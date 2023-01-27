@@ -22,11 +22,6 @@ Intermediate tables and variables used for working not included. Self-explanator
 1 line per patid / date (drugclass specific variables in wide format) for all patids
 | Variable name | Description | Derivation |
 | --- | --- | --- |
-| coverage_{drugclass} | see above | |
-| drugsubstances_{drugclass} | see above | |
-| numpxdate | see above | |
-| numstart | see above | |
-| numstop | see above | |
 | cu_numstart | cumulative sum of numstart up to this date | |
 | cu_numstop | cumulative sum of numstop up to this date | |
 | numdrugs | number of drug classes patient is on at that date including ones stopped on that date | calculated as: cu_numstart - cu_numstop + numstop (add numstop so includes drug stopped on that day<br />NB: numdrugs2 is identical - calculated as sum of binary drug class columns (see next row) to check |
@@ -49,9 +44,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 | timeondrug | dstopdate-dstartdate (in days) | |
 | timeondrugpluscov | dstoppluscovdate-dstartdate (in days) | |
 | drugorder | order within patient | e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 3, 4 |
-| drugline_all / drugline | drug line |
-| drugline_all is not missing for any drug periods |
-| In final merge script, 'drugline' is the same as 'drugline_all' except it is set to missing if diabetes diagnosis date < registration (this is the only reason why this variable would be missing) | just takes into account first instance of drug e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 1, 4<br />if multiple drug classes started on same day, use minimum drug line for both |
+| drugline_all / drugline | drug line<br />drugline_all is not missing for any drug periods<br />In final merge script, 'drugline' is the same as 'drugline_all' except it is set to missing if diabetes diagnosis date < registration (this is the only reason why this variable would be missing) | just takes into account first instance of drug e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 1, 4<br />if multiple drug classes started on same day, use minimum drug line for both |
 | druginstance | 1st, 2nd, 3rd etc. period of taking this specific drug class | |
 
 &nbsp;
@@ -75,10 +68,8 @@ Intermediate tables and variables used for working not included. Self-explanator
 | nextswap | 1 if at least one drug class added and at least one drug class removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | uses nextadd and nextrem<br />0 if no swap (i.e. drugs only added or removed) / no next drug combo as this is the last before end of prescriptions |
 | nextaddrug | names of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none added / no next drug combo as this is the last before end of prescriptions |
 | nextremdrug | names of drug classes removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none removed / no next drug combo as this is the last before end of prescriptions |
-| drugchange | what change from previous drug combo to present one represents: add / remove / swap / [no previous combo as this is the] start of px / restart of same combo after break: stop - break |
-| (doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
-| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / [no next combo as this is the] end of px / restart of same combo after break: stop - break |
-| (doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
+| drugchange | what change from previous drug combo to present one represents: add / remove / swap / [no previous combo as this is the] start of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
+| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / [no next combo as this is the] end of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
 | timetochange | time until changed to different drug combo in days (**does** take into account breaks when patient is on no diabetes meds) | if last combination before end of prescriptions, or if next event is a break from all drug classes, use dcstopdate to calculate |
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
@@ -95,8 +86,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 | --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
-| pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate) |
-| For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
+| pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
 | pre[biomarker]date | date of baseline biomarker | |
 | pre[biomarker]drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
 | height | height in cm | Mean of all values on/post- drug start date |
@@ -105,19 +95,17 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 ## Script: 3_mm_biomarker_response
 ### Table: mm_biomarker_response
-Biomarkers included currently:weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | Only uses first instance of use of that drug class | | |
 | dstartdate | see above | |
 | druginstance | see above | |
-| post[biomarker]6m | biomarker value at 6m post drug initiation | post[biomarker]6m: closest biomarker to dstartdate+183 days (6 months), at least 3 months (91 days) after dstartdate, before 9 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest). |
-| No posthba1c6m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
+| post[biomarker]6m | biomarker value at 6m post drug initiation | post[biomarker]6m: closest biomarker to dstartdate+183 days (6 months), at least 3 months (91 days) after dstartdate, before 9 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c6m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
 | post[biomarker]6mdate | date of biomarker at 6m post drug initiation | |
 | post[biomarker]6mdrugdiff | days between dstartdate and post[biomarker]6mdate | |
-| post[biomarker]12m | biomarker value at 12m post drug initiation | posthba1c12m: closest biomarker to dstartdate+365 days (12 months), at least 9 months (274 days) after dstartdate, before 15 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest) |
-| No posthba1c12m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
+| post[biomarker]12m | biomarker value at 12m post drug initiation | posthba1c12m: closest biomarker to dstartdate+365 days (12 months), at least 9 months (274 days) after dstartdate, before 15 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c12m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
 | post[biomarker]12mdate | date of biomarker at 12m post drug initiation | |
 | post[biomarker]12mdrugdiff | days between dstartdate and post[biomarker]6mdate | |
 | [biomarker]resp6m | post[biomarker]6m - pre[biomarker] | |
