@@ -18,6 +18,8 @@ Intermediate tables and variables used for working not included. Self-explanator
 | numstart | number of drug classes started on that day (duplicated within patid/date) | sum of dstart on that day |
 | numstop | number of drug classes stopped on that day (duplicated within patid/date) | sum of dstop on that day |
 
+&nbsp;
+
 ### Table: mm_all_scripts
 1 line per patid / date (drugclass specific variables in wide format) for all patids
 | Variable name | Description | Derivation |
@@ -32,6 +34,8 @@ Intermediate tables and variables used for working not included. Self-explanator
 | dcstart | whether date is start date for drug combo | uses drugcombo variable: 1 if it is the earliest instance of that drug combo for that person, or if previous script was >183 days (6 months) prior |
 | dcstop | whether date is stop for drug combo | uses drugcombo variable: 1 if it is the last instance of that drug combo for that person, or if next script is >183 days (6 months) after |
 | timetolastpx | time from date to last prescription date for patient (in days) | |
+
+&nbsp;
 
 ### Table: mm_drug_start_stop
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
@@ -49,7 +53,6 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 &nbsp;
 
-## Script: 1_mm_drug_sorting_and_combos
 ### Table: mm_combo_start_stop
 1 line per patid / drug combo instance (continuous period of drug combo use) for all patids
 | Variable name | Description | Derivation |
