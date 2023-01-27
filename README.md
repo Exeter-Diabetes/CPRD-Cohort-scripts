@@ -12,7 +12,12 @@ Recently we have recreated the above processing pipeline in CPRD Aurum, and this
 
 | Script  | Inputs | Outputs |
 | ---- | ---- | ---- |
-| Content Cell  | Content Cell  |  s |
+| 01_mm_drug_sorting_and_combos | CPRD Drug Issue table |  mm_ohains: all prescriptions for diabetes medications, with duplicates for patid/date/drugclass removed, and coverage calculated. 1 row per patid/date/drugclass
+mm_all_scripts_long: as per mm_ohains but with additional variables like number of drug classes started on that day (numstart)
+mm_all_scripts: reshaped wide version of mm_all_scripts_long, with one row per patid/date
+mm_drug_start_stop: one row per continuous period of use of each patid/drugclass, with start and stop dates, drugline etc.
+mm_combo_start_stop: one row per continuous period of patid/drug combination, including variables like time until next drug class added or removed
+ |
 | Content Cell  | Content Cell  | z |
 
 ## CPRD Aurum extract details
