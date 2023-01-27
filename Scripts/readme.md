@@ -10,7 +10,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | quantity | number of tablets/items in prescriptions | provided by CPRD in drug issue table, directly from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
-| daily_dose | number of tablets/items prescribed per day | provided by CPRD (in dosage lookup ['common doses'] - need to merge with dosageid in drug issue table), 'derived using CPRD algorithm based on free text'<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
+| daily_dose | number of tablets/items prescribed per day | provided by CPRD (in dosage lookup ('common doses') - need to merge with dosageid in Drug Issue table), 'derived using CPRD algorithm based on free text'<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
 | duration | number of days prescription is for | provided by CPRD in drug issue table, no info on source so presumably from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
 | coverage | days of meds for that script | quantity/daily_dose if neither are missing, or use duration<br />NB: very high missingness in Aurum (~60%) |
 | drugsubstances | drug substances within that class prescribed on that date | from [drug substance class lookup](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Scripts/drug_substance_class_lookup.txt)<br />if multiple prescriptions for same patid/date/drug with different drug substances, combined using ' & ' as a separator |
@@ -79,8 +79,8 @@ Intermediate tables and variables used for working not included. Self-explanator
 | nextswap | 1 if at least one drug class added and at least one drug class removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | uses nextadd and nextrem<br />0 if no swap (i.e. drugs only added or removed) / no next drug combo as this is the last before end of prescriptions |
 | nextaddrug | names of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none added / no next drug combo as this is the last before end of prescriptions |
 | nextremdrug | names of drug classes removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none removed / no next drug combo as this is the last before end of prescriptions |
-| drugchange | what change from previous drug combo to present one represents: add / remove / swap / [no previous combo as this is the] start of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
-| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / [no next combo as this is the] end of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
+| drugchange | what change from previous drug combo to present one represents: add / remove / swap / (no previous combo as this is the) start of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
+| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / (no next combo as this is the) end of px / restart of same combo after break: stop - break<br />(doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
 | timetochange | time until changed to different drug combo in days (**does** take into account breaks when patient is on no diabetes meds) | if last combination before end of prescriptions, or if next event is a break from all drug classes, use dcstopdate to calculate |
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
@@ -99,9 +99,9 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
-| pre[biomarker]date | date of baseline biomarker | |
-| pre[biomarker]drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
+| pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
+| pre{biomarker}date | date of baseline biomarker | |
+| pre{biomarker}drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
 | height | height in cm | Mean of all values on/post- drug start date |
 
 &nbsp;
@@ -117,14 +117,14 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| post[biomarker]6m | biomarker value at 6m post drug initiation | post[biomarker]6m: closest biomarker to dstartdate+183 days (6 months), at least 3 months (91 days) after dstartdate, before 9 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c6m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
-| post[biomarker]6mdate | date of biomarker at 6m post drug initiation | |
-| post[biomarker]6mdrugdiff | days between dstartdate and post[biomarker]6mdate | |
-| post[biomarker]12m | biomarker value at 12m post drug initiation | posthba1c12m: closest biomarker to dstartdate+365 days (12 months), at least 9 months (274 days) after dstartdate, before 15 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c12m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
-| post[biomarker]12mdate | date of biomarker at 12m post drug initiation | |
-| post[biomarker]12mdrugdiff | days between dstartdate and post[biomarker]6mdate | |
-| [biomarker]resp6m | post[biomarker]6m - pre[biomarker] | |
-| [biomarker]resp12m | post[biomarker]12m - pre[biomarker] | |
+| post{biomarker}6m | biomarker value at 6m post drug initiation | post{biomarker}6m: closest biomarker to dstartdate+183 days (6 months), at least 3 months (91 days) after dstartdate, before 9 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c6m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
+| post{biomarker}6mdate | date of biomarker at 6m post drug initiation | |
+| post{biomarker}6mdrugdiff | days between dstartdate and post{biomarker}6mdate | |
+| post{biomarker}12m | biomarker value at 12m post drug initiation | posthba1c12m: closest biomarker to dstartdate+365 days (12 months), at least 9 months (274 days) after dstartdate, before 15 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c12m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
+| post{biomarker}12mdate | date of biomarker at 12m post drug initiation | |
+| post{biomarker}12mdrugdiff | days between dstartdate and post{biomarker}6mdate | |
+| {biomarker}resp6m | post{biomarker}6m - pre{biomarker} | |
+| {biomarker}resp12m | post{biomarker}12m - pre{biomarker} | |
 | egfr_40_decline_date | date at which eGFR<=40% of baseline value | |
 
 &nbsp;
@@ -140,15 +140,15 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 | --- | --- |
 | dstartdate | see above |
 | druginstance | see above |
-| predrug_[comorbidity] | binary 0/1 if any instance of comorbidity before/at dstartdate |
-| predrug_earliest_[comorbidity] | earliest occurrence of comorbidity before/at dstartdate |
-| predrug_latest_[comorbidity] | latest occurrence of comorbidity before/at dstartdate |
-| postdrug_first_[comorbidity] | earliest occurrence of comorbidity after (not at) dstartdate |
-| postdrug_first_[comorbidity]\_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |
+| predrug_{comorbidity} | binary 0/1 if any instance of comorbidity before/at dstartdate |
+| predrug_earliest_{comorbidity} | earliest occurrence of comorbidity before/at dstartdate |
+| predrug_latest_{comorbidity} | latest occurrence of comorbidity before/at dstartdate |
+| postdrug_first_{comorbidity} | earliest occurrence of comorbidity after (not at) dstartdate |
+| postdrug_first_{comorbidity}\_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |
 | not present for unspecific_gi comorbidity |
-| postdrug_first_[comorbidity]\_hes_icd10_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) ICD10 (diagnosis) codes only |
+| postdrug_first_{comorbidity}\_hes_icd10_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) ICD10 (diagnosis) codes only |
 | not present for unspecific_gi comorbidity |
-| postdrug_first_[comorbidity]\_hes_opcs4_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) OPCS4 (operation) codes only |
+| postdrug_first_{comorbidity}\_hes_opcs4_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) OPCS4 (operation) codes only |
 | not present for unspecific_gi comorbidity |
 | hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate) |
 | NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
@@ -182,9 +182,9 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 | Variable name | Description |
 | --- | --- |
-| predrug_earliest_[med] | earliest script for non-diabetes medication before/at dstartdate |
-| predrug_latest_[med] | latest script for non-diabetes medication before/at dstartdate |
-| postdrug_first_[med] | earliest script for non-diabetes medication after (not at) dstartdate |
+| predrug_earliest_{med} | earliest script for non-diabetes medication before/at dstartdate |
+| predrug_latest_{med} | latest script for non-diabetes medication before/at dstartdate |
+| postdrug_first_{med} | earliest script for non-diabetes medication after (not at) dstartdate |
 
 &nbsp;
 
@@ -237,7 +237,7 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 &nbsp;
 
 ## Script: 10_mm_final_merge
-### Table: mm_[today's date]\_t2d_1stinstance
+### Table: mm_{today's date}\_t2d_1stinstance
 
 1 line per patid / drug class instance (continuous period of drug class use), but first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration
 
@@ -297,7 +297,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | has_insulin | has a prescription for insulin ever (excluding invalid dates - before DOB / after LCD/death/deregistration) | |
 | type1_code_count | number of Type 1-specific codes in records (any date) | |
 | type2_code_count | number of Type 2-specific codes in records (any date) | |
-| dm_diag_dmcodedate | earliest diabetes medcode (excluding those with obstypeid=4 [family history] and invalid dates) | |
+| dm_diag_dmcodedate | earliest diabetes medcode (excluding those with obstypeid=4 (family history) and invalid dates) | |
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
