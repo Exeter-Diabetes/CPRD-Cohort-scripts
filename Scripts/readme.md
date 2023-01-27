@@ -4,7 +4,9 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 ## Script: 1_mm_drug_sorting_and_combos
 ### Table: mm_ohains / mm_all_scripts_long (ohains lacks dstart/dstop/num* variables)
+
 1 line per patid / date / drug class (for which there is a prescription) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | quantity | number of tablets/items in prescriptions | provided by CPRD in drug issue table, directly from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
@@ -21,7 +23,9 @@ Intermediate tables and variables used for working not included. Self-explanator
 &nbsp;
 
 ### Table: mm_all_scripts
+
 1 line per patid / date (drugclass specific variables in wide format) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | cu_numstart | cumulative sum of numstart up to this date | |
@@ -38,7 +42,9 @@ Intermediate tables and variables used for working not included. Self-explanator
 &nbsp;
 
 ### Table: mm_drug_start_stop
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | drug class start date | uses dstart=1 - see above |
@@ -54,7 +60,9 @@ Intermediate tables and variables used for working not included. Self-explanator
 &nbsp;
 
 ### Table: mm_combo_start_stop
+
 1 line per patid / drug combo instance (continuous period of drug combo use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dcstartdate | drug combo start date | uses dcstart - see above |
@@ -82,9 +90,13 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 ## Script: 2_mm_baseline_biomarkers
 ### Table: mm_baseline_biomarkers
+
 Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -98,8 +110,13 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 ## Script: 3_mm_biomarker_response
 ### Table: mm_biomarker_response
+
 Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+
+NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | Only uses first instance of use of that drug class | | |
@@ -119,8 +136,11 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 ## Script: 4_mm_comorbidities
 ### Table: mm_comorbidities
+
 Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -143,7 +163,9 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 ## Script: 5_mm_ckd_stages
 ### Table: mm_ckd_stages
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -158,8 +180,11 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 ## Script: 6_mm_non_diabetes_meds
 ### Table: mm_non_diabetes_meds
+
 Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -172,7 +197,9 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 ## Script: 7_mm_smoking
 ### Table: mm_smoking
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -185,7 +212,9 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 ## Script: 8_mm_discontinuation
 ### Table: mm_discontinuation
+
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
@@ -207,7 +236,9 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 ## Script: 9_mm_death_cause
 ### Table: mm_death_cause
+
 1 line per patid for all patids in ONS death table
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) | |
@@ -220,10 +251,14 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 &nbsp;
 
 ## Script: 10_mm_final_merge
-### Table: mm_[today's date]_t2d_1stinstance
+### Table: mm_[today's date]\_t2d_1stinstance
+
 1 line per patid / drug class instance (continuous period of drug class use), but first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration
+
 Only includes patids with Type 2 diabetes in Type 1/2 cohort and with HES linkage (with_hes==1; see below all_t1t2_cohort table)
+
 Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones (below)
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | dstartdate_age | age at dstartdate in years (dstartdate-dob) | |
@@ -239,7 +274,9 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 ## Script: all_patid_ethnicity_table
 ### Table: all_patid_ethnicity
+
 1 line per patid in download
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | ethnicity_5cat | 5-category ethnicity: (0=White, 1=South Asian, 2=Black, 3=Other, 4=Mixed) | Uses [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity) (NB: use all medcodes; no date restrictions):<br />Use most frequent category<br />If multiple categories with same frequency, use latest one<br />If multiple categories with same frequency and used as recently as each other, label as missing<br />Use HES if missing/no consensus from medcodes |
@@ -250,7 +287,9 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 ## Script: all_patid_townsend_deprivation_score
 ### Table: all_patid_townsend
+
 1 line per patid with Index of Multiple Deprivation Score from CPRD
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | imd2015_10 | English Index of Multiple Deprivation (IMD) decile (1=most deprived, 10=least deprived) | |
@@ -258,9 +297,11 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 &nbsp;
 
-## Script: all_t1t2_cohort_table (also all_patid_ethnicity_table for ethnicity)
+## Script: all_t1t2_cohort_table
 ### Table: all_t1t2_cohort
+
 1 line per patid who meet requirements for being in Type 1/2 cohort
+
 | Variable name | Description | Derivation |
 | --- | --- | --- |
 | gender | gender (1=male, 2=female) | |
