@@ -6,6 +6,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 ### Table: mm_ohains / mm_all_scripts_long (ohains lacks dstart/dstop/num* variables)
 1 line per patid / date / drug class (for which there is a prescription) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | quantity | number of tablets/items in prescriptions | provided by CPRD in drug issue table, directly from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
 | daily_dose | number of tablets/items prescribed per day | provided by CPRD (in dosage lookup ['common doses'] - need to merge with dosageid in drug issue table), 'derived using CPRD algorithm based on free text'<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
 | duration | number of days prescription is for | provided by CPRD in drug issue table, no info on source so presumably from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
@@ -17,12 +18,15 @@ Intermediate tables and variables used for working not included. Self-explanator
 | numstart | number of drug classes started on that day (duplicated within patid/date) | sum of dstart on that day |
 | numstop | number of drug classes stopped on that day (duplicated within patid/date) | sum of dstop on that day |
 
-&nbsp;
-
-## Script: 1_mm_drug_sorting_and_combos
 ### Table: mm_all_scripts
 1 line per patid / date (drugclass specific variables in wide format) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
+| coverage_{drugclass} | see above | |
+| drugsubstances_{drugclass} | see above | |
+| numpxdate | see above | |
+| numstart | see above | |
+| numstop | see above | |
 | cu_numstart | cumulative sum of numstart up to this date | |
 | cu_numstop | cumulative sum of numstop up to this date | |
 | numdrugs | number of drug classes patient is on at that date including ones stopped on that date | calculated as: cu_numstart - cu_numstop + numstop (add numstop so includes drug stopped on that day<br />NB: numdrugs2 is identical - calculated as sum of binary drug class columns (see next row) to check |
@@ -34,12 +38,10 @@ Intermediate tables and variables used for working not included. Self-explanator
 | dcstop | whether date is stop for drug combo | uses drugcombo variable: 1 if it is the last instance of that drug combo for that person, or if next script is >183 days (6 months) after |
 | timetolastpx | time from date to last prescription date for patient (in days) | |
 
-&nbsp;
-
-## Script: 1_mm_drug_sorting_and_combos		
-### Table: mm_drug_start_stop		
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+### Table: mm_drug_start_stop
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | drug class start date | uses dstart=1 - see above |
 | dstopdate | drug class stop date | uses dstop=1 - see above |
 | dstopdatepluscov | drug class stop date + coverage from last prescription | |
@@ -47,15 +49,18 @@ Intermediate tables and variables used for working not included. Self-explanator
 | timeondrug | dstopdate-dstartdate (in days) | |
 | timeondrugpluscov | dstoppluscovdate-dstartdate (in days) | |
 | drugorder | order within patient | e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 3, 4 |
-| drugline_all / drugline | drug line<br />drugline_all is not missing for any drug periods<br />In final merge script, 'drugline' is the same as 'drugline_all' except it is set to missing if diabetes diagnosis date < registration (this is the only reason why this variable would be missing) | just takes into account first instance of drug e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 1, 4<br />if multiple drug classes started on same day, use minimum drug line for both |
+| drugline_all / drugline | drug line |
+| drugline_all is not missing for any drug periods |
+| In final merge script, 'drugline' is the same as 'drugline_all' except it is set to missing if diabetes diagnosis date < registration (this is the only reason why this variable would be missing) | just takes into account first instance of drug e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 1, 4<br />if multiple drug classes started on same day, use minimum drug line for both |
 | druginstance | 1st, 2nd, 3rd etc. period of taking this specific drug class | |
 
 &nbsp;
 
-## Script: 1_mm_drug_sorting_and_combos		
-### Table: mm_combo_start_stop		
-1 line per patid / drug combo instance (continuous period of drug combo use) for all patids		
+## Script: 1_mm_drug_sorting_and_combos
+### Table: mm_combo_start_stop
+1 line per patid / drug combo instance (continuous period of drug combo use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dcstartdate | drug combo start date | uses dcstart - see above |
 | dcstopdate | drug combo stop date | uses dcstop - see above |
 | drugcomboorder | order within patient | e.g. patient takes MFN only, MFN+SU, MFN+SU+DPP4 in that order = 1, 2, 3 |
@@ -70,8 +75,10 @@ Intermediate tables and variables used for working not included. Self-explanator
 | nextswap | 1 if at least one drug class added and at least one drug class removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | uses nextadd and nextrem<br />0 if no swap (i.e. drugs only added or removed) / no next drug combo as this is the last before end of prescriptions |
 | nextaddrug | names of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none added / no next drug combo as this is the last before end of prescriptions |
 | nextremdrug | names of drug classes removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none removed / no next drug combo as this is the last before end of prescriptions |
-| drugchange | what change from previous drug combo to present one represents: add / remove / swap / [no previous combo as this is the] start of px / restart of same combo after break: stop - break<br / >(doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
-| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / [no next combo as this is the] end of px / restart of same combo after break: stop - break<br / >(doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
+| drugchange | what change from previous drug combo to present one represents: add / remove / swap / [no previous combo as this is the] start of px / restart of same combo after break: stop - break |
+| (doesn't take into account breaks when patient is on no diabetes meds) | if add>=1 & rem==0 -> add<br />if add==0 & rem>=1 -> remove<br />if add>=1 & rem>=1 -> swap<br />if add==0 & rem==0 & drugcomboorder==1 -> start of px<br />if add==0 & rem==0 & drugcomboorder!=1 -> stop - break |
+| nextdrugchange | what change from present drug combo to next one represents: add / remove / swap / [no next combo as this is the] end of px / restart of same combo after break: stop - break |
+| (doesn't take into account breaks when patient is on no diabetes meds) | if nextadd>=1 & nextrem==0 -> add<br />if nextadd==0 & nextrem>=1 -> remove<br />if nextadd>=1 & nextrem>=1 -> swap<br />if nextadd==0 & nextrem==0 & nextdcdate!=dcstopdate -> stop - break<br />if nextadd==0 & nextrem==0 & nextdcdate==dcstopdate -> stop - end of px |
 | timetochange | time until changed to different drug combo in days (**does** take into account breaks when patient is on no diabetes meds) | if last combination before end of prescriptions, or if next event is a break from all drug classes, use dcstopdate to calculate |
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
@@ -79,24 +86,29 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 &nbsp;
 
-## Script: 2_mm_baseline_biomarkers		
-### Table: mm_baseline_biomarkers	biomarkers included currently = weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR	NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight/height/albumin/creatinine measuremnts
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+## Script: 2_mm_baseline_biomarkers
+### Table: mm_baseline_biomarkers
+Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
-| pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
+| pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate) |
+| For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
 | pre[biomarker]date | date of baseline biomarker | |
 | pre[biomarker]drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
 | height | height in cm | Mean of all values on/post- drug start date |
 
 &nbsp;
 
-## Script: 3_mm_biomarker_response		
-### Table: mm_biomarker_respons
-Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
-1 line per patid / drug class instance (continuous period of drug class use) for all patids	
+## Script: 3_mm_biomarker_response
+### Table: mm_biomarker_response
+Biomarkers included currently:weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | Only uses first instance of use of that drug class | | |
 | dstartdate | see above | |
 | druginstance | see above | |
@@ -114,10 +126,12 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 4_mm_comorbidities		
-### Table: mm_comorbidities	comorbidities included currently = af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture	
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+## Script: 4_mm_comorbidities
+### Table: mm_comorbidities
+Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
 | predrug_[comorbidity] | binary 0/1 if any instance of comorbidity before/at dstartdate | |
@@ -136,9 +150,11 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 5_mm_ckd_stages		
-### Table: mm_ckd_stages		
+## Script: 5_mm_ckd_stages
+### Table: mm_ckd_stages
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
 | preckdstage | CKD stage at baseline | CKD stages calculated as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage)<br />eGFR calculated from creatinine using CKD-EPI creatinine 2021 equation<br />Start date = earliest test for CKD stage, only including those confirmed by another test at least 91 days later, without a test for a different stage in the intervening period<br />Baseline stage = maximum stage with start date < dstartdate or up to 7 days afterwards<br />CKD5 supplemented by medcodes/ICD10/OPCS4 codes for CKD5 / ESRD |
@@ -149,10 +165,12 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 6_mm_non_diabetes_meds		
-### Table: mm_non_diabetes_meds	medications included currently = ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins	
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+## Script: 6_mm_non_diabetes_meds
+### Table: mm_non_diabetes_meds
+Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
 | predrug_earliest_[med] | earliest script for non-diabetes medication before/at dstartdate | |
@@ -161,10 +179,11 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 7_mm_smoking		
-### Table: mm_smoking		
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+## Script: 7_mm_smoking
+### Table: mm_smoking
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
 | smoking_cat | Smoking category at drug start: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
@@ -173,10 +192,11 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 8_mm_discontinuation		
-### Table: mm_discontinuation		
-1 line per patid / drug class instance (continuous period of drug class use) for all patids		
+## Script: 8_mm_discontinuation
+### Table: mm_discontinuation
+1 line per patid / drug class instance (continuous period of drug class use) for all patids
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate | see above | |
 | dstopdate | see above | |
 | druginstance | see above | |
@@ -194,10 +214,11 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 9_mm_death_cause		
-### Table: mm_death_cause		
-1 line per patid for all patids in ONS death table		
+## Script: 9_mm_death_cause
+### Table: mm_death_cause
+1 line per patid for all patids in ONS death table
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) | |
 | secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) | |
 | cv_death_primary | 1 if primary cause of death is CV | |
@@ -207,12 +228,13 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 &nbsp;
 
-## Script: 10_mm_final_merge		
-### Table: mm_[today's date]_t2d_1stinstance		
-1 line per patid / drug class instance (continuous period of drug class use), but first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration		
-Only includes patids with Type 2 diabetes in Type 1/2 cohort and with HES linkage (with_hes==1; see below all_t1t2_cohort table)		
-Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones (below)		
+## Script: 10_mm_final_merge
+### Table: mm_[today's date]_t2d_1stinstance
+1 line per patid / drug class instance (continuous period of drug class use), but first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration
+Only includes patids with Type 2 diabetes in Type 1/2 cohort and with HES linkage (with_hes==1; see below all_t1t2_cohort table)
+Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones (below)
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | dstartdate_age | age at dstartdate in years (dstartdate-dob) | |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years (dstartdate-dm_diag_date_all)<br />No missingness | |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years (dstartdate-dm_diag_date)<br />Missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1), as final merge script sets dm_diag_date to missing where this is the case - this is the only reason why this variable would be missing | |
@@ -224,29 +246,32 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 &nbsp;
 
-## Script: all_patid_ethnicity_table		
-### Table: all_patid_ethnicity		
-1 line per patid in download		
+## Script: all_patid_ethnicity_table
+### Table: all_patid_ethnicity
+1 line per patid in download
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | ethnicity_5cat | 5-category ethnicity: (0=White, 1=South Asian, 2=Black, 3=Other, 4=Mixed) | Uses [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity) (NB: use all medcodes; no date restrictions):<br />Use most frequent category<br />If multiple categories with same frequency, use latest one<br />If multiple categories with same frequency and used as recently as each other, label as missing<br />Use HES if missing/no consensus from medcodes |
 | ethnicity_16cat | 16-category ethnicity: (1=White British, 2=White Irish, 3=Other White, 4=White and Black Caribbean, 5=White and Black African, 6=White and Asian, 7=Other Mixed, 8=Indian, 9=Pakistani, 10=Bangladeshi, 11=Other Asian, 12=Caribbean, 13=African, 14=Other Black, 15=Chinese, 16=Other) | |
 | ethnicity_qrisk2 | QRISK2 ethnicity category: (1=White, 2=Indian, 3=Pakistani, 4=Bangladeshi, 5=Other Asian, 6=Black Caribbean, 7=Black African, 8=Chinese, 9=Other) | |
 
 &nbsp;
 
-## Script: all_patid_townsend_deprivation_score		
-### Table: all_patid_townsend		
-1 line per patid with Index of Multiple Deprivation Score from CPRD		
+## Script: all_patid_townsend_deprivation_score
+### Table: all_patid_townsend
+1 line per patid with Index of Multiple Deprivation Score from CPRD
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | imd2015_10 | English Index of Multiple Deprivation (IMD) decile (1=most deprived, 10=least deprived) | |
 | tds_2011 | Townsend Deprivation Score (TDS) - made by converting IMD decile scores (median TDS for LSOAs with the same IMD decile as patient used) | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#townsend-deprivation-scores) |
 
 &nbsp;
 
-## Script: all_t1t2_cohort_table (also all_patid_ethnicity_table for ethnicity)		
-### Table: all_t1t2_cohort		
-1 line per patid who meet requirements for being in Type 1/2 cohort		
+## Script: all_t1t2_cohort_table (also all_patid_ethnicity_table for ethnicity)
+### Table: all_t1t2_cohort
+1 line per patid who meet requirements for being in Type 1/2 cohort
 | Variable name | Description | Derivation |
+| --- | --- | --- |
 | gender | gender (1=male, 2=female) | |
 | dob | date of birth | if month and date missing, 1st July used, if date but not month missing, 15th of month used, or earliest medcode in year of birth if this is earlier |
 | pracid | practice ID | |
@@ -272,4 +297,3 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0<br />In final merge script - usually exclude people where with_hes==0 | |
-
