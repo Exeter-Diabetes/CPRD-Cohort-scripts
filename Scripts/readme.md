@@ -7,7 +7,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 1 line per patid / date / drug class (for which there is a prescription) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | quantity | number of tablets/items in prescriptions | provided by CPRD in drug issue table, directly from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
 | daily_dose | number of tablets/items prescribed per day | provided by CPRD (in dosage lookup ['common doses'] - need to merge with dosageid in drug issue table), 'derived using CPRD algorithm based on free text'<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
@@ -26,7 +26,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 1 line per patid / date (drugclass specific variables in wide format) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | cu_numstart | cumulative sum of numstart up to this date | |
 | cu_numstop | cumulative sum of numstop up to this date | |
@@ -45,7 +45,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | dstartdate | drug class start date | uses dstart=1 - see above |
 | dstopdate | drug class stop date | uses dstop=1 - see above |
@@ -63,7 +63,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 1 line per patid / drug combo instance (continuous period of drug combo use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | dcstartdate | drug combo start date | uses dcstart - see above |
 | dcstopdate | drug combo stop date | uses dcstop - see above |
@@ -97,10 +97,8 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| dstartdate | see above | |
-| druginstance | see above | |
 | pre[biomarker] | biomarker value at baseline | For all biomarkers except HbA1c: pre[biomarker] is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
 | pre[biomarker]date | date of baseline biomarker | |
 | pre[biomarker]drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
@@ -115,13 +113,10 @@ Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, b
 
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
 
-1 line per patid / drug class instance (continuous period of drug class use) for all patids
+1 line per patid / drug class instance (continuous period of drug class use) for all patids. Only uses first instance of use of that drug class.
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| Only uses first instance of use of that drug class | | |
-| dstartdate | see above | |
-| druginstance | see above | |
 | post[biomarker]6m | biomarker value at 6m post drug initiation | post[biomarker]6m: closest biomarker to dstartdate+183 days (6 months), at least 3 months (91 days) after dstartdate, before 9 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c6m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
 | post[biomarker]6mdate | date of biomarker at 6m post drug initiation | |
 | post[biomarker]6mdrugdiff | days between dstartdate and post[biomarker]6mdate | |
@@ -141,23 +136,23 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
-| --- | --- | --- |
-| dstartdate | see above | |
-| druginstance | see above | |
-| predrug_[comorbidity] | binary 0/1 if any instance of comorbidity before/at dstartdate | |
-| predrug_earliest_[comorbidity] | earliest occurrence of comorbidity before/at dstartdate | |
-| predrug_latest_[comorbidity] | latest occurrence of comorbidity before/at dstartdate | |
-| postdrug_first_[comorbidity] | earliest occurrence of comorbidity after (not at) dstartdate | |
-| postdrug_first_[comorbidity]_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |
-| not present for unspecific_gi comorbidity | |
-| postdrug_first_[comorbidity]_hes_icd10_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) ICD10 (diagnosis) codes only |
-| not present for unspecific_gi comorbidity | |
-| postdrug_first_[comorbidity]_hes_opcs4_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) OPCS4 (operation) codes only |
-| not present for unspecific_gi comorbidity | |
+| Variable name | Description |
+| --- | --- |
+| dstartdate | see above |
+| druginstance | see above |
+| predrug_[comorbidity] | binary 0/1 if any instance of comorbidity before/at dstartdate |
+| predrug_earliest_[comorbidity] | earliest occurrence of comorbidity before/at dstartdate |
+| predrug_latest_[comorbidity] | latest occurrence of comorbidity before/at dstartdate |
+| postdrug_first_[comorbidity] | earliest occurrence of comorbidity after (not at) dstartdate |
+| postdrug_first_[comorbidity]\_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |
+| not present for unspecific_gi comorbidity |
+| postdrug_first_[comorbidity]\_hes_icd10_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) ICD10 (diagnosis) codes only |
+| not present for unspecific_gi comorbidity |
+| postdrug_first_[comorbidity]\_hes_opcs4_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) OPCS4 (operation) codes only |
+| not present for unspecific_gi comorbidity |
 | hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate) |
-| NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
-| postdrug_first_all_cause_hosp | earliest inpatient hospital admission after (not at) dstartdate - emegency only (excluding admimeth=11, 12, or 13) | |
+| NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
+| postdrug_first_all_cause_hosp | earliest inpatient hospital admission after (not at) dstartdate - emegency only (excluding admimeth=11, 12, or 13) |
 
 &nbsp;
 
@@ -166,7 +161,7 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | dstartdate | see above | |
 | druginstance | see above | |
@@ -185,13 +180,11 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
-| --- | --- | --- |
-| dstartdate | see above | |
-| druginstance | see above | |
-| predrug_earliest_[med] | earliest script for non-diabetes medication before/at dstartdate | |
-| predrug_latest_[med] | latest script for non-diabetes medication before/at dstartdate | |
-| postdrug_first_[med] | earliest script for non-diabetes medication after (not at) dstartdate | |
+| Variable name | Description |
+| --- | --- |
+| predrug_earliest_[med] | earliest script for non-diabetes medication before/at dstartdate |
+| predrug_latest_[med] | latest script for non-diabetes medication before/at dstartdate |
+| postdrug_first_[med] | earliest script for non-diabetes medication after (not at) dstartdate |
 
 &nbsp;
 
@@ -200,10 +193,8 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| dstartdate | see above | |
-| druginstance | see above | |
 | smoking_cat | Smoking category at drug start: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
@@ -215,13 +206,8 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes onderivation |
 | --- | --- | --- |
-| dstartdate | see above | |
-| dstopdate | see above | |
-| druginstance | see above | |
-| timetopx | see above | |
-| nextdrugchange | see above | |
 | ttc3m | 1 if timeondrug<=3 months | |
 | ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
 | ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months) | |
@@ -239,14 +225,14 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 1 line per patid for all patids in ONS death table
 
-| Variable name | Description | Derivation |
-| --- | --- | --- |
-| primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) | |
-| secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) | |
-| cv_death_primary | 1 if primary cause of death is CV | |
-| cv_death_any | 1 if any (primary or secondary) cause of death is CV | |
-| hf_death_primary | 1 if primary cause of death is heart failure | |
-| hf_death_any | 1 if any (primary or secondary) cause of death is heartfailure | |
+| Variable name | Description |
+| --- | --- |
+| primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
+| secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) |
+| cv_death_primary | 1 if primary cause of death is CV |
+| cv_death_any | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary | 1 if primary cause of death is heart failure |
+| hf_death_any | 1 if any (primary or secondary) cause of death is heartfailure |
 
 &nbsp;
 
@@ -259,16 +245,16 @@ Only includes patids with Type 2 diabetes in Type 1/2 cohort and with HES linkag
 
 Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones (below)
 
-| Variable name | Description | Derivation |
-| --- | --- | --- |
-| dstartdate_age | age at dstartdate in years (dstartdate-dob) | |
-| dstartdate_dm_dur_all | diabetes duration at dstartdate in years (dstartdate-dm_diag_date_all)<br />No missingness | |
-| dstartdate_dm_dur | diabetes duration at dstartdate in years (dstartdate-dm_diag_date)<br />Missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1), as final merge script sets dm_diag_date to missing where this is the case - this is the only reason why this variable would be missing | |
-| qdiabeteshf_5yr_score | 5-year QDiabetes-heart failure score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model<br />NB: NOT missing if have pre-existing HF but obviously not valid | |
-| qdiabeteshf_lin_predictor | QDiabetes heart failure linear predictor<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid | |
-| qrisk2_5yr_score | 5-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid | |
-| qrisk2_10yr_score | 10-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid | |
-| qrisk2_lin_predictor | QRISK2-2017 linear predictor<br />NB: NOT missing if have CVD but obviously not valid<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info) | |
+| Variable name | Description |
+| --- | --- |
+| dstartdate_age | age at dstartdate in years (dstartdate-dob) |
+| dstartdate_dm_dur_all | diabetes duration at dstartdate in years (dstartdate-dm_diag_date_all)<br />No missingness |
+| dstartdate_dm_dur | diabetes duration at dstartdate in years (dstartdate-dm_diag_date)<br />Missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1), as final merge script sets dm_diag_date to missing where this is the case - this is the only reason why this variable would be missing |
+| qdiabeteshf_5yr_score | 5-year QDiabetes-heart failure score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model<br />NB: NOT missing if have pre-existing HF but obviously not valid |
+| qdiabeteshf_lin_predictor | QDiabetes heart failure linear predictor<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
+| qrisk2_5yr_score | 5-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
+| qrisk2_10yr_score | 10-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
+| qrisk2_lin_predictor | QRISK2-2017 linear predictor<br />NB: NOT missing if have CVD but obviously not valid<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info) |
 
 &nbsp;
 
@@ -277,7 +263,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 1 line per patid in download
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | ethnicity_5cat | 5-category ethnicity: (0=White, 1=South Asian, 2=Black, 3=Other, 4=Mixed) | Uses [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity) (NB: use all medcodes; no date restrictions):<br />Use most frequent category<br />If multiple categories with same frequency, use latest one<br />If multiple categories with same frequency and used as recently as each other, label as missing<br />Use HES if missing/no consensus from medcodes |
 | ethnicity_16cat | 16-category ethnicity: (1=White British, 2=White Irish, 3=Other White, 4=White and Black Caribbean, 5=White and Black African, 6=White and Asian, 7=Other Mixed, 8=Indian, 9=Pakistani, 10=Bangladeshi, 11=Other Asian, 12=Caribbean, 13=African, 14=Other Black, 15=Chinese, 16=Other) | |
@@ -290,7 +276,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 1 line per patid with Index of Multiple Deprivation Score from CPRD
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | imd2015_10 | English Index of Multiple Deprivation (IMD) decile (1=most deprived, 10=least deprived) | |
 | tds_2011 | Townsend Deprivation Score (TDS) - made by converting IMD decile scores (median TDS for LSOAs with the same IMD decile as patient used) | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#townsend-deprivation-scores) |
@@ -302,7 +288,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 
 1 line per patid who meet requirements for being in Type 1/2 cohort
 
-| Variable name | Description | Derivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | gender | gender (1=male, 2=female) | |
 | dob | date of birth | if month and date missing, 1st July used, if date but not month missing, 15th of month used, or earliest medcode in year of birth if this is earlier |
