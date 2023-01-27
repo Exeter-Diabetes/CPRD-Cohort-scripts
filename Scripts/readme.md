@@ -138,8 +138,6 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 | Variable name | Description |
 | --- | --- |
-| dstartdate | see above |
-| druginstance | see above |
 | predrug_{comorbidity} | binary 0/1 if any instance of comorbidity before/at dstartdate |
 | predrug_earliest_{comorbidity} | earliest occurrence of comorbidity before/at dstartdate |
 | predrug_latest_{comorbidity} | latest occurrence of comorbidity before/at dstartdate |
@@ -163,8 +161,6 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| dstartdate | see above | |
-| druginstance | see above | |
 | preckdstage | CKD stage at baseline | CKD stages calculated as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage)<br />eGFR calculated from creatinine using CKD-EPI creatinine 2021 equation<br />Start date = earliest test for CKD stage, only including those confirmed by another test at least 91 days later, without a test for a different stage in the intervening period<br />Baseline stage = maximum stage with start date < dstartdate or up to 7 days afterwards<br />CKD5 supplemented by medcodes/ICD10/OPCS4 codes for CKD5 / ESRD |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
 | preckdstagedrugdiff | days between dstartdate and preckdstagedate | |
