@@ -148,8 +148,7 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 | not present for unspecific_gi comorbidity |
 | postdrug_first_{comorbidity}\_hes_opcs4_only | earliest occurrence of comorbidity after (not at) dstartdate, from HES (secondary care) OPCS4 (operation) codes only |
 | not present for unspecific_gi comorbidity |
-| hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate) |
-| NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
+| hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
 | postdrug_first_all_cause_hosp | earliest inpatient hospital admission after (not at) dstartdate - emegency only (excluding admimeth=11, 12, or 13) |
 
 &nbsp;
@@ -300,8 +299,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | dm_diag_date_all / dm_diag_date | diabetes diagnosis date<br />dm_diag_date_all is not missing for anyone<br />In final merge script, 'dm_diag_date' is the same as 'dm_diag_date_all' except it is set to missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1) - this is the only reason why this variable would be missing | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate.<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect Mastermind analysis results greatly, but might need to be considered for other analysis |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
 | dm_diag_flag | whether diagnosis date is <91 days following registration | |
-| dm_diag_age_all / dm_diag_age | age at diabetes diagnosis<br />dm_diag_age_all is not missing for anyone<br /> |
-| In final merge script, 'dm_diag_age' is the same as 'dm_diag_age_all' except it is set to missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1) - this is the only reason why this variable would be missing | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age_all / dm_diag_age | age at diabetes diagnosis<br />dm_diag_age_all is not missing for anyone<br />In final merge script, 'dm_diag_age' is the same as 'dm_diag_age_all' except it is set to missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1) - this is the only reason why this variable would be missing | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
