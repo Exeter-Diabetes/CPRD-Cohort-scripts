@@ -14,7 +14,11 @@ Recently we have recreated the above processing pipeline in CPRD Aurum, and this
 
 
 ## Summary of script inputs and outputs
-....
+
+| Script  | Inputs | Outputs |
+| ---- | ---- | ---- |
+| Content Cell  | Content Cell  |  s |
+| Content Cell  | Content Cell  | z |
 
 ## CPRD Aurum extract details
 Patients with a diabetes medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
