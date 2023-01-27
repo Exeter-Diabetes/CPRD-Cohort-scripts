@@ -206,7 +206,7 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
-| Variable name | Description | Notes onderivation |
+| Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | ttc3m | 1 if timeondrug<=3 months | |
 | ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
