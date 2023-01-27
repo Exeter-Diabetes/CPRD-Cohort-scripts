@@ -12,9 +12,8 @@ Recently we have recreated the above processing pipeline in CPRD Aurum, and this
 
 | Script  | Inputs | Outputs |
 | ---- | ---- | ---- |
-| 01_mm_drug_sorting_and_combos | CPRD Drug Issue table |  mm_ohains: all prescriptions for diabetes medications, with duplicates for patid/date/drugclass removed, and coverage calculated. 1 row per patid/date/drugclass<br />mm_all_scripts_long: as per mm_ohains but with additional variables like number of drug classes started on that day (numstart)<br />mm_all_scripts: reshaped wide version of mm_all_scripts_long, with one row per patid/date<br />mm_drug_start_stop: one row per continuous period of use of each patid/drugclass, with start and stop dates, drugline etc.<br />mm_combo_start_stop: one row per continuous period of patid/drug combination, including variables like time until next drug class added or removed
- |
-| Content Cell  | Content Cell  | z |
+| 01_mm_drug_sorting_and_combos | CPRD Drug Issue table |  mm_ohains: all prescriptions for diabetes medications, with duplicates for patid/date/drugclass removed, and coverage calculated. 1 row per patid/date/drugclass<br />mm_all_scripts_long: as per mm_ohains but with additional variables like number of drug classes started on that day (numstart)<br />mm_all_scripts: reshaped wide version of mm_all_scripts_long, with one row per patid/date<br />mm_drug_start_stop: one row per continuous period of use of each patid/drugclass, with start and stop dates, drugline etc.<br />mm_combo_start_stop: one row per continuous period of patid/drug combination, including variables like time until next drug class added or removed |
+| 02_mm_baseline_biomarkers  | mm_full_{biomarker}\_drug_merge | z |
 
 ## CPRD Aurum extract details
 Patients with a diabetes medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
