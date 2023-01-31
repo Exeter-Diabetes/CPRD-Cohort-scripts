@@ -42,6 +42,7 @@ acceptable_patids <- cprd$tables$patient %>%
 # T1T2 cohort definition
 
 # Define T1T2 cohort (has diabetes QOF code with valid date, has no diabetes exclusion codes)
+## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. Codes for non-T1/T2 types of diabetes were removed, but these codes are also in the 'exclusion_diabetes' codelist anyway.
 
 exclusion_patids <- cprd$tables$observation %>%
   semi_join(codes$exclusion_diabetes) %>%
