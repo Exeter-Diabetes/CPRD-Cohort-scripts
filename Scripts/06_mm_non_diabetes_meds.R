@@ -34,7 +34,8 @@ meds <- c("ace_inhibitors",
           "immunosuppressants",
           "oralsteroids",
           "oestrogens",
-          "statins")
+          "statins",
+          "fluvacc_stopflu_prod")
 
 
 ############################################################################################
@@ -100,9 +101,9 @@ for (i in meds) {
 ############################################################################################
 
 # Find earliest predrug, latest predrug and first postdrug dates
-## Remove definite_genital_infection_meds as needs to be used in combination with genital_infection_nonspec medcodes (see script 4_mm_comorbidities)
+## Remove definite_genital_infection_meds / fluvacc_stopflu_prod as need to be used in combination with genital_infection_nonspec / fluvacc_stopflu_med medcodes (see script 4_mm_comorbidities)
 
-meds <- setdiff(meds, "definite_genital_infection_meds")
+meds <- setdiff(meds, c("definite_genital_infection_meds", "fluvacc_stopflu_prod"))
 
 non_diabetes_meds <- drug_start_stop %>%
   select(patid, dstartdate, drugclass, druginstance)
@@ -122,13 +123,13 @@ for (i in meds) {
     filter(date<=dstartdate) %>%
     group_by(patid, dstartdate, drugclass) %>%
     summarise({{predrug_earliest_date_variable}}:=min(date, na.rm=TRUE),
-              {{predrug_latest_date_variable}}:=max(date, na.rm-TRUE)) %>%
+              {{predrug_latest_date_variable}}:=max(date, na.rm=TRUE)) %>%
     ungroup()
   
   postdrug <- get(drug_merge_tablename) %>%
     filter(date>dstartdate) %>%
     group_by(patid, dstartdate, drugclass) %>%
-    summarise({{postdrug_date_variable}}:=min(date, na.rm-TRUE)) %>%
+    summarise({{postdrug_date_variable}}:=min(date, na.rm=TRUE)) %>%
     ungroup()
   
   non_diabetes_meds <- non_diabetes_meds %>%
