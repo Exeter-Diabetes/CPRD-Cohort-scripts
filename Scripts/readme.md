@@ -132,7 +132,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 ## Script: 4_mm_comorbidities
 ### Table: mm_comorbidities
 
-Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture
+Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture, flu_vaccination (from fluvacc_stopflu_med and fluvacc_stopflu_prod codelists, courtesy of the STOPflu project).
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
