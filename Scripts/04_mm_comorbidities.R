@@ -356,14 +356,14 @@ fluvacc_stopflu <- cbind(full_fluvacc_stopflu_med_drug_merge, fluvacc_stopflu_pr
 predrug_fluvacc_stopflu <- fluvacc_stopflu %>%
   filter(date<=dstartdate) %>%
   group_by(patid, dstartdate, drugclass) %>%
-  summarise(predrug_earliest_fluvacc_stopflu=min(date, na.rm=TRUE),
-            predrug_latest_fluvacc_stopflu=max(date, na.rm=TRUE)) %>%
+  summarise(predrug_earliest_fluvacc=min(date, na.rm=TRUE),
+            predrug_latest_fluvacc=max(date, na.rm=TRUE)) %>%
   ungroup()
 
 postdrug_fluvacc_stopflu <- fluvacc_stopflu %>%
   filter(date>dstartdate) %>%
   group_by(patid, dstartdate, drugclass) %>%
-  summarise(postdrug_first_fluvacc_stopflu=min(date, na.rm=TRUE)) %>%
+  summarise(postdrug_first_fluvacc=min(date, na.rm=TRUE)) %>%
   ungroup()
 
 
