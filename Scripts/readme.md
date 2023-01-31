@@ -34,7 +34,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 | Acarbose / DPP4 / Glinide / GLP1 / MFN / SGLT2 / SU / TZD / INS | binary variable of whether patient taking that drugclass on that date (regardless of whether or not prescribed on that date) | calculated using dstart and dstop vars for that particular drug class: 1 if cumsum(dstart)>cumsum(dstop) | dstart==1 | dstop==1 |
 | INS_startdate | start date for insulin which is being taken on this date | uses dstart=1 - see above |
 | INS_stopdate | stop date for insulin which is being taken on this date | uses dstop=1 - see above |
-| drugcombo | combination of drug classes patient is on at that date | made by concatenating names of drug classes which patient is on at that date (from binary variables; separated by '_') |
+| drugcombo | combination of drug classes patient is on at that date | made by concatenating names of drug classes which patient is on at that date (from binary variables; separated by '\_') |
 | dcstart | whether date is start date for drug combo | uses drugcombo variable: 1 if it is the earliest instance of that drug combo for that person, or if previous script was >183 days (6 months) prior |
 | dcstop | whether date is stop for drug combo | uses drugcombo variable: 1 if it is the last instance of that drug combo for that person, or if next script is >183 days (6 months) after |
 | timetolastpx | time from date to last prescription date for patient (in days) | |
@@ -132,7 +132,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 ## Script: 4_mm_comorbidities
 ### Table: mm_comorbidities
 
-Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture, flu_vaccination (from fluvacc_stopflu_med and fluvacc_stopflu_prod codelists, courtesy of the STOPflu project).
+Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension, ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf, anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture, fluvacc (from fluvacc_stopflu_med and fluvacc_stopflu_prod codelists, courtesy of the STOPflu project).
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
@@ -171,7 +171,7 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5, cld,
 ## Script: 6_mm_non_diabetes_meds
 ### Table: mm_non_diabetes_meds
 
-Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins
+Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbiditie script and table).
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
