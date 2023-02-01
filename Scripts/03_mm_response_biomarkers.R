@@ -16,6 +16,7 @@
 # Setup
 library(tidyverse)
 library(aurum)
+library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
