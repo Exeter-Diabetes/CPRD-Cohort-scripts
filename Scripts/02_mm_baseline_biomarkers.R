@@ -139,17 +139,19 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
 
 
 # Make eGFR table from creatinine readings and add to list of biomarkers
-## Have to join to all_t1t2_cohort table to get sex and age
+## Use DOBs produced in all_t1t2_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
+## Also need gender for eGFR
 
-analysis = cprd$analysis("all")
+analysis = cprd$analysis("diagnosis_date")
 
-all_t1t2_cohort <- all_t1t2_cohort %>% analysis$cached("t1t2_cohort")
+dob <- dob %>% analysis$cached("dob")
 
 analysis = cprd$analysis("all_patid")
 
 clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   
-  inner_join((all_t1t2_cohort %>% select(patid, dob, gender)), by="patid") %>%
+  inner_join((dob %>% select(patid, dob)), by="patid") %>%
+  inner_join((cprd$tables$patient %>% select(patid, gender)), by="patid") %>%
   mutate(age_at_creat=(datediff(date, dob))/365.25,
          sex=ifelse(gender==1, "male", ifelse(gender==2, "female", NA))) %>%
   select(-c(dob, gender)) %>%
