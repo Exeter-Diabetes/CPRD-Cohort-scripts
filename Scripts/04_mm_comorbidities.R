@@ -33,7 +33,7 @@ comorbids <- c("af", #atrial fibrillation
                "angina",
                "asthma",
                "bronchiectasis",
-               "ckd5",
+               "ckd5_code",
                "cld",
                "copd",
                "cysticfibrosis",

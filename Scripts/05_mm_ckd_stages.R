@@ -123,22 +123,22 @@ ckd_stages_from_algorithm %>% count()
 
 ### Medcodes
 analysis = cprd$analysis("all_patid")
-raw_ckd5_medcodes <- raw_ckd5_medcodes %>% analysis$cached("raw_ckd5_medcodes")
+raw_ckd5_code_medcodes <- raw_ckd5_medcodes %>% analysis$cached("raw_ckd5_code_medcodes")
 
 ### ICD10 codes
-raw_ckd5_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_icd10")
+raw_ckd5_code_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_code_icd10")
 
 ### OPCS4 codes
-raw_ckd5_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_opcs4")
+raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
 
 
 ## Clean, find earliest date per person, and re-cache
 
-earliest_clean_ckd5 <- raw_ckd5_medcodes %>%
+earliest_clean_ckd5 <- raw_ckd5_code_medcodes %>%
   select(patid, date=obsdate) %>%
   mutate(source="gp") %>%
-  union_all((raw_ckd5_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
-  union_all((raw_ckd5_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
+  union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
+  union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
   inner_join(cprd$tables$validDateLookup) %>%
   filter(date>=min_dob & ((source=="gp" & date<=gp_ons_end_date) | (source=="hes" & (is.na(gp_ons_death_date) | date<=gp_ons_death_date)))) %>%
   group_by(patid) %>%

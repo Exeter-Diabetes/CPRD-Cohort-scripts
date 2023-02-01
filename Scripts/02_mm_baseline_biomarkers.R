@@ -139,16 +139,20 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
 
 
 # Make eGFR table from creatinine readings and add to list of biomarkers
-## Have to join to patient table to get sex and age
-## Need to v. small minority (1 patid) with no gender
+## Have to join to all_t1t2_cohort table to get sex and age
+
+analysis = cprd$analysis("all")
+
+all_t1t2_cohort <- all_t1t2_cohort %>% analysis$cached("t1t2_cohort")
+
+analysis = cprd$analysis("all_patid")
 
 clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   
-  inner_join((cprd$tables$patient %>% select(patid, yob, mob, gender)), by="patid") %>%
-  mutate(dob=as.Date(ifelse(is.na(mob), paste0(yob,"-07-01"), paste0(yob, "-",mob,"-15"))),
-         age_at_creat=(datediff(date, dob))/365.25,
+  inner_join((all_t1t2_cohort %>% select(patid, dob, gender)), by="patid") %>%
+  mutate(age_at_creat=(datediff(date, dob))/365.25,
          sex=ifelse(gender==1, "male", ifelse(gender==2, "female", NA))) %>%
-  select(-c(yob, mob, dob, gender)) %>%
+  select(-c(dob, gender)) %>%
   
   ckd_epi_2021_egfr(creatinine=testvalue, sex=sex, age_at_creatinine=age_at_creat) %>%
   select(-c(testvalue, sex, age_at_creat)) %>%
