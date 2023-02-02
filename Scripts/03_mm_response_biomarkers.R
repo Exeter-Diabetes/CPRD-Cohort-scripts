@@ -86,12 +86,15 @@ for (i in biomarkers) {
     mutate(post_biomarker_6m=min(testvalue, na.rm=TRUE)) %>%
     filter(post_biomarker_6m==testvalue) %>%
     
-    dbplyr::window_order(drugdatediff) %>%
+    rename(post_biomarker_6mdate=date,
+           post_biomarker_6mdrugdiff=drugdatediff) %>%
+    
+    dbplyr::window_order(post_biomarker_6mdrugdiff) %>%
     filter(row_number()==1) %>%
     
     ungroup() %>%
     
-    select(patid, dstartdate, drugclass, post_biomarker_6m, post_biomarker_6mdate=date, post_biomarker_6mdrugdiff=drugdatediff) %>%
+    select(patid, dstartdate, drugclass, post_biomarker_6m, post_biomarker_6mdate, post_biomarker_6mdrugdiff) %>%
     
     analysis$cached(post6m_table_name, indexes=c("patid", "dstartdate", "drugclass"))
   
@@ -133,12 +136,15 @@ for (i in biomarkers) {
     mutate(post_biomarker_12m=min(testvalue, na.rm=TRUE)) %>%
     filter(post_biomarker_12m==testvalue) %>%
     
-    dbplyr::window_order(drugdatediff) %>%
+    rename(post_biomarker_12mdate=date,
+           post_biomarker_12mdrugdiff=drugdatediff) %>%
+    
+    dbplyr::window_order(post_biomarker_12mdrugdiff) %>%
     filter(row_number()==1) %>%
     
     ungroup() %>%
     
-    select(patid, dstartdate, drugclass, post_biomarker_12m, post_biomarker_12mdate=date, post_biomarker_12mdrugdiff=drugdatediff) %>%
+    select(patid, dstartdate, drugclass, post_biomarker_12m, post_biomarker_12mdate, post_biomarker_12mdrugdiff) %>%
     
     analysis$cached(post12m_table_name, indexes=c("patid", "dstartdate", "drugclass"))
   
