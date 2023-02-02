@@ -98,7 +98,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   analysis$cached("ckd_stages_from_algorithm_interim_1",indexes=c("patid", "ckd_stage", "test_count", "first_test_date", "last_test_date"))
   
 ckd_stages_from_algorithm %>% count()
-#7,023,899
+#7,024,230
 
 ckd_stages_from_algorithm %>% summarise(total=sum(test_count, na.rm=TRUE))
 #total number of tests: 24,925,444 as above
@@ -111,7 +111,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   analysis$cached("ckd_stages_from_algorithm_interim_2",indexes=c("patid","ckd_stage","first_test_date"))
 
 ckd_stages_from_algorithm %>% count()
-#3,423,316
+#3,423,432
 
 
 ################################################################################################################################
@@ -155,7 +155,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   analysis$cached("ckd_stages_from_algorithm_interim_3",indexes=c("patid","ckd_stage","first_test_date"))
 
 ckd_stages_from_algorithm %>% count()        
-#3,477,914
+#3,478,030
 
 
 ################################################################################################################################
