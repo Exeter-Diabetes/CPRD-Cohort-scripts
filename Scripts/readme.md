@@ -2,7 +2,7 @@
 
 Intermediate tables and variables used for working not included. Self-explanatory variables like patid and drugclass not included.
 
-## Script: 1_mm_drug_sorting_and_combos
+## Script: 01_mm_drug_sorting_and_combos
 ### Table: mm_ohains / mm_all_scripts_long (ohains lacks dstart/dstop/num* variables)
 
 1 line per patid / date / drug class (for which there is a prescription) for all patids
@@ -88,7 +88,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 
 &nbsp;
 
-## Script: 2_mm_baseline_biomarkers
+## Script: 02_mm_baseline_biomarkers
 ### Table: mm_baseline_biomarkers
 
 Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
@@ -106,7 +106,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 &nbsp;
 
-## Script: 3_mm_biomarker_response
+## Script: 03_mm_biomarker_response
 ### Table: mm_biomarker_response
 
 Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
@@ -129,7 +129,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 &nbsp;
 
-## Script: 4_mm_comorbidities
+## Script: 04_mm_comorbidities
 ### Table: mm_comorbidities
 
 Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5_code, cld, copd, cysticfibrosis, dementia, diabeticnephropathy, fh_premature_cvd, haem_cancer, heartfailure, hypertension (uses primary care data only, see note in script), ihd, myocardialinfarction, neuropathy, otherneuroconditions, pad, pulmonaryfibrosis, pulmonaryhypertension, retinopathy, revasc, rheumatoidarthritis, solid_cancer, solidorgantransplant, stroke, tia, primary_hhf (hospitalisation for HF with HF as primary cause), anxiety_disorders, medspecific_gi (from genital_infection codelist), unspecific_gi (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), benignprostatehyperplasia, micturition_control, volume_depletion, urinary_frequency, falls, lowerlimbfracture, fluvacc (from fluvacc_stopflu_med and fluvacc_stopflu_prod codelists, courtesy of the STOPflu project), dka (HES only), amputation (from hosp_cause_majoramputation and hosp_cause_minoramputation; both in HES only and not just primary cause).
@@ -153,7 +153,7 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5_code,
 
 &nbsp;
 
-## Script: 5_mm_ckd_stages
+## Script: 05_mm_ckd_stages
 ### Table: mm_ckd_stages
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
@@ -168,7 +168,7 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5_code,
 
 &nbsp;
 
-## Script: 6_mm_non_diabetes_meds
+## Script: 06_mm_non_diabetes_meds
 ### Table: mm_non_diabetes_meds
 
 Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbiditie script and table).
@@ -183,7 +183,7 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 &nbsp;
 
-## Script: 7_mm_smoking
+## Script: 07_mm_smoking
 ### Table: mm_smoking
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
@@ -196,7 +196,7 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 &nbsp;
 
-## Script: 8_mm_discontinuation
+## Script: 08_mm_discontinuation
 ### Table: mm_discontinuation
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
@@ -215,7 +215,7 @@ Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel bl
 
 &nbsp;
 
-## Script: 9_mm_death_cause
+## Script: 09_mm_death_cause
 ### Table: mm_death_cause
 
 1 line per patid for all patids in ONS death table
