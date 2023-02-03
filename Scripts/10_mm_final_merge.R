@@ -106,7 +106,7 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 ## Merge in biomarkers, comorbidities, non-diabetes meds, smoking status
 ### Could merge on druginstance too, but quicker not to
 ### Remove some variables to avoid duplicates
-### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores (to do)
+### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores
 
 t2d_1stinstance <- t2d_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
@@ -263,8 +263,7 @@ t2d_1stinstance <- t2d_1stinstance %>%
   analysis$cached("20230116_t2d_1stinstance", indexes=c("patid", "dstartdate", "drugclass"))
 
 
-################
-############################################################################
+############################################################################################
 
 # Export to R data object
 ## Convert integer64 datatypes to double
