@@ -300,15 +300,13 @@ rm(t2d_1stinstance_b)
 t2d_all_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
   select(patid, drugclass, dstartdate, dstopdate) %>%
-  mutate(patid=as.character(patid),
-         drugline=ifelse(!is.na(dm_diag_date) & dm_diag_date<regstartdate, NA, drugline_all)) %>%
   analysis$cached("20230116_t2d_all_drug_periods")
 
 
 ## Export to R data object
 ### No integer64 datatypes
 
-t2d_all_drug_periods <- collect(t2d_all_drug_periods)
+t2d_all_drug_periods <- collect(t2d_all_drug_periods %>% mutate(patid=as.character(patid)))
 
 save(t2d_all_drug_periods, file="20230116_t2d_all_drug_periods.Rda")
 
