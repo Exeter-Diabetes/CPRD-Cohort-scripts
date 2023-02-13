@@ -71,7 +71,9 @@ comorbids <- c("af", #atrial fibrillation
                "fluvacc_stopflu_med",
                "dka",
                "hosp_cause_majoramputation",
-               "hosp_cause_minoramputation"
+               "hosp_cause_minoramputation",
+               "osteoporosis",
+               "unstableangina"
 )
 
 
