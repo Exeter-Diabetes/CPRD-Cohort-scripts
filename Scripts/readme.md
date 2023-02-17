@@ -168,10 +168,10 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5_code,
 
 &nbsp;
 
-## Script: 06_mm_non_diabetes_meds
-### Table: mm_non_diabetes_meds
+## Script: 06_mm_medications
+### Table: mm_medications
 
-Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbiditie script and table).
+Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbidities script and table), insulin, other anti-hyperglycaemic agents (OHAs).
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
@@ -250,6 +250,12 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | qrisk2_5yr_score | 5-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
 | qrisk2_10yr_score | 10-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
 | qrisk2_lin_predictor | QRISK2-2017 linear predictor<br />NB: NOT missing if have CVD but obviously not valid<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info) |
+| ckdpc_egfr60_total_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_egfr60_total_lin_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_egfr60_confirmed_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events only). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_egfr60_confirmed_line_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_40egfr_score | CKDPC risk score for 3-year risk of 40% decline in eGFR or kidney failure in people with diabetes and baseline eGFR>=60ml/min/1.73m2. <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_40egfr_predictor | Linear predictor for CKDPC risk score for 40% decline in eGFR or kidney failure in people with diabetes and baseline eGFR>=60ml/min/1.73m2. <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
 
 &nbsp;
 
