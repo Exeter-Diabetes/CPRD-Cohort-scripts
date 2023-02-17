@@ -168,10 +168,10 @@ Comorbidities included currently: af, angina, asthma, bronchiectasis, ckd5_code,
 
 &nbsp;
 
-## Script: 06_mm_medications
-### Table: mm_medications
+## Script: 06_mm_non_diabetes_meds
+### Table: mm_non_diabetes_meds
 
-Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbidities script and table), insulin, other anti-hyperglycaemic agents (OHAs).
+Medications included currently:ACE-inhibitors, beta-blockers, calcium-channel blockers, thiazide-like diuretics (all BP meds), loop diuretics, potassium-sparing duiretics, definite genital infection meds (used in unspecific_gi comorbiditiy - see comorbidity script and table), prodspecific_gi (from topical candidal meds codelist), immunosuppressants, oral steriods, oestrogens, statins, fluvacc_stopflu_prod (used in combination with medcodes - see comorbidities script and table).
 
 1 line per patid / drug class instance (continuous period of drug class use) for all patids
 
