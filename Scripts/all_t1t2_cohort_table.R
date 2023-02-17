@@ -310,7 +310,7 @@ diabetes_type_prelim <- t1t2_ids %>%
 # Check those that have a different type of diabetes depending on whether include medcodes in year of birth or not
 check <- collect(diabetes_type_prelim %>%
   filter(diabetes_type!=diabetes_type_post_yob))
-## 19 people: 18 are Type 1 if include codes in year of birth, and Type 2 otherwise, one is Type 2 if include codes in year of birth, and Type 1 otherwise as affects time to insulin
+## 10 people: 9 are Type 1 if include codes in year of birth, and Type 2 otherwise, 1 is Type 2 if include codes in year of birth, and Type 1 otherwise as affects time to insulin
 ## Class these people as unclassifiable
 
 # Check those with T2D who still have diagnosis date in year of birth due to having script or high HbA1c in year of birth
