@@ -16,8 +16,8 @@ library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
-#codesets = cprd$codesets()
-#codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+codesets = cprd$codesets()
+codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 analysis = cprd$analysis("mm")
 
@@ -27,7 +27,7 @@ analysis = cprd$analysis("mm")
 # Define biomarkers
 ## Keep HbA1c separate as processed differently
 
-biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr")
+biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "albumin_urine", "creatinine_urine")
 
 
 ############################################################################################
@@ -65,6 +65,12 @@ raw_hba1c_medcodes <- cprd$tables$observation %>%
 ## If multiple values on the same day, take mean
 ## Remove those with invalid dates (before DOB or after LCD/death/deregistration)
 
+## Urine albumin and creatinine: can't determine acceptable value limits as huge range in urine depending on how concentrated it is
+## Similarly, can't keep those with missing unit codes as might be mg/g (albumin) or mmol/umol (creatinine) and can't tell from value
+## Urine albumin: 66% of readings have unit code 183=mg/L; keep these. Remainder are missing or <1%
+## Urine creatinine: 85% of readings have unit codes 218=mmol/L and 8% 285=umol/L; keep these and convert umol/L to mmol/L. Rest are missing or <1%
+## Combine to get ACR and then clean values
+
 ## Haematocrit only: convert all to proportion by dividing those >1 by 100
 ## Haemoglobin only: convert all to g/L (some in g/dL) by multiplying values <30 by 10
 ## HbA1c only: remove before 1990, and convert all values to mmol/mol
@@ -96,10 +102,23 @@ for (i in biomarkers) {
   }
   
   
-  data <- raw_data %>%
-    
-    clean_biomarker_values(testvalue, i) %>%
-    clean_biomarker_units(numunitid, i) %>%
+  if (i=="albumin_urine") {
+    data <- raw_data %>%
+      filter(numunitid==183)
+  }
+  else if (i=="creatinine_urine") {
+    data <- raw_data %>%
+      filter(numunitid==218 | numunitid==285) %>%
+      mutate(testvalue=ifelse(numunitid==285, testvalue/1000, testvalue))
+  }
+  else {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, i) %>%
+      clean_biomarker_units(numunitid, i)
+  }
+  
+  
+  data <- data %>%
     
     group_by(patid,obsdate) %>%
     summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
@@ -162,9 +181,23 @@ clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   rename(testvalue=ckd_epi_2021_egfr) %>%
   filter(!is.na(testvalue)) %>%
   analysis$cached("clean_egfr_medcodes", indexes=c("patid", "date", "testvalue"))
-  
 
 biomarkers <- c(biomarkers, "egfr")
+
+
+# Make ACR from separate urine albumin and urine creatinine measurements on the same day
+# Then clean values
+
+clean_acr_from_separate_medcodes <- clean_albumin_urine_medcodes %>%
+  inner_join((clean_creatinine_urine_medcodes %>% select(patid, creat_date=date, creat_value=testvalue)), by="patid") %>%
+  filter(date==creat_date) %>%
+  mutate(new_testvalue=testvalue/creat_value) %>%
+  select(patid, date, testvalue=new_testvalue) %>%
+  clean_biomarker_values(testvalue, "acr") %>%
+  analysis$cached("clean_acr_from_separate_medcodes", indexes=c("patid", "date", "testvalue"))
+
+biomarkers <- setdiff(biomarkers, c("albumin_urine", "creatinine_urine"))
+biomarkers <- c(biomarkers, "acr_from_separate")
 
 
 ############################################################################################
