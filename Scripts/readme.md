@@ -91,7 +91,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 ## Script: 02_mm_baseline_biomarkers
 ### Table: mm_baseline_biomarkers
 
-Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, urine albumin, urine creatinine
+Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, urine albumin, urine creatinine (latter two not included but separately but combined where on the same day to give 'acr_from_separate' values.
 
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
 
@@ -109,7 +109,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 ## Script: 03_mm_biomarker_response
 ### Table: mm_biomarker_response
 
-Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, urine albumin, urine creatinine
+Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, acr_from_separate as above (02_mm_baseline_biomarkers).
 
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
 
