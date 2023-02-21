@@ -91,7 +91,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 ## Script: 02_mm_baseline_biomarkers
 ### Table: mm_baseline_biomarkers
 
-Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+Biomarkers included currently: weight, height, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, urine albumin, urine creatinine (latter two not included but separately but combined where on the same day to give 'acr_from_separate' values.
 
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
 
@@ -109,7 +109,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 ## Script: 03_mm_biomarker_response
 ### Table: mm_biomarker_response
 
-Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR
+Biomarkers included currently: weight, bmi, fastingglucose, hdl, triglyceride, blood creatinine, ldl, alt, ast, totalcholesterol, dbp, sbp, acr, hba1c, egfr (from blood creatinine), blood albumin, bilirubin, haematocrit, haemoglobin, PCR, acr_from_separate as above (02_mm_baseline_biomarkers).
 
 NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements
 
@@ -245,17 +245,17 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | dstartdate_age | age at dstartdate in years (dstartdate-dob) |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years (dstartdate-dm_diag_date_all)<br />No missingness |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years (dstartdate-dm_diag_date)<br />Missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1), as final merge script sets dm_diag_date to missing where this is the case - this is the only reason why this variable would be missing |
-| qdiabeteshf_5yr_score | 5-year QDiabetes-heart failure score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model<br />NB: NOT missing if have pre-existing HF but obviously not valid |
-| qdiabeteshf_lin_predictor | QDiabetes heart failure linear predictor<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
+| qdiabeteshf_5yr_score | 5-year QDiabetes-heart failure score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing HbA1c or smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
+| qdiabeteshf_lin_predictor | QDiabetes heart failure linear predictor<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing HbA1c or smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
 | qrisk2_5yr_score | 5-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
 | qrisk2_10yr_score | 10-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
 | qrisk2_lin_predictor | QRISK2-2017 linear predictor<br />NB: NOT missing if have CVD but obviously not valid<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing smoking info) |
-| ckdpc_egfr60_total_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
-| ckdpc_egfr60_total_lin_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
-| ckdpc_egfr60_confirmed_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events only). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
-| ckdpc_egfr60_confirmed_line_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_egfr60_total_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, BMI or UACR) |
+| ckdpc_egfr60_total_lin_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (total events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, BMI or UACR) |
+| ckdpc_egfr60_confirmed_score | CKDPC risk score for 5-year risk of eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events only). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, BMI or UACR) |
+| ckdpc_egfr60_confirmed_lin_predictor | Linear predictor for CKDPC risk score for eGFR<=60ml/min/1.73m2 in people with diabetes (confirmed events). <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (ethnicity, eGFR, HbA1c, smoking info, BMI or UACR) |
 | ckdpc_40egfr_score | CKDPC risk score for 3-year risk of 40% decline in eGFR or kidney failure in people with diabetes and baseline eGFR>=60ml/min/1.73m2. <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
-| ckdpc_40egfr_predictor | Linear predictor for CKDPC risk score for 40% decline in eGFR or kidney failure in people with diabetes and baseline eGFR>=60ml/min/1.73m2. <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
+| ckdpc_40egfr_lin_predictor | Linear predictor for CKDPC risk score for 40% decline in eGFR or kidney failure in people with diabetes and baseline eGFR>=60ml/min/1.73m2. <br />Missing for anyone with CKD stage 3a-5 or eGFR<60ml/min/1.73m2 at drug start, with age/BMI/biomarkers outside of range for model, or missing any predictors (eGFR, HbA1c, smoking info, SBP, BMI or UACR) |
 
 &nbsp;
 
