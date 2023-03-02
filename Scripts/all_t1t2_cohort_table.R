@@ -45,15 +45,15 @@ acceptable_patids <- cprd$tables$patient %>%
 ## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. Codes for non-T1/T2 types of diabetes were removed, but these codes are also in the 'exclusion_diabetes' codelist anyway.
 
 exclusion_patids <- cprd$tables$observation %>%
-  semi_join(codes$exclusion_diabetes) %>%
+  semi_join(codes$exclusion_diabetes, by="medcodeid") %>%
   select(patid)
 
 t1t2_ids <- cprd$tables$observation %>%
-  inner_join(codes$qof_diabetes) %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(codes$qof_diabetes, by="medcodeid") %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
-  semi_join(acceptable_patids) %>%
-  anti_join(exclusion_patids)%>%
+  semi_join(acceptable_patids, by="patid") %>%
+  anti_join(exclusion_patids, by="patid")%>%
   select(patid) %>%
   distinct() %>%
   analysis$cached("t1t2_ids", unique_indexes="patid")
@@ -77,13 +77,13 @@ analysis = cprd$analysis("all")
 
 ## All diabetes medcodes (need for diagnosis date (cleaned) and Type 1 vs Type 2 (raw))
 raw_diabetes_medcodes <- cprd$tables$observation %>%
-  inner_join(codes$all_diabetes) %>%
+  inner_join(codes$all_diabetes, by="medcodeid") %>%
   analysis$cached("patid_raw_diabetes_medcodes", indexes=c("patid", "obsdate", "all_diabetes_cat"))
 
 
 ## All HbA1cs - could clean on import but do separately for now
 raw_hba1c <- cprd$tables$observation %>%
-  inner_join(codes$hba1c) %>%
+  inner_join(codes$hba1c, by="medcodeid") %>%
   analysis$cached("patid_raw_hba1c_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
 
 clean_hba1c <- raw_hba1c %>%
@@ -94,7 +94,7 @@ clean_hba1c <- raw_hba1c %>%
   group_by(patid, obsdate) %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   select(patid, date=obsdate, testvalue) %>%
   analysis$cached("patid_clean_hba1c_medcodes", indexes=c("patid", "date", "testvalue"))
@@ -102,8 +102,8 @@ clean_hba1c <- raw_hba1c %>%
 
 ## All OHA scripts (need for diagnosis date (cleaned) and definition (cleaned))
 clean_oha <- cprd$tables$drugIssue %>%
-  inner_join(cprd$tables$ohaLookup) %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$ohaLookup, by="prodcodeid") %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>%
   select(patid, date=issuedate, dosageid, quantity, quantunitid, duration, INS, TZD, SU, DPP4, MFN, GLP1, Glinide, Acarbose, SGLT2) %>%
   analysis$cached("patid_clean_oha_prodcodes", indexes=c("patid", "date", "INS", "TZD", "SU", "DPP4", "MFN", "GLP1", "Glinide", "Acarbose", "SGLT2"))
@@ -111,8 +111,8 @@ clean_oha <- cprd$tables$drugIssue %>%
 
 ## All insulin scripts (need for diagnosis date (cleaned) and definition (cleaned))
 clean_insulin <- cprd$tables$drugIssue %>%
-  inner_join(codes$insulin) %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(codes$insulin, by="prodcodeid") %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>%
   select(patid, date=issuedate, dosageid, quantity, quantunitid, duration) %>%
   analysis$cached("patid_clean_insulin_prodcodes", indexes=c("patid", "date"))
@@ -127,7 +127,7 @@ analysis = cprd$analysis("diagnosis_date")
 ## Earliest clean (i.e. with valid date) non-family history diabetes medcode
 first_diagnosis_dm_code <- raw_diabetes_medcodes %>%
   filter(obstypeid!=4) %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   group_by(patid) %>%
   summarise(date=min(obsdate, na.rm=TRUE)) %>%
@@ -136,7 +136,7 @@ first_diagnosis_dm_code <- raw_diabetes_medcodes %>%
 ## Earliest clean (i.e. with valid date) non-family history diabetes medcode excluding those in year of birth
 first_diagnosis_dm_code_post_yob <- raw_diabetes_medcodes %>%
   filter(obstypeid!=4) %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(year(obsdate)>year(min_dob) & obsdate<=gp_ons_end_date) %>%
   group_by(patid) %>%
   summarise(date=min(obsdate, na.rm=TRUE)) %>%
@@ -221,7 +221,7 @@ type2_code_count <-
 ### First need to estimate DOB: earliest of any medcode in Observation table (besides those before mob/yob), or use the 15/mob/yob if mob where provided, or 01/07/yob if only yob provided
 
 dob <- cprd$tables$observation %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob) %>%
   group_by(patid) %>%
   summarise(earliest_medcode=min(obsdate, na.rm=TRUE)) %>%
@@ -233,7 +233,7 @@ dob %>% count()
 
 ### No-one has missing dob or earliest_medcode so pmin (runs as 'LEAST' in MySQL) works
 dob <- dob %>%
-  inner_join(cprd$tables$patient) %>%
+  inner_join(cprd$tables$patient, by="patid") %>%
   mutate(dob=as.Date(ifelse(is.na(mob), paste0(yob,"-07-01"), paste0(yob, "-",mob,"-15")))) %>%
   mutate(dob=pmin(dob, earliest_medcode, na.rm=TRUE)) %>%
   select(patid, dob, mob, yob, regstartdate) %>%
@@ -242,7 +242,7 @@ dob <- dob %>%
 ### Calculate from dob and diagnosis date
 ### Also add in whether diagnosis date < regstartdate as will need this for time to insulin
 dm_diag_age <- dm_diag_dates %>%
- left_join(dob) %>%
+ left_join(dob, by="patid") %>%
   mutate(dm_diag_age_all=(datediff(dm_diag_date_all, dob))/365.25,
          dm_diag_age_all_post_yob=(datediff(dm_diag_date_all_post_yob, dob))/365.25,
          dm_diag_before_reg=dm_diag_date_all<regstartdate,
@@ -257,7 +257,7 @@ time_to_insulin <- clean_insulin %>%
   group_by(patid) %>%
   summarise(first_insulin=min(date, na.rm=TRUE)) %>%
   ungroup() %>%
-  inner_join(dm_diag_dates) %>%
+  inner_join(dm_diag_dates, by="patid") %>%
   mutate(ins_in_1_year=ifelse(datediff(first_insulin, dm_diag_date_all)/365.25<=1, 1L, NA),
          ins_in_1_year_post_yob=ifelse(datediff(first_insulin, dm_diag_date_all_post_yob)/365.25<=1, 1L, NA)) %>%
   select(patid, ins_in_1_year, ins_in_1_year_post_yob) %>%
@@ -269,7 +269,7 @@ current_oha <- clean_oha %>%
   group_by(patid) %>%
   summarise(latest_oha=max(date, na.rm=TRUE)) %>%
   ungroup() %>%
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter((datediff(gp_ons_end_date, latest_oha))/365.25<=0.5) %>%
   mutate(current_oha=1L) %>%
   select(patid, current_oha) %>%

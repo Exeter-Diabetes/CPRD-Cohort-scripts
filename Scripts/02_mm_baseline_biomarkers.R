@@ -149,7 +149,7 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
     
-  inner_join(cprd$tables$validDateLookup) %>%
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date & year(obsdate)>=1990) %>%
     
   select(patid, date=obsdate, testvalue) %>%

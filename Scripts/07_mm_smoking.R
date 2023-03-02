@@ -31,7 +31,7 @@ analysis = cprd$analysis("all_patid")
 ## Check codelists are identical
 codes$smoking %>% count()          #194
 codes$qrisk2_smoking %>% count()   #194
-codes$smoking %>% inner_join(codes$qrisk2_smoking) %>% count()  #194
+codes$smoking %>% inner_join(codes$qrisk2_smoking, by="medcodeid") %>% count()  #194
 
 
 raw_smoking_medcodes <- cprd$tables$observation %>%
