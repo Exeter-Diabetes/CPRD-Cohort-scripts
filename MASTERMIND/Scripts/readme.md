@@ -84,7 +84,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 | timetochange | time until changed to different drug combo in days (**does** take into account breaks when patient is on no diabetes meds) | if last combination before end of prescriptions, or if next event is a break from all drug classes, use dcstopdate to calculate |
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
-| multi_drug_start | whether multiple drug classes started on this dcstartdate | If add>1, multi_drug_start= 1(yes), otherwise multi_drug_start=0 (no) |
+| multi_drug_start | whether multiple drug classes started on this dcstartdate | If add>1, multi_drug_start= 1 (yes), otherwise multi_drug_start=0 (no) |
 
 &nbsp;
 
