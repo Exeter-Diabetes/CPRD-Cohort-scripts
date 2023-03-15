@@ -53,7 +53,7 @@ t1t2_ids <- cprd$tables$observation %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   semi_join(acceptable_patids, by="patid") %>%
-  anti_join(exclusion_patids, by="patid")%>%
+  anti_join(exclusion_patids, by="patid") %>%
   select(patid) %>%
   distinct() %>%
   analysis$cached("t1t2_ids", unique_indexes="patid")
