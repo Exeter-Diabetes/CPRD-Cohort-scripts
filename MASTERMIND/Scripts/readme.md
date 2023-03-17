@@ -125,6 +125,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 | post{biomarker}12mdrugdiff | days between dstartdate and post{biomarker}6mdate | |
 | {biomarker}resp6m | post{biomarker}6m - pre{biomarker} | |
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker} | |
+| next_egfr_date | date of first eGFR post-baseline | |
 | egfr_40_decline_date | date at which eGFR<=40% of baseline value | |
 
 &nbsp;
