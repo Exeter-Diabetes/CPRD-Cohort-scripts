@@ -84,7 +84,7 @@ Intermediate tables and variables used for working not included. Self-explanator
 | timetochange | time until changed to different drug combo in days (**does** take into account breaks when patient is on no diabetes meds) | if last combination before end of prescriptions, or if next event is a break from all drug classes, use dcstopdate to calculate |
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
-| multi_drug_start | whether multiple drug classes started on this dcstartdate | If add>1, multi_drug_start= 1(yes), otherwise multi_drug_start=0 (no) |
+| multi_drug_start | whether multiple drug classes started on this dcstartdate | If add>1, multi_drug_start= 1 (yes), otherwise multi_drug_start=0 (no) |
 
 &nbsp;
 
@@ -125,6 +125,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 | post{biomarker}12mdrugdiff | days between dstartdate and post{biomarker}6mdate | |
 | {biomarker}resp6m | post{biomarker}6m - pre{biomarker} | |
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker} | |
+| next_egfr_date | date of first eGFR post-baseline | |
 | egfr_40_decline_date | date at which eGFR<=40% of baseline value | |
 
 &nbsp;
@@ -309,7 +310,7 @@ Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), an
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
-| diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />NB: we know have a few 'unclassified's - not included in any T2D cohorts. Date/age of diagnosis, time to insulin from diagnosis, and whether diagnosis is before registration is likely to be unreliable for these people.<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />NB: we now have a few 'unclassified's - not included in any T2D cohorts. Date/age of diagnosis, time to insulin from diagnosis, and whether diagnosis is before registration is likely to be unreliable for these people.<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
