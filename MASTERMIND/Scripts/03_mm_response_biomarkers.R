@@ -8,7 +8,7 @@
 
 # All biomarker tests merged with all drug start and stop dates (plus timetochange, timeaddrem and multi_drug_start from mm_combo_start_stop = combination start stop table) in script 2_mm_baseline_biomarkers - tables created have names of the form 'mm_full_{biomarker}_drug_merge'
 
-# Also finds date of 40% decline in eGFR outcome (if present)
+# Also finds date of next eGFR measurement post-baseline and date of 40% decline in eGFR outcome (if present)
 
 
 ############################################################################################
@@ -221,7 +221,7 @@ for (i in biomarkers) {
 }
 
 
-# Add in 40% decline in eGFR outcome
+# Add in next eGFR measurement
 
 analysis = cprd$analysis("all")
 
@@ -229,23 +229,31 @@ egfr_long <- egfr_long %>% analysis$cached("patid_clean_egfr_medcodes")
 
 analysis = cprd$analysis("mm")
 
+next_egfr <- baseline_biomarkers %>%
+  select(patid, drugclass, dstartdate, preegfrdate) %>%
+  left_join(egfr_long, by="patid") %>%
+  filter(datediff(date, preegfrdate)>0) %>%
+  group_by(patid, drugclass, dstartdate) %>%
+  summarise(next_egfr_date=min(date, na.rm=TRUE)) %>%
+  analysis$cached("response_biomarkers_next_egfr", indexes=c("patid", "dstartdate", "drugclass"))
+
+
+# Add in 40% decline in eGFR outcome
+
 ## Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=40% of the baseline value
-## And at least 7 days after drug start, as baseline measurements go up to 7 days post drug initiation
 ## Checked and those with null eGFR do get dropped
 egfr40 <- baseline_biomarkers %>%
-  select(patid, drugclass, dstartdate, preegfr) %>%
+  select(patid, drugclass, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
-  filter(datediff(date, dstartdate)>7 & testvalue<=0.4*preegfr) %>%
-  analysis$cached("response_biomarkers_egfr40_1", indexes=c("patid", "dstartdate", "drugclass"))
-
-## Find the earliest date for each drug start
-egfr40 <- egfr40 %>%
+  filter(datediff(date, preegfrdate)>0 & testvalue<=0.4*preegfr) %>%
   group_by(patid, drugclass, dstartdate) %>%
   summarise(egfr_40_decline_date=min(date, na.rm=TRUE)) %>%
-  analysis$cached("response_biomarkers_egfr40_2", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drugclass"))
 
-## Join to rest of response dataset and move where height variable is
+
+# Join to rest of response dataset and move where height variable is
 response_biomarkers <- response_biomarkers %>%
+  left_join(next_egfr, by=c("patid", "drugclass", "dstartdate")) %>%
   left_join(egfr40, by=c("patid", "drugclass", "dstartdate")) %>%
   relocate(height, .after=timeprevcombo) %>%
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
