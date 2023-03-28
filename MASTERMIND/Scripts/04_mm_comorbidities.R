@@ -4,6 +4,7 @@
 # Merges with drug start and stop dates
 
 # Then finds earliest predrug, latest predrug, and earliest postdrug occurrence for each comorbidity
+## And include which code is used for heart failure
 
 # Plus binary 'is there a predrug occurrence?' variables
 
@@ -28,6 +29,7 @@ analysis = cprd$analysis("mm")
 ############################################################################################
 
 # Define comorbidities
+## If you add comorbidity to the end of this list, code should run fine to incorporate new comorbidity, as long as you delete final 'mm_comorbidities' table
 
 comorbids <- c("af", #atrial fibrillation
                "angina",
@@ -146,7 +148,8 @@ raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
   analysis$cached("raw_primary_incident_stroke_icd10", indexes=c("patid", "epistart"))
   
 
-comorbids <- c(comorbids, "primary_hhf", "primary_incident_mi", "primary_incident_stroke")
+## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
+comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", comorbids)
 
 
 ############################################################################################
@@ -180,7 +183,7 @@ for (i in comorbids) {
   if (exists(medcode_tablename)) {
     
     medcodes <- get(medcode_tablename) %>%
-      select(patid, date=obsdate) %>%
+      select(patid, date=obsdate, code=medcodeid) %>%
       mutate(source="gp")
     
   }
@@ -188,7 +191,7 @@ for (i in comorbids) {
   if (exists(icd10_tablename)) {
     
     icd10_codes <- get(icd10_tablename) %>%
-      select(patid, date=epistart) %>%
+      select(patid, date=epistart, code=ICD) %>%
       mutate(source="hes_icd10")
 
   }
@@ -196,7 +199,7 @@ for (i in comorbids) {
   if (exists(opcs4_tablename)) {
     
     opcs4_codes <- get(opcs4_tablename) %>%
-      select(patid, date=evdate) %>%
+      select(patid, date=evdate, code=OPCS) %>%
       mutate(source="hes_opcs4")
     
   }
@@ -241,7 +244,7 @@ for (i in comorbids) {
   all_codes_clean <- all_codes %>%
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
     filter(date>=min_dob & ((source=="gp" & date<=gp_ons_end_date) | ((source=="hes_icd10" | source=="hes_opcs4") & (is.na(gp_ons_death_date) | date<=gp_ons_death_date)))) %>%
-    select(patid, date, source)
+    select(patid, date, source, code)
   
   rm(all_codes)
   
@@ -262,9 +265,9 @@ for (i in comorbids) {
 ############################################################################################
 
 # Find earliest predrug, latest predrug and first postdrug dates
-## Do separately for genital_infection_nonspec, fluvacc_stopflu_med and amputation as need to be combined with definite_genital_infection_meds / fluvacc_stopflu_prod (prodcodes) / combine 2 x amputation medcodes first (need to produce definite_genital_infection_meds / fluvacc_stopflu_prod full drug merge table in script 6_mm_non_diabetes_meds first)
+## Leave genital_infection_nonspec, fluvacc_stopflu_med and amputation for now as need to be processed differently
 
-comorbids <- setdiff(comorbids, c("genital_infection_nonspec_prelim", "fluvacc_stopflu_med", "hosp_cause_majoramputation", "hosp_cause_minoramputation"))
+comorbids <- setdiff(comorbids, c("genital_infection_nonspec", "fluvacc_stopflu_med", "hosp_cause_majoramputation", "hosp_cause_minoramputation"))
 
 comorbidities <- drug_start_stop %>%
   select(patid, dstartdate, drugclass, druginstance)
@@ -328,7 +331,14 @@ for (i in comorbids) {
 }
 
 
-## Unspecific GI variable  -have to have medcode and prodcode on same day
+############################################################################################
+
+# Make separate tables for genital_infection_nonspec, fluvacc_stopflu_med and amputation as need to be combined with definite_genital_infection_meds / fluvacc_stopflu_prod (prodcodes) / combine 2 x amputation medcodes first (need to produce definite_genital_infection_meds / fluvacc_stopflu_prod full drug merge table in script 6_mm_non_diabetes_meds first)
+
+drug_start_stop <- drug_start_stop %>%
+  select(patid, dstartdate, drugclass)
+
+## Unspecific GI variable - have to have medcode and prodcode on same day
 ### Also rename genital_infection to medspecific_gi
 
 definite_gi_meds <- definite_gi_meds %>% analysis$cached("full_definite_genital_infection_meds_drug_merge")
@@ -350,18 +360,11 @@ postdrug_unspecific_gi <- unspecific_gi %>%
   group_by(patid, dstartdate, drugclass) %>%
   summarise(postdrug_first_unspecific_gi=min(date, na.rm=TRUE)) %>%
   ungroup()
-
-comorbidities <- comorbidities %>%
+  
+unspecific_gi <- drug_start_stop %>%
   left_join(predrug_unspecific_gi, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(postdrug_unspecific_gi, by=c("patid", "dstartdate", "drugclass")) %>%
   mutate(predrug_unspecific_gi=!is.na(predrug_earliest_unspecific_gi)) %>%
-  rename(predrug_earliest_medspecific_gi=predrug_earliest_genital_infection,
-         predrug_latest_medspecific_gi=predrug_latest_genital_infection,
-         postdrug_first_medspecific_gi=postdrug_first_genital_infection,
-         postdrug_first_medspecific_gi_gp_only=postdrug_first_genital_infection_gp_only,
-         postdrug_first_medspecific_gi_hes_icd10_only=postdrug_first_genital_infection_hes_icd10_only,
-         postdrug_first_medspecific_gi_hes_opcs4_only=postdrug_first_genital_infection_hes_opcs4_only,
-         predrug_medspecific_gi=predrug_genital_infection) %>%
   analysis$cached("comorbidities_interim_unspecific_gi", indexes=c("patid", "dstartdate", "drugclass"))
 
 
@@ -384,11 +387,11 @@ postdrug_fluvacc <- fluvacc %>%
   summarise(postdrug_first_fluvacc=min(date, na.rm=TRUE)) %>%
   ungroup()
 
-comorbidities <- comorbidities %>%
+flu_vaccination <- drug_start_stop %>%
   left_join(predrug_fluvacc, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(postdrug_fluvacc, by=c("patid", "dstartdate", "drugclass")) %>%
   mutate(predrug_fluvacc=!is.na(predrug_earliest_fluvacc)) %>%
-  analysis$cached("comorbidities_interim_fluvacc", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("comorbidities_interim_flu_vaccination", indexes=c("patid", "dstartdate", "drugclass"))
 
 
 ## Amputation variable - use earliest of hosp_cause_majoramputation and hosp_cause_minoramputation
@@ -408,35 +411,51 @@ postdrug_amputation <- amputation %>%
   summarise(postdrug_first_amputation=min(date, na.rm=TRUE)) %>%
   ungroup()
 
-comorbidities <- comorbidities %>%
+amputation_outcome <- drug_start_stop %>%
   left_join(predrug_amputation, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(postdrug_amputation, by=c("patid", "dstartdate", "drugclass")) %>%
   mutate(predrug_amputation=!is.na(predrug_earliest_amputation)) %>%
-  analysis$cached("comorbidities_interim_amputation", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("comorbidities_interim_amputation_outcome", indexes=c("patid", "dstartdate", "drugclass"))
 
 
 ############################################################################################
 
-# Add in whether hospital admission in previous year to drug start, and first postdrug emergency hospitalisation for any cause
+# Make separate table for whether hospital admission in previous year to drug start, and with first postdrug emergency hospitalisation for any cause
 ## Admimeth never missing in hesHospital
 
 hosp_admi_prev_year <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass) %>%
   inner_join(cprd$tables$hesPrimaryDiagHosp, by="patid") %>%
   filter(!is.na(admidate) & datediff(dstartdate, admidate)<365 & datediff(dstartdate, admidate)>0) %>%
   distinct(patid, dstartdate, drugclass) %>%
   mutate(hosp_admission_prev_year=1L)
 
 next_hosp_admi <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass) %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
   filter(!is.na(admidate) & admidate>dstartdate & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
   group_by(patid, dstartdate, drugclass) %>%
   summarise(postdrug_first_all_cause_hosp=min(admidate, na.rm=TRUE)) %>%
   ungroup()
 
-comorbidities <- comorbidities %>%
+hosp_admi <- drug_start_stop %>%
   left_join(hosp_admi_prev_year, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(next_hosp_admi, by=c("patid", "dstartdate", "drugclass")) %>%
-  analysis$cached("comorbidities", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("comorbidities_interim_hosp_admi", indexes=c("patid", "dstartdate", "drugclass"))
 
+
+############################################################################################
+
+# Join together interim_comorbidity_table with genital infection, flu vaccination, amputation and hospital admission tables, and rename genital_infection variables to 'medspecific_gi'
+
+comorbidities <- comorbidities %>%
+  left_join(unspecific_gi, by=c("patid", "dstartdate", "drugclass")) %>%
+  rename(predrug_earliest_medspecific_gi=predrug_earliest_genital_infection,
+         predrug_latest_medspecific_gi=predrug_latest_genital_infection,
+         postdrug_first_medspecific_gi=postdrug_first_genital_infection,
+         postdrug_first_medspecific_gi_gp_only=postdrug_first_genital_infection_gp_only,
+         postdrug_first_medspecific_gi_hes_icd10_only=postdrug_first_genital_infection_hes_icd10_only,
+         postdrug_first_medspecific_gi_hes_opcs4_only=postdrug_first_genital_infection_hes_opcs4_only,
+         predrug_medspecific_gi=predrug_genital_infection) %>%
+  left_join(flu_vaccination, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(amputation_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(hosp_admi, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("comorbidities", indexes=c("patid", "dstartdate", "drugclass"))
