@@ -71,6 +71,7 @@ predrug_smoking_codes <- drug_start_stop %>%
   analysis$cached("predrug_smoking_merge", indexes=c("patid", "dstartdate", "drugclass", "smoking_cat", "qrisk2_smoking_cat"))
 
 
+
 # Find smoking status at drug start date according to our algorithm
 
 ## Find if ever previously an active smoker
@@ -79,31 +80,39 @@ smoker_ever <- predrug_smoking_codes %>%
   distinct(patid, dstartdate, drugclass) %>%
   mutate(smoked_ever_flag=1L)
 
-## Find most recent code (ignore testvalue) - only keep those with 1 type of category recorded on most recent date
+## Find most recent code (ignore testvalue)
+### If both non- and ex-smoker, use ex-smoker
+### If conflicting categories (non- and active- / ex- and active-), treat as missing
 most_recent_code <- predrug_smoking_codes %>%
-  
   distinct(patid, dstartdate, drugclass, date, smoking_cat) %>%
-  
   group_by(patid, dstartdate, drugclass) %>%
   filter(date==max(date, na.rm=TRUE)) %>%
-  filter(n()==1) %>%
   ungroup() %>%
-  
-  select(patid, dstartdate, drugclass, most_recent_code=smoking_cat)
-
-## Find next recorded code for those with multiple categories on most recent date
+  select(-date) %>%
+  mutate(fill=TRUE) %>%
+  pivot_wider(id_cols=c(patid, dstartdate, drugclass), names_from=smoking_cat, values_from=fill, values_fill=list(fill=FALSE)) %>%
+  mutate(smoking_cat=ifelse(`Active smoker`==1 & `Non-smoker`==0 & `Ex-smoker`==0, "Active smoker",
+                            ifelse(`Active smoker`==0 & `Ex-smoker`==1, "Ex-smoker",
+                                   ifelse(`Active smoker`==0 & `Ex-smoker`==0 & `Non-smoker`==1, "Non-smoker", NA)))) %>%
+  select(patid, dstartdate, drugclass, most_recent_code=smoking_cat) %>%
+  analysis$cached("smoking_interim_1", indexes=c("patid", "dstartdate", "drugclass"))
+    
+## Find next recorded code (to use for those with conflicting categories on most recent date)
 next_most_recent_code <- predrug_smoking_codes %>%
-  
   distinct(patid, dstartdate, drugclass, date, smoking_cat) %>%
-  
   group_by(patid, dstartdate, drugclass) %>%
   filter(date!=max(date, na.rm=TRUE)) %>%
   filter(date==max(date, na.rm=TRUE)) %>%
-  filter(n()==1) %>%
   ungroup() %>%
-  
-  select(patid, dstartdate, drugclass, next_most_recent_code=smoking_cat)
-  
+  select(-date) %>%
+  mutate(fill=TRUE) %>%
+  pivot_wider(id_cols=c(patid, dstartdate, drugclass), names_from=smoking_cat, values_from=fill, values_fill=list(fill=FALSE)) %>%
+  mutate(smoking_cat=ifelse(`Active smoker`==1 & `Non-smoker`==0 & `Ex-smoker`==0, "Active smoker",
+                            ifelse(`Active smoker`==0 & `Ex-smoker`==1, "Ex-smoker",
+                                   ifelse(`Active smoker`==0 & `Ex-smoker`==0 & `Non-smoker`==1, "Non-smoker", NA)))) %>%
+  select(patid, dstartdate, drugclass, next_most_recent_code=smoking_cat) %>%
+  analysis$cached("smoking_interim_2", indexes=c("patid", "dstartdate", "drugclass"))
+
 ## Pull together
 smoking_cat <- drug_start_stop %>%
   select(patid, dstartdate, drugclass) %>%
@@ -113,30 +122,37 @@ smoking_cat <- drug_start_stop %>%
   mutate(most_recent_code=coalesce(most_recent_code, next_most_recent_code),
          smoking_cat=ifelse(most_recent_code=="Non-smoker" & !is.na(smoked_ever_flag) & smoked_ever_flag==1, "Ex-smoker", most_recent_code)) %>%
   select(-c(most_recent_code, next_most_recent_code, smoked_ever_flag)) %>%
-  analysis$cached("smoking_interim_1", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("smoking_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
+
 
 
 # Work out smoking status from QRISK2 algorithm
 
 ## Only keep codes within 5 years, keep those on most recent date, and convert to QRISK2 categories using testvalues (only use testvalues if valid numunitid)
 qrisk2_smoking_cat <- predrug_smoking_codes %>%
-  
   filter(datediff(dstartdate, date) <= 1826) %>%
-  
   group_by(patid, dstartdate, drugclass) %>%
   filter(date==max(date, na.rm=TRUE)) %>%
   ungroup() %>%
-  
   mutate(qrisk2_smoking=ifelse(is.na(testvalue) | qrisk2_smoking_cat==1 | medcodeid==1780396011 | (!is.na(numunitid) & numunitid!=39 & numunitid!=118 & numunitid!=247 & numunitid!=98 & numunitid!=120 & numunitid!=237 & numunitid!=478 & numunitid!=1496 & numunitid!=1394 & numunitid!=1202 & numunitid!=38), qrisk2_smoking_cat,
                                ifelse(testvalue<10, 2L,
-                                      ifelse(testvalue<20, 3L, 4L))))
+                                      ifelse(testvalue<20, 3L, 4L)))) %>%
+  analysis$cached("smoking_interim_4", indexes=c("patid", "dstartdate", "drugclass"))
 
-## If more than 1 category on most recent day, use minimum
+## If both non- and ex-smoker, use ex-smoker
+## If conflicting categories (non- and active- / ex- and active-), use minimum
 qrisk2_smoking_cat <- qrisk2_smoking_cat %>%
-  group_by(patid, dstartdate, drugclass) %>%
-  summarise(qrisk2_smoking_cat=min(qrisk2_smoking, na.rm=TRUE)) %>%
-  ungroup() %>%
-  analysis$cached("smoking_interim_2", indexes=c("patid", "dstartdate", "drugclass"))
+  mutate(fill=TRUE, qrisk2_smoking_cat=paste0("cat_", qrisk2_smoking)) %>%
+  distinct(patid, dstartdate, drugclass, qrisk2_smoking_cat, fill) %>%
+  pivot_wider(id_cols=c(patid, dstartdate, drugclass), names_from=qrisk2_smoking_cat, values_from=fill, values_fill=list(fill=FALSE)) %>%
+  mutate(qrisk2_smoking_cat=ifelse(cat_1==1, 1L,
+                                   ifelse(cat_0==1 & cat_1==0, 0L,
+                                          ifelse(cat_0==0 & cat_1==0 & cat_2==1, 2L,
+                                                 ifelse(cat_0==0 & cat_1==0 & cat_2==0 & cat_3==1, 3L,
+                                                        ifelse(cat_0==0 & cat_1==0 & cat_2==0 & cat_3==0 & cat_4==1, 4L, NA)))))) %>%
+  select(patid, dstartdate, drugclass, qrisk2_smoking_cat) %>%
+  analysis$cached("smoking_interim_5", indexes=c("patid", "dstartdate", "drugclass"))
+
 
 
 # Join results of our algorithm and QRISK2 algorithm and add uncoded version of QRISK2 category
