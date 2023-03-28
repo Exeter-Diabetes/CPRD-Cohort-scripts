@@ -480,9 +480,10 @@ combo_start_stop <- combo_start_stop %>%
 
 
 # Add variable to indicate whether multiple drug classes started on the same day
+## Updated 28/03/2023 as realised this is missing if no prior drug periods
 
 combo_start_stop <- combo_start_stop %>%
-  mutate(multi_drug_start=add>1)
+  mutate(multi_drug_start=ifelse(add>1 | (drugcomboorder==1 & numdrugs>1), 1L, 0L))
 
 
 # Cache
