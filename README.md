@@ -3,9 +3,9 @@
 ## Background
 
 This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts from a CPRD Aurum dataset: 
-* An 'at-diagnosis' cohort
-* A prevalent cohort (registered at 01/02/2020)
-* A treatment response cohort (those initiating diabetes medications)
+* An **'at-diagnosis'** cohort
+* A **prevalent** cohort (registered at 01/02/2020)
+* A **treatment response** cohort (those initiating diabetes medications)
 
 The below diagram shows the data processing steps involved in creating these cohorts.
 
