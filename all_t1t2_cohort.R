@@ -6,9 +6,6 @@
 # Uses other pre-made tables:
 ## validDateLookup has min_dob (earliest possible DOB), ons_death (date of death [dod] or date of death registration [dor] if dod missing from ONS death records, and gp_ons_end_date (earliest of last collection date from practice, deregistration, cprd_ddate and ons_death)
 ## patidsWithLinkage has patids of those with linkage to HES APC, IMD and ONS death records plus n_patid_hes (how many patids linked with 1 HES record)
-## all_patid_ethnicity has ethnicity_5cat, ethnicity_16cat, and ethnicity_qrisk2 derived as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
-## all_patid_townsend_score has tds_2011 derived as per https://github.com/Exeter-Diabetes/CPRD-Codelists#townsend-deprivation-scores 
-
 
 ############################################################################################
 
@@ -20,8 +17,6 @@ rm(list=ls())
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
-
-analysis = cprd$analysis("diagnosis_date")
 
 
 ############################################################################################
@@ -36,27 +31,53 @@ acceptable_patids <- cprd$tables$patient %>%
   filter(acceptable==1 & year(regstartdate)!=2020) %>%
   select(patid)
 
+acceptable_patids %>% count()
+#1,480,985
+
 
 ############################################################################################
 
 # T1T2 cohort definition
 
 # Define T1T2 cohort (has diabetes QOF code with valid date, has no diabetes exclusion codes)
-## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. Codes for non-T1/T2 types of diabetes were removed, but these codes are also in the 'exclusion_diabetes' codelist anyway.
+## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. Codes for non-T1/T2 types of diabetes were not excluded, but these codes are also in the 'exclusion_diabetes' codelist.
 
-exclusion_patids <- cprd$tables$observation %>%
-  semi_join(codes$exclusion_diabetes, by="medcodeid") %>%
-  select(patid)
+analysis = cprd$analysis("all_patid")
 
-t1t2_ids <- cprd$tables$observation %>%
+raw_qof_diabetes_medcodes <- cprd$tables$observation %>%
   inner_join(codes$qof_diabetes, by="medcodeid") %>%
+  analysis$cached("raw_qof_diabetes_medcodes", indexes=c("patid", "obsdate", "qof_diabetes_cat"))
+
+analysis = cprd$analysis("diagnosis_date")
+
+qof_ids <- raw_qof_diabetes_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   semi_join(acceptable_patids, by="patid") %>%
-  anti_join(exclusion_patids, by="patid") %>%
-  select(patid) %>%
-  distinct() %>%
+  distinct(patid) %>%
+  analysis$cached("qof_ids", unique_indexes="patid")
+
+qof_ids %>% count()
+#1,138,179
+
+
+analysis = cprd$analysis("all_patid")
+
+raw_exclusion_diabetes_medcodes <- cprd$tables$observation %>%
+  inner_join(codes$exclusion_diabetes, by="medcodeid") %>%
+  analysis$cached("raw_exclusion_diabetes_medcodes", indexes=c("patid", "obsdate", "exclusion_diabetes_cat"))
+
+analysis = cprd$analysis("diagnosis_date")
+
+exclusion_ids <- raw_exclusion_diabetes_medcodes %>%
+  distinct(patid) 
+
+t1t2_ids <- qof_ids %>%
+  anti_join(exclusion_ids, by="patid") %>%
   analysis$cached("t1t2_ids", unique_indexes="patid")
+
+t1t2_ids %>% count()
+#
 
 
 ############################################################################################
@@ -73,18 +94,18 @@ t1t2_ids <- cprd$tables$observation %>%
 ## Have also cached HbA1c as needed for later analysis
 ## Haven't filtered on patids in T1T2 cohort as doesn't make much difference to numbers
 
-analysis = cprd$analysis("all")
+analysis = cprd$analysis("all_patid")
 
 ## All diabetes medcodes (need for diagnosis date (cleaned) and Type 1 vs Type 2 (raw))
 raw_diabetes_medcodes <- cprd$tables$observation %>%
   inner_join(codes$all_diabetes, by="medcodeid") %>%
-  analysis$cached("patid_raw_diabetes_medcodes", indexes=c("patid", "obsdate", "all_diabetes_cat"))
+  analysis$cached("raw_diabetes_medcodes", indexes=c("patid", "obsdate", "all_diabetes_cat"))
 
 
 ## All HbA1cs - could clean on import but do separately for now
 raw_hba1c <- cprd$tables$observation %>%
   inner_join(codes$hba1c, by="medcodeid") %>%
-  analysis$cached("patid_raw_hba1c_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
+  analysis$cached("raw_hba1c_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
 
 clean_hba1c <- raw_hba1c %>%
   filter(year(obsdate)>=1990) %>%
@@ -97,7 +118,7 @@ clean_hba1c <- raw_hba1c %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   select(patid, date=obsdate, testvalue) %>%
-  analysis$cached("patid_clean_hba1c_medcodes", indexes=c("patid", "date", "testvalue"))
+  analysis$cached("clean_hba1c_medcodes", indexes=c("patid", "date", "testvalue"))
 
 
 ## All OHA scripts (need for diagnosis date (cleaned) and definition (cleaned))
@@ -106,7 +127,7 @@ clean_oha <- cprd$tables$drugIssue %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>%
   select(patid, date=issuedate, dosageid, quantity, quantunitid, duration, INS, TZD, SU, DPP4, MFN, GLP1, Glinide, Acarbose, SGLT2) %>%
-  analysis$cached("patid_clean_oha_prodcodes", indexes=c("patid", "date", "INS", "TZD", "SU", "DPP4", "MFN", "GLP1", "Glinide", "Acarbose", "SGLT2"))
+  analysis$cached("clean_oha_prodcodes", indexes=c("patid", "date", "INS", "TZD", "SU", "DPP4", "MFN", "GLP1", "Glinide", "Acarbose", "SGLT2"))
 
 
 ## All insulin scripts (need for diagnosis date (cleaned) and definition (cleaned))
@@ -115,7 +136,7 @@ clean_insulin <- cprd$tables$drugIssue %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>%
   select(patid, date=issuedate, dosageid, quantity, quantunitid, duration) %>%
-  analysis$cached("patid_clean_insulin_prodcodes", indexes=c("patid", "date"))
+  analysis$cached("clean_insulin_prodcodes", indexes=c("patid", "date"))
 
 
 
@@ -356,13 +377,13 @@ diabetes_type_final <- diabetes_type_prelim %>%
 ## Whether diagnosis date needs flag (if within 90 days of start of registration), and what type of code diagnosis is based on
 ## Also add in gender, registration end, practice ID, and cprd_ddate from patient table
 ## Also add in last collection date for practice, death date from ONS records, and whether has HES data from patidsWithLinkage lookup and derive/keep: regstartdate, gp_record_end (earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records)), death_date (earliest of 'cprddeathdate' (derived by CPRD) and ONS death date), and with_hes (patients with HES linkage and n_patid_hes<=20)
+## Also add in IMD score from patient IMD table
 ## Also add in ethnicity from all_patid_ethnicity table derived as per: https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
-## Also add in IMD and Townsend Deprivation Score from all_patid_townsend_score derived as per: https://github.com/Exeter-Diabetes/CPRD-Codelists#townsend-deprivation-scores 
+
 
 analysis = cprd$analysis("all")
 
 ethnicity <- ethnicity %>% analysis$cached("patid_ethnicity")
-imd_townsend <- imd_townsend %>% analysis$cached("patid_townsend_score")
 
 t1t2_cohort <- diabetes_type_final %>%
   mutate(dm_diag_codetype = ifelse(is.na(dm_diag_date_all), NA,
@@ -374,6 +395,7 @@ t1t2_cohort <- diabetes_type_final %>%
   
   left_join((cprd$tables$patient %>% select(patid, gender, regenddate, pracid, cprd_ddate)), by="patid") %>%
   left_join((cprd$tables$practice %>% select(pracid, lcd, region)), by="pracid") %>%
+  left_join((cprd$tables$patientImd2015 %>% select(patid, imd2015_10)), by="patid") %>%
   left_join((cprd$tables$validDateLookup %>% select(patid, ons_death)), by="patid") %>%
   left_join((cprd$tables$patidsWithLinkage %>% select(patid, n_patid_hes)), by="patid") %>%
   
@@ -390,6 +412,6 @@ t1t2_cohort <- diabetes_type_final %>%
   left_join(ethnicity, by="patid") %>%
   left_join(imd_townsend, by="patid") %>%
   
-  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, tds_2011, has_insulin, type1_code_count, type2_code_count, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
+  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
   
   analysis$cached("t1t2_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
