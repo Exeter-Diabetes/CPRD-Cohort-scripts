@@ -20,6 +20,9 @@ Each cohort includes biomarker measurements, comorbidity status (including CKD s
 These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
 
 
+SOMETHING ABOUT SCRIPT ORDER and final merge being last
+
+
 ## CPRD Aurum extract details
 Patients with a diabetes medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
 
