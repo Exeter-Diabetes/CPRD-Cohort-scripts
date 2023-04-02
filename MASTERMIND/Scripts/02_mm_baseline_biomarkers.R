@@ -182,7 +182,7 @@ clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   filter(!is.na(testvalue)) %>%
   analysis$cached("clean_egfr_medcodes", indexes=c("patid", "date", "testvalue"))
 
-biomarkers <- c(biomarkers, "egfr")
+biomarkers <- c("egfr", biomarkers)
 
 
 # Make ACR from separate urine albumin and urine creatinine measurements on the same day
@@ -197,7 +197,7 @@ clean_acr_from_separate_medcodes <- clean_albumin_urine_medcodes %>%
   analysis$cached("clean_acr_from_separate_medcodes", indexes=c("patid", "date", "testvalue"))
 
 biomarkers <- setdiff(biomarkers, c("albumin_urine", "creatinine_urine"))
-biomarkers <- c(biomarkers, "acr_from_separate")
+biomarkers <- c("acr_from_separate", biomarkers)
 
 
 ############################################################################################
