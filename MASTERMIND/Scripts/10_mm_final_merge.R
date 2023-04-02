@@ -32,6 +32,9 @@ analysis = cprd$analysis("mm")
 ## Cohort and patient characteristics
 analysis = cprd$analysis("all")
 t1t2_cohort <- t1t2_cohort %>% analysis$cached("t1t2_cohort")
+
+### Townsend Deprivation Score info
+imd_townsend <- imd_townsend %>% analysis$cached("patid_townsend_score")
 analysis = cprd$analysis("mm")
 
 ## Drug info
@@ -64,8 +67,11 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 # Make first instance drug period dataset
 
 ## Define T2D cohort (1 line per patient) with HES linkage
+## Add in Townsend Deprivation Scores
 ## Make new variables for diabetes diagnosis date and age which are missing if diagnosed with diabetes within 91 days following registration (dm_diag_flag==1)
 t2ds <- t1t2_cohort %>%
+  inner_join((imd_townsend %>% select(patid, tds_2011)), by="patid") %>%
+  relocate(tds_2011, .after=imd2015_10) %>%
   filter(diabetes_type=="type 2" & with_hes==1) %>%
   mutate(dm_diag_date=ifelse(dm_diag_flag==1, as.Date(NA), dm_diag_date_all),
          dm_diag_age=ifelse(dm_diag_flag==1, NA, dm_diag_age_all))
