@@ -40,9 +40,9 @@
 # Algorithm: https://github.com/drkgyoung/Exeter_Diabetes_codelists#ethnicity
 
 
-################################################################################################################################
+############################################################################################
 
-##################### SETUP ####################################################################################################
+# Setup
 
 library(aurum)
 library(tidyverse)
@@ -54,11 +54,10 @@ codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 analysis = cprd$analysis("all_patid")
 
 
-################################################################################################################################
+############################################################################################
 
-##################### FINDING ETHNICITY ########################################################################################
+# Find ethnicity from GP codes
 
-# GP codes
 ## All 3 codelists (ethnicity_5cat, ethnicity_16cat and ethnicity_qrisk2) are identical, just with different category columns
 
 raw_gp_ethnicity <- cprd$tables$observation %>% 
@@ -127,8 +126,9 @@ gp_qrisk2_ethnicity <- raw_gp_ethnicity %>%
   analysis$cached("gp_qrisk2_ethnicity",unique_indexes="patid", indexes="gp_qrisk2_ethnicity")
 
 
+############################################################################################
 
-# HES codes
+# Find ethnicity from HES codes
 
 hes_ethnicity <- cprd$tables$hesPatient %>% 
   filter(!is.na(gen_ethnicity)) %>% 
@@ -166,10 +166,11 @@ hes_ethnicity <- cprd$tables$hesPatient %>%
                                         gen_ethnicity==10 ~ 9L,    
                                         gen_ethnicity==11 ~ 9L)) %>%
   analysis$cached("hes_ethnicity",unique_indexes="patid", indexes=c("hes_5cat_ethnicity", "hes_16cat_ethnicity", "hes_qrisk2_ethnicity"))
-         
+    
+     
+############################################################################################
 
-
-## Combine GP and HES
+## Combine GP and HES ethnicity
     
 ethnicity <- cprd$tables$patient %>%
   select(patid) %>%
