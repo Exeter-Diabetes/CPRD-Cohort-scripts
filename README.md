@@ -12,7 +12,7 @@ The below diagram shows the data processing steps involved in creating these coh
 ```mermaid
 graph TD;
     A[CPRD Aurum October 2020 release]
-    B[Patient with a diabetes-related medcode between 01/01/2004-06/11/2020 and ≥1 year prior UTS and ≥1 year follow-up. n=1,480,985 (n=1,481,884 in download as some patients incorrectly included)]
+    B[Patient with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year prior UTS and >=1 year follow-up. n=1,480,985 (n=1,481,884 in download as some patients incorrectly included)]
     C[No diabetes QOF code with a valid date. n=342792]
     D[With a diabetes QOF code with a valid date (quality check to remove those without diabetes). n=1,138,193]
     E[With a code for a non-T1/T2 diabetes type (e.g. gestational, genetic, secondary) with any date. n=18,108]
