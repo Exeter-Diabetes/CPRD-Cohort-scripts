@@ -11,30 +11,16 @@ The below diagram shows the data processing steps involved in creating these coh
 
 ```mermaid
 graph TD;
-    A[CPRD Aurum October 2020 release]
-    B[Patient with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year prior UTS and >=1 year follow-up. n=1,480,985 (n=1,481,884 in download as some patients incorrectly included)]
-    C[No diabetes QOF code with a valid date. n=342792]
-    D[With a diabetes QOF code with a valid date (quality check to remove those without diabetes). n=1,138,193]
-    E[With a code for a non-T1/T2 diabetes type (e.g. gestational, genetic, secondary) with any date. n=18,108]
-    F[With no codes for non-T1/T2 diabetes types. n=1,120,085]
-    G[Determined to be T2 based on https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms but with OHA prescription or HbA1c>=48 mmol/mol in year of birth. n=4] 
-    H[T1T2 cohort with date of diagnosis and type of diabetes determined as per: https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms. n=1,120,081]
-    I[At-diagnosis cohort]
-    J[Prevalent cohort]
-    K[Treatment response cohort]
-    A ---> B
-    B ---> C
-    B ---> D
-    D ---> E
-    D ---> F
-    E ---> G
-    E ---> H
-    H ---> I
-    H ---> J
-    H ---> K
-        
-    
+    A["<b>CPRD Aurum October 2020 release</b>"] --> |"With a diabetes-related medcode between 01/01/2004-06/11/2020"| B["<b>Our download</b>: n=1,480,985*"]
+    B -->|"With a diabetes QOF code with a valid date (quality check to remove those without diabetes)"|C["n=1,138,193"]
+    C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
+    D --> |"Inconsistencies in diabetes type"|E["n=4"]
+    D --> F["<b>T1T2 cohort</b>: n=1,120,081"]
+    F --> G["<b>At-diagnosis cohort</b>: n= <br> Index date=diagnosis date"]
+    F --> H["<b>Prevalent cohort</b>: n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
+    F --> I["<b>Treatment response cohort</b>: n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
+* 
 
 
 
