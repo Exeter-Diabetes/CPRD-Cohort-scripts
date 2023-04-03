@@ -15,9 +15,12 @@ The below diagram shows the data processing steps involved in creating these coh
 
 
 
-Each cohort includes biomarker measurements, comorbidity status (including CKD stage) and lifestyle status (smoking/alcohol) at baseline (index date). Template scripts which pull out these variables relative to an index date can be found in this directory ('template_baseline_biomarker', 'template_CKD', 'template_comorbidities', 'template_smoking', and 'template_alcohol'; see below for details).
+Each cohort includes biomarker measurements, comorbidity status and lifestyle status (smoking/alcohol) at baseline (index date). Template scripts which pull out these variables relative to an index date can be found in this directory ('template_baseline_biomarker', 'template_comorbidities', 'template_smoking', and 'template_alcohol'; see below for details).
 
 These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
+
+
+SOMETHING ABOUT SCRIPT ORDER and final merge being last. And that all_t1t2 and ethnicity  (and CKD stage) scripts use data from all time even if after index date to determine diabetes type / ethnicity / CKD stage.
 
 
 ## CPRD Aurum extract details
