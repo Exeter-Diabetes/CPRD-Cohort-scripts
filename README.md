@@ -16,11 +16,11 @@ graph TD;
     C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
     D --> |"Inconsistencies in diabetes type"|E["n=4"]
     D --> F["<b>T1T2 cohort</b>: n=1,120,081"]
-    F --> G["<b>At-diagnosis cohort</b>: n= <br> Index date=diagnosis date"]
-    F --> H["<b>Prevalent cohort</b>: n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
-    F --> I["<b>Treatment response cohort</b>: n= <br> With script for diabetes medication <br> Index date=drug start date"]
+    F --> G["<b>At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
+    F --> H["<b>Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
+    F --> I["<b>Treatment response cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
-* 
+\* Download actually contained .... 
 
 
 
