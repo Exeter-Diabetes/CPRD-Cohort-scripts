@@ -58,7 +58,7 @@ qof_ids <- raw_qof_diabetes_medcodes %>%
   analysis$cached("qof_ids", unique_indexes="patid")
 
 qof_ids %>% count()
-#1,138,179
+#1,138,193
 
 
 analysis = cprd$analysis("all_patid")
@@ -77,7 +77,8 @@ t1t2_ids <- qof_ids %>%
   analysis$cached("t1t2_ids", unique_indexes="patid")
 
 t1t2_ids %>% count()
-#
+#1,120,085
+## 4 people removed as OHA/HbA1c in year of birth later in script, giving 1,120,081 in T1T2 cohort
 
 
 ############################################################################################
@@ -151,7 +152,7 @@ first_diagnosis_dm_code <- raw_diabetes_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   group_by(patid) %>%
-  summarise(date=min(obsdate, na.rm=TRUE)) %>%
+  summarise(dm_diag_dmcodedate=min(obsdate, na.rm=TRUE)) %>%
   analysis$cached("first_diagnosis_dm_code", unique_index="patid")
 
 ## Earliest clean (i.e. with valid date) non-family history diabetes medcode excluding those in year of birth
@@ -160,7 +161,7 @@ first_diagnosis_dm_code_post_yob <- raw_diabetes_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(year(obsdate)>year(min_dob) & obsdate<=gp_ons_end_date) %>%
   group_by(patid) %>%
-  summarise(date=min(obsdate, na.rm=TRUE)) %>%
+  summarise(dm_diag_dmcodedate_post_yob=min(obsdate, na.rm=TRUE)) %>%
   analysis$cached("first_diagnosis_dm_code_post_yob", unique_index="patid")
 
 
@@ -168,31 +169,31 @@ first_diagnosis_dm_code_post_yob <- raw_diabetes_medcodes %>%
 first_high_hba1c <- clean_hba1c_clean_units %>%
   filter(testvalue>47.5) %>%
   group_by(patid) %>%
-  summarise(date=min(date, na.rm=TRUE)) %>%
+  summarise(dm_diag_hba1cdate=min(date, na.rm=TRUE)) %>%
   analysis$cached("first_high_hba1c", unique_index="patid")
 
 
 ## Earliest (clean) OHA script
 first_oha <- clean_oha %>%
   group_by(patid) %>%
-  summarise(date=min(date, na.rm=TRUE)) %>%
+  summarise(dm_diag_ohadate=min(date, na.rm=TRUE)) %>%
   analysis$cached("first_oha", unique_index="patid")
 
 
 ## Earliest (clean) insulin script
 first_insulin <- clean_insulin %>%
   group_by(patid) %>%
-  summarise(date=min(date, na.rm=TRUE)) %>%
+  summarise(dm_diag_insdate=min(date, na.rm=TRUE)) %>%
   analysis$cached("first_insulin", unique_index="patid")
 
 
 # Calculate possible diagnosis dates (overall earliest of code/HbA1c/script, and earliest excluding codes in year of birth)
 dm_diag_dates <- t1t2_ids %>%
-  left_join((first_diagnosis_dm_code %>% rename(dm_diag_dmcodedate=date)), by="patid") %>%
-  left_join((first_diagnosis_dm_code_post_yob %>% rename(dm_diag_dmcodedate_post_yob=date)), by="patid") %>%
-  left_join((first_high_hba1c %>% rename(dm_diag_hba1cdate=date)), by="patid") %>%
-  left_join((first_oha %>% rename(dm_diag_ohadate=date)), by="patid") %>%
-  left_join((first_insulin %>% rename(dm_diag_insdate=date)), by="patid") %>%
+  left_join(first_diagnosis_dm_code, by="patid") %>%
+  left_join(first_diagnosis_dm_code_post_yob, by="patid") %>%
+  left_join(first_high_hba1c, by="patid") %>%
+  left_join(first_oha, by="patid") %>%
+  left_join(first_insulin, by="patid") %>%
   
   mutate(dm_diag_date_all = pmin(ifelse(is.na(dm_diag_dmcodedate), as.Date("2050-01-01"), dm_diag_dmcodedate),
                                  ifelse(is.na(dm_diag_hba1cdate), as.Date("2050-01-01"), dm_diag_hba1cdate),
@@ -347,7 +348,6 @@ check <- collect(diabetes_type_prelim %>%
 
 
 
-# Exclude Type 2s with diagnosis date in year of birth
 # Finalise diabetes type and date of diagnosis - recode dm_diag_dmcodedate, dm_diag_date_all, dm_diag_age_all, dm_diag_before_reg and ins_in_1_year so include/exclude diabetes medcodes in year of birth depending on diabetes type
 
 diabetes_type_final <- diabetes_type_prelim %>%
@@ -410,7 +410,6 @@ t1t2_cohort <- diabetes_type_final %>%
          with_hes=ifelse(!is.na(n_patid_hes) & n_patid_hes<=20, 1L, 0L)) %>%
   
   left_join(ethnicity, by="patid") %>%
-  left_join(imd_townsend, by="patid") %>%
   
   select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
   
