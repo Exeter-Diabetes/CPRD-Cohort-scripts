@@ -6,6 +6,8 @@
 # Uses other pre-made tables:
 ## validDateLookup has min_dob (earliest possible DOB), ons_death (date of death [dod] or date of death registration [dor] if dod missing from ONS death records, and gp_ons_end_date (earliest of last collection date from practice, deregistration, cprd_ddate and ons_death)
 ## patidsWithLinkage has patids of those with linkage to HES APC, IMD and ONS death records plus n_patid_hes (how many patids linked with 1 HES record)
+## all_patid_ethnicity, from all_patid_ethnicity.R script as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
+
 
 ############################################################################################
 
@@ -378,7 +380,7 @@ diabetes_type_final <- diabetes_type_prelim %>%
 ## Also add in gender, registration end, practice ID, and cprd_ddate from patient table
 ## Also add in last collection date for practice, death date from ONS records, and whether has HES data from patidsWithLinkage lookup and derive/keep: regstartdate, gp_record_end (earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records)), death_date (earliest of 'cprddeathdate' (derived by CPRD) and ONS death date), and with_hes (patients with HES linkage and n_patid_hes<=20)
 ## Also add in IMD score from patient IMD table
-## Also add in ethnicity from all_patid_ethnicity table derived as per: https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
+## Also add in ethnicity from all_patid_ethnicity table from all_patid_ethnicity.R script as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
 
 
 analysis = cprd$analysis("all")
