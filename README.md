@@ -16,9 +16,9 @@ graph TD;
     C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
     D --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|E["n=14"]
     D --> F["<b>T1T2 cohort</b>: n=1,120,071"]
-    F --> G["<b>At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
-    F --> H["<b>Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
-    F --> I["<b>Treatment response (MASTERMIND) cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
+    F --> G["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
+    F --> H["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
+    F --> I["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
 \* Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition](https://cprd.com/sites/default/files/2023-02/CPRD%20Aurum%20Glossary%20Terms%20v2.pdf)). See next section for further details on the extract.
 &nbsp;
