@@ -11,7 +11,7 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum October 2020 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year UTS data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
+    A["<b>CPRD Aurum October 2020 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
     B -->|"With a diabetes QOF code with a valid date (quality check to remove those without diabetes)"|C["n=1,138,193"]
     C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
     D --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|E["n=14"]
@@ -20,22 +20,12 @@ graph TD;
     F --> H["<b>Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
     F --> I["<b>Treatment response cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
-\* UTS='up-to standard' based on [CPRD's own definition](). Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition]()).
+\* Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition](https://cprd.com/sites/default/files/2023-02/CPRD%20Aurum%20Glossary%20Terms%20v2.pdf)). See next section for further details on the extract.
 
+&nbsp;
 
-
-
-
-Each cohort includes biomarker measurements, comorbidity status and lifestyle status (smoking/alcohol) at baseline (index date). Template scripts which pull out these variables relative to an index date can be found in this directory ('template_baseline_biomarker', 'template_comorbidities', 'template_smoking', and 'template_alcohol'; see below for details).
-
-These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
-
-
-SOMETHING ABOUT SCRIPT ORDER and final merge being last. And that all_t1t2 and ethnicity  (and CKD stage) scripts use data from all time even if after index date to determine diabetes type / ethnicity / CKD stage.
-
-
-## CPRD Aurum extract details
-Patients with a diabetes medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
+## Extract details
+Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
 
 <img src="https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/download_details1.PNG" width="370">
 
@@ -51,6 +41,18 @@ Patients with a diabetes medcode ([full list here](https://github.com/Exeter-Dia
 'Drug' refers to diabetes medications unless otherwise stated, and the drug classes analysed by these scripts are acarbose, DPP4-inhibitors, glinides, GLP1 receptor agonists, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, and insulin. 'Outputs' are the primary MySQL tables produced by each script. Various scripts link to our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists) which contains more details on the algorithms used to define variables such as ethnicity and diabetes type - see individual scripts for links to the appropriate part of the CPRD-Codelists repository. The variables in each of the output tables and their definitions are listed in the [Data Dictionary]().
 
 &nbsp;
+
+
+
+
+Each cohort includes biomarker measurements, comorbidity status and lifestyle status (smoking/alcohol) at baseline (index date). Template scripts which pull out these variables relative to an index date can be found in this directory ('template_baseline_biomarker', 'template_comorbidities', 'template_smoking', and 'template_alcohol'; see below for details).
+
+These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
+
+
+SOMETHING ABOUT SCRIPT ORDER and final merge being last. And that all_t1t2 and ethnicity  (and CKD stage) scripts use data from all time even if after index date to determine diabetes type / ethnicity / CKD stage.
+
+
 
 | Script description | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Outputs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | ---- | ---- |
