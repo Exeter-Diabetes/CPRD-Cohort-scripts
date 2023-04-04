@@ -47,7 +47,7 @@ The below diagram shows the scripts used to create the final cohorts (at-diagnos
 graph TD;
     A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
-    D["<b>Cohort IDs and index dates</b>"]
+    D["<b>Cohort index dates</b>"]
     D-->|"baseline_biomarkers"|E["<b>Biomarkers</b> <br> at index date"]
     D-->|"comorbidities"|F["<b>Comorbidities</b> <br> at index date"]
     D-->|"smoking"|G["<b>Smoking status</b> <br> at index date"]
@@ -61,28 +61,27 @@ graph TD;
     H-->|"final_merge"|J
     I-->|"final_merge"|J
 ```
-\*IMD=Index of Multiple Deprivation - 'static' because we only have data from 2015.
+\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015.
 
 &nbsp;
 
-For the at-diagnosis cohort, the 'cohort_definition' script uses diagnosis dates from the T1T2 cohort dataset; for the prevalent cohort 
-
-medications?????
-death?
+This directory contains the scripts which are common to all three cohorts as 
 
 
 
+The three cohorts differ in:
+* How the index dates are defined
+* Additional inclusion/exclusion criteria in the 'final_merge' script so that not everyone with an index date is included in the final cohort datasets
+* Additional scripts which pull in additional information e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
 
-
-
-'Drug' refers to diabetes medications unless otherwise stated, and the drug classes analysed by these scripts are acarbose, DPP4-inhibitors, glinides, GLP1 receptor agonists, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, and insulin. 'Outputs' are the primary MySQL tables produced by each script. Various scripts link to our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists) which contains more details on the algorithms used to define variables such as ethnicity and diabetes type - see individual scripts for links to the appropriate part of the CPRD-Codelists repository. The variables in each of the output tables and their definitions are listed in the [Data Dictionary]().
-
-&nbsp;
+The directories for each cohort (at-diagnosis, prevalent, and treatment response) contain these details and tailored versions of the baseline_biomarker, comorbidity,  
 
 
 
 
-Each cohort includes biomarker measurements, comorbidity status and lifestyle status (smoking/alcohol) at baseline (index date). Template scripts which pull out these variables relative to an index date can be found in this directory ('template_baseline_biomarker', 'template_comorbidities', 'template_smoking', and 'template_alcohol'; see below for details).
+
+
+&nbs
 
 These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
 
