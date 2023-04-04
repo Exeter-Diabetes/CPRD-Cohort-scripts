@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts from a CPRD Aurum dataset: 
+This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic/medication data from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
 * A **prevalent** cohort (registered at 01/02/2020)
 * A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
@@ -41,7 +41,11 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ## Script overview
 
-
+```mermaid
+graph TD;
+    A["<b>Our extract</b>: n=1,480,985"] --> |"all_t1t2_cohort.R"|B["<b>T1T2 cohort</b>: n=1,120,071"]
+    B-->C["<b>Final cohort (at-diagnosis/prevalent/treatment response)</b>"]
+```
 
 
 
