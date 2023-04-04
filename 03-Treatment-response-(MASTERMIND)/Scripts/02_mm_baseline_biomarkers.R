@@ -53,7 +53,7 @@ for (i in biomarkers) {
 
 }
 
-# HbA1c table should already be present from all_t1t2_cohort_table script
+# HbA1c table should already be present from all_t1t2_cohort script
 
 raw_hba1c_medcodes <- cprd$tables$observation %>%
     inner_join(codes$hba1c, by="medcodeid") %>%
@@ -77,7 +77,7 @@ raw_hba1c_medcodes <- cprd$tables$observation %>%
 ## Haematocrit only: convert all to proportion by dividing those >1 by 100
 ## Haemoglobin only: convert all to g/L (some in g/dL) by multiplying values <30 by 10
 ## HbA1c only: remove before 1990, and convert all values to mmol/mol
-### NB: HbA1c table already present from all_t1t2_cohort_table script, so don't need to include 1990/conversion here
+### NB: HbA1c table already present from all_t1t2_cohort script
 
 
 analysis = cprd$analysis("all_patid")
@@ -139,7 +139,7 @@ for (i in biomarkers) {
 }
 
 
-# HbA1c table should already be present from all_t1t2_cohort_table script
+# HbA1c table should already be present from all_t1t2_cohort script
 
 clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
   
