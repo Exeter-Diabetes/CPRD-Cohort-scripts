@@ -11,7 +11,7 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum October 2020 release</b>"] --> |"With a diabetes-related medcode between 01/01/2004-06/11/2020"| B["<b>Our download</b>: n=1,480,985*"]
+    A["<b>CPRD Aurum October 2020 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year UTS data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
     B -->|"With a diabetes QOF code with a valid date (quality check to remove those without diabetes)"|C["n=1,138,193"]
     C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
     D --> |"Inconsistencies in diabetes type suggesting coding errors or unclassifiable"|E["n=14"]
@@ -20,7 +20,7 @@ graph TD;
     F --> H["<b>Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
     F --> I["<b>Treatment response cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
-\* Download actually contained .... 
+\* UTS='up-to standard' based on [CPRD's own definition](). Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition]()).
 
 
 
