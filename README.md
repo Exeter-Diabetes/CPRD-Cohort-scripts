@@ -11,7 +11,7 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum October 2020 release</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
+    A["<b>CPRD Aurum October 2020 release</b> with linked Set 21 <br> (April 2021) HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
     B -->|"With a diabetes QOF code with a valid date** (quality check to remove those without diabetes)"|C["n=1,138,193"]
     C --> |"With no codes for non-T1/T2 diabetes types (any date)"|D["n=1,120,085"]
     D --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|E["n=14"]
