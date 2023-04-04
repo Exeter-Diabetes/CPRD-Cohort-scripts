@@ -47,12 +47,11 @@ The below diagram shows the R scripts (in grey boxes) used to create the final c
 graph TD;
     A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
-    D["<b>Cohort index dates</b>"]
-    D-->|"baseline_biomarkers"|E["<b>Biomarkers</b> <br> at index date"]
-    D-->|"comorbidities"|F["<b>Comorbidities</b> <br> at index date"]
-    D-->|"smoking"|G["<b>Smoking status</b> <br> at index date"]
-    D-->|"alcohol"|H["<b>Alcohol status</b> <br> at index date"]
-    D-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at index date"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at index date"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at index date"]
+    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at index date"]
+    A-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
     C-->|"ckd_stage"|I
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
