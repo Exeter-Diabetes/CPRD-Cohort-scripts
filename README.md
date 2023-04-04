@@ -53,8 +53,8 @@ graph TD;
     D-->|"comorbidities"|F["<b>Comorbidities</b> <br> at index date"]
     D-->|"smoking"|G["<b>Smoking status</b> <br> at index date"]
     D-->|"alcohol"|H["<b>Alcohol status</b> <br> at index date"]
-    C-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
-    D-->|"ckd_stage"|I
+    D-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
+    C-->|"ckd_stage"|I
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
