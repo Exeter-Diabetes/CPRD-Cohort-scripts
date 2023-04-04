@@ -45,7 +45,7 @@ The below diagram shows the scripts used a create the final cohorts (at-diagnosi
 
 ```mermaid
 graph TD;
-    A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including ethnicity and IMD*"]
+    A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
     A-->|"cohort_definition"|D
     D["<b>Cohort IDs and index dates</b>"]
@@ -54,6 +54,7 @@ graph TD;
     D-->|"smoking"|G["<b>Smoking status</b> <br> at index date"]
     D-->|"alcohol"|H["<b>Alcohol status</b> <br> at index date"]
     C-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
+    D-->|"ckd_stage"|I
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
