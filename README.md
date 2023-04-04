@@ -5,7 +5,7 @@
 This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
 * A **prevalent** cohort (registered at 01/02/2020)
-* A **treatment response** cohort (those initiating diabetes medications)
+* A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
 
 The below diagram outlines the data processing steps involved in creating these cohorts.
 
@@ -18,7 +18,7 @@ graph TD;
     D --> F["<b>T1T2 cohort</b>: n=1,120,071"]
     F --> G["<b>At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
     F --> H["<b>Prevalent cohort</b>: <br> n= <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
-    F --> I["<b>Treatment response cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
+    F --> I["<b>Treatment response (MASTERMIND) cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
 \* Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition](https://cprd.com/sites/default/files/2023-02/CPRD%20Aurum%20Glossary%20Terms%20v2.pdf)). See next section for further details on the extract.
 &nbsp;
@@ -39,7 +39,17 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 &nbsp;
 
 
-## Summary of scripts and their outputs
+## Script overview
+
+
+
+
+
+
+
+
+
+
 
 'Drug' refers to diabetes medications unless otherwise stated, and the drug classes analysed by these scripts are acarbose, DPP4-inhibitors, glinides, GLP1 receptor agonists, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, and insulin. 'Outputs' are the primary MySQL tables produced by each script. Various scripts link to our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists) which contains more details on the algorithms used to define variables such as ethnicity and diabetes type - see individual scripts for links to the appropriate part of the CPRD-Codelists repository. The variables in each of the output tables and their definitions are listed in the [Data Dictionary]().
 
