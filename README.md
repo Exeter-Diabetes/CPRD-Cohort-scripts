@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic/medication data from a CPRD Aurum dataset: 
+This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic data from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
 * A **prevalent** cohort (registered at 01/02/2020)
 * A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
@@ -41,23 +41,31 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ## Script overview
 
+The below diagram shows the scripts used a create the final cohorts (at-diagnosis/prevalent/treatment response).
+
 ```mermaid
 graph TD;
-    A["<b>Our extract</b>"] --> |"all_t1t2_cohort"|B["<b>T1T2 cohort<b> with ethnicity data"]
-    A-->|"all_patid_ckd_stages"|C["Longitudinal CKD stages for all patients"]
-    D["<b>Cohort index date</b>"]
-    D-->|"baseline_biomarkers"|E["Biomarkers at index date"]
-    D-->|"comorbidities"|F["Comorbidities at index date"]
-    D-->|"smoking"|G["Smoking status at index date"]
-    D-->|"alcohol"|H["Alcohol status at index date"]
-    B-->|"final_merge"|I["Final cohort dataset"]
-    
-    
-    
+    A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including ethnicity and IMD*"]
+    A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
+    A-->|"cohort_definition"|D
+    D["<b>Cohort IDs and index dates</b>"]
+    D-->|"baseline_biomarkers"|E["<b>Biomarkers</b> <br> at index date"]
+    D-->|"comorbidities"|F["<b>Comorbidities</b> <br> at index date"]
+    D-->|"smoking"|G["<b>Smoking status</b> <br> at index date"]
+    D-->|"alcohol"|H["<b>Alcohol status</b> <br> at index date"]
+    C-->|"ckd_stage"|I["<b>CKD stage</b <br> at index date"]
+    B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
+    E-->|"final_merge"|J
+    F-->|"final_merge"|J
+    G-->|"final_merge"|J
+    H-->|"final_merge"|J
+    I-->|"final_merge"|J
 ```
+\*IMD=Index of Multiple Deprivation - 'static' because we only have data from 2015.
 
 
-
+medications?????
+death?
 
 
 
