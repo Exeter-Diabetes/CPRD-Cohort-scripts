@@ -7,6 +7,9 @@
 ## HbA1c: -6 months to +7 days, and excludes any before timeprevcombo
 ## Height: mean of all values >= drug start
 
+# NB: creatinine_blood and eGFR tables may already have been cached as part of all_patid_ckd_stages script
+
+
 ############################################################################################
 
 # Setup
