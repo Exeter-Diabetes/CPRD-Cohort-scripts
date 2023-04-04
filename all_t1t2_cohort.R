@@ -87,7 +87,7 @@ t1t2_ids %>% count()
 
 # Diagnosis dates
 
-# Earliest of: diabetes medcode (excluding obstype==4 (family history)), HbA1c >=48mmol/mol, OHA script, insulin script (all - valid dates only)
+# Earliest of: diabetes medcode (excluding obstype==4 [family history]), HbA1c >=47.5mmol/mol, OHA script, insulin script (all - valid dates only)
 
 ## If Type 2 (determined later in this script), ignore any diabetes medcodes in year of birth - use next code/HbA1c/script
 ## If Type 2 and have high HbA1c or OHA/insulin script in year of birth, will exclude later
@@ -106,6 +106,7 @@ raw_diabetes_medcodes <- cprd$tables$observation %>%
 
 
 ## All HbA1cs - could clean on import but do separately for now
+### Remove if <1990 and assume in % and convert to mmol/mol if <=20 (https://github.com/Exeter-Diabetes/CPRD-Codelists#hba1c)
 raw_hba1c <- cprd$tables$observation %>%
   inner_join(codes$hba1c, by="medcodeid") %>%
   analysis$cached("raw_hba1c_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
