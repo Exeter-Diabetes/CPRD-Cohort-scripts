@@ -335,7 +335,7 @@ diabetes_type_prelim <- t1t2_ids %>%
 check <- collect(diabetes_type_prelim %>%
   filter(diabetes_type!=diabetes_type_post_yob))
 ## 10 people: 9 are Type 1 if include codes in year of birth, and Type 2 otherwise, 1 is Type 2 if include codes in year of birth, and Type 1 otherwise as affects time to insulin
-## Class these people as unclassifiable
+## These people are 'unclassifiable' - exclude
 
 # Check those with T2D who still have diagnosis date in year of birth due to having script or high HbA1c in year of birth
 check <- collect(diabetes_type_prelim %>%
@@ -354,7 +354,7 @@ check <- collect(diabetes_type_prelim %>%
 
 diabetes_type_final <- diabetes_type_prelim %>%
   
-  filter(!(diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob)) %>%
+  filter(!((diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob) | (diabetes_type!=diabetes_type_post_yob))) %>%
   
   mutate(diabetes_type=ifelse(diabetes_type!=diabetes_type_post_yob, "unclassifiable", diabetes_type),
          
