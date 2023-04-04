@@ -1,6 +1,6 @@
 # CPRD Aurum Cohort scripts
 
-## Background
+## Introduction
 
 This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
