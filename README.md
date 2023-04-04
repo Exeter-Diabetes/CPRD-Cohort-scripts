@@ -43,9 +43,14 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ```mermaid
 graph TD;
-    A["<b>Our extract</b>: n=1,480,985"] --> |"all_t1t2_cohort.R"|B["<b>T1T2 cohort</b>: n=1,120,071"]
-    B-->C["<b>Final cohort (at-diagnosis/prevalent/treatment response)</b>"]
-    A-->|"test"|B
+    A["<b>Our extract</b>"] --> |"all_t1t2_cohort"|B["<b>T1T2 cohort<b> with ethnicity data"]
+    A-->|"all_patid_ckd_stages"|C["Longitudinal CKD stages for all patients"]
+    D["<b>Cohort index date</b>"]
+    D-->|"baseline_biomarkers"|E["Biomarkers at index date"]
+    D-->|"comorbidities"|F["Comorbidities at index date"]
+    D-->|"smoking"|G["Smoking status at index date"]
+    D-->|"alcohol"|H["Alcohol status at index date"]
+    B-->|"final_merge"|I["Final cohort dataset"]
     
     
     
