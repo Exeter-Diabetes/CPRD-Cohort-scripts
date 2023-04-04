@@ -45,6 +45,10 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 graph TD;
     A["<b>Our extract</b>: n=1,480,985"] --> |"all_t1t2_cohort.R"|B["<b>T1T2 cohort</b>: n=1,120,071"]
     B-->C["<b>Final cohort (at-diagnosis/prevalent/treatment response)</b>"]
+    A-->|"test"|B
+    
+    
+    
 ```
 
 
