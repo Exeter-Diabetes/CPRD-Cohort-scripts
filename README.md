@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository contains the scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic data from a CPRD Aurum dataset: 
+This repository contains the R scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic data from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
 * A **prevalent** cohort (registered at 01/02/2020)
 * A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
@@ -41,7 +41,7 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ## Script overview
 
-The below diagram shows the R scripts used to create the final cohorts (at-diagnosis, prevalent, and treatment response). These scripts can be found in this directory.
+The below diagram shows the R scripts used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
 
 ```mermaid
 graph TD;
@@ -65,28 +65,17 @@ graph TD;
 
 &nbsp;
 
+Each of the three final cohorts (at-diagnosis, prevalent, and treatment response) contains static patient data e.g. ethnicity, IMD and diabetes type from the T1T2 cohort dataset, plus biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the (cohort-specific) index date.
 
 
+This directory contains the scripts which are common to all three cohorts: 'all_patid_ckd_stages', 'all_patid_ethnicity', and 'all_t1t2_cohort'. These pull out static patient characteristics or features based on longitudinal data which may go beyond the index date of the cohorts (e.g. all_patid_ethnicity uses ethnicity codes from all time for each patient, which may occur later than the index date for a cohort).
 
 
-The three cohorts differ in:
-* How the index dates are defined
-* Additional inclusion/exclusion criteria in the 'final_merge' script so that not everyone with an index date is included in the final cohort datasets
-* Additional scripts which pull in additional information e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
+In addition, this directory contains templates for the scripts which pull out data relative to the cohort index dates ('baseline_biomarkers', 'comorbidities', 'smoking', 'alcohol', 'ckd_stage' and 'final_merge'). The final cohorts each use tailored versions of these to account for the different index dates, the interest in different biomarkers/comorbidities for the different cohorts, and different additional inclusion/exclusion criteria which are applied in the 'final_merge' script. In addition to these differences, the cohorts have different additional scripts which pull in additional information e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
 
-The directories for each cohort (at-diagnosis, prevalent, and treatment response) contain these details and tailored versions of the baseline_biomarker, comorbidity,  
+The exact 'tailored' and additional scripts used to create each cohort dataset can be found in the relevant subdirectory: link link link.
 
 
-
-
-
-
-&nbs
-
-These were tailored for each of the three cohorts and the tailored scripts can be found in the individual 'At-diagnosis', 'Prevalent' and 'Treatment response' directories. These directories include additional scripts e.g. the treatment response cohort also has biomarker responses (6/12 month post-index) and post-index comorbidity occurrences, used to evaluate treatment response.
-
-
-SOMETHING ABOUT SCRIPT ORDER and final merge being last. And that all_t1t2 and ethnicity  (and CKD stage) scripts use data from all time even if after index date to determine diabetes type / ethnicity / CKD stage.
 
 
 
