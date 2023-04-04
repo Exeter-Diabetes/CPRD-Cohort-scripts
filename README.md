@@ -65,7 +65,7 @@ graph TD;
 
 &nbsp;
 
-This directory contains the scripts which are common to all three cohorts as 
+This directory contains the scripts which 
 
 
 
