@@ -41,13 +41,12 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ## Script overview
 
-The below diagram shows the scripts used a create the final cohorts (at-diagnosis/prevalent/treatment response).
+The below diagram shows the scripts used to create the final cohorts (at-diagnosis/prevalent/treatment response).
 
 ```mermaid
 graph TD;
     A["<b>Our extract</b>"] --> |"all_t1t2_cohort <br> & all_patid_ethnicity"|B["<b>T1T2 cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
-    A-->|"cohort_definition"|D
     D["<b>Cohort IDs and index dates</b>"]
     D-->|"baseline_biomarkers"|E["<b>Biomarkers</b> <br> at index date"]
     D-->|"comorbidities"|F["<b>Comorbidities</b> <br> at index date"]
@@ -64,6 +63,9 @@ graph TD;
 ```
 \*IMD=Index of Multiple Deprivation - 'static' because we only have data from 2015.
 
+&nbsp;
+
+For the at-diagnosis cohort, the 'cohort_definition' script uses diagnosis dates from the T1T2 cohort dataset; for the prevalent cohort 
 
 medications?????
 death?
