@@ -41,7 +41,7 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 ## Script overview
 
-The below diagram shows the R scripts used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
+The below diagram shows the R scripts (in grey boxes) used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
 
 ```mermaid
 graph TD;
