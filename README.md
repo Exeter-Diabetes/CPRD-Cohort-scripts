@@ -95,7 +95,9 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 
 &nbsp;
 
-## Data dictionary of template_final_merge output variables
+## Data dictionary of variables in 'final_merge' table
+
+
 
 
 
