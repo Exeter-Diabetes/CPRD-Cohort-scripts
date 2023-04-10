@@ -110,10 +110,10 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
-| dm_diag_date_all / dm_diag_date | diabetes diagnosis date<br />dm_diag_date_all is not missing for anyone<br />In final merge script, 'dm_diag_date' is the same as 'dm_diag_date_all' except it is set to missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1) - this is the only reason why this variable would be missing | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate.<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect Mastermind analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate.<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
 | dm_diag_flag | whether diagnosis date is <91 days following registration | |
-| dm_diag_age_all / dm_diag_age | age at diabetes diagnosis<br />dm_diag_age_all is not missing for anyone<br />In final merge script, 'dm_diag_age' is the same as 'dm_diag_age_all' except it is set to missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1) - this is the only reason why this variable would be missing | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age | age at diabetes diagnosis | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
@@ -121,7 +121,7 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 | regstartdate | registration start date | |
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
-| with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0<br />In final merge script - usually exclude people where with_hes==0 | |
+| with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
 
 
 
