@@ -37,7 +37,7 @@
 ## 17. Not Stated/Unknown         5. Not stated/Unknown     0. Unknown
 
 
-# Algorithm: https://github.com/drkgyoung/Exeter_Diabetes_codelists#ethnicity
+# Algorithm: https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#ethnicity
 
 
 ############################################################################################
@@ -56,7 +56,7 @@ analysis = cprd$analysis("all_patid")
 
 ############################################################################################
 
-# Find ethnicity from GP codes
+# Find ethnicity from GP codes - separately for 3 different categories
 
 ## All 3 codelists (ethnicity_5cat, ethnicity_16cat and ethnicity_qrisk2) are identical, just with different category columns
 
@@ -171,19 +171,29 @@ hes_ethnicity <- cprd$tables$hesPatient %>%
 ############################################################################################
 
 ## Combine GP and HES ethnicity
+## Set 16- and QRISK-category ethnicity to missing if drirectly conflicts with 5-category ethnicity, before using HES ethnicity for missing
+
     
 ethnicity <- cprd$tables$patient %>%
   select(patid) %>%
   left_join(gp_5cat_ethnicity, by="patid") %>%
   left_join(gp_16cat_ethnicity, by="patid") %>%
   left_join(gp_qrisk2_ethnicity, by="patid") %>%
-  left_join(hes_ethnicity, by="patid") %>%
+  left_join((hes_ethnicity %>% select(-pracid)), by="patid") %>%
   
-  mutate(ethnicity_5cat=coalesce(gp_5cat_ethnicity, hes_5cat_ethnicity),
+  mutate(gp_16cat_ethnicity=ifelse((gp_5cat_ethnicity==0 & (gp_16cat_ethnicity==8 | gp_16cat_ethnicity==9 | gp_16cat_ethnicity==10 | gp_16cat_ethnicity==11 | gp_16cat_ethnicity==12 | gp_16cat_ethnicity==13 | gp_16cat_ethnicity==14 | gp_16cat_ethnicity==15)) |
+         (gp_5cat_ethnicity==1 & (gp_16cat_ethnicity==1 | gp_16cat_ethnicity==2 | gp_16cat_ethnicity==3 | gp_16cat_ethnicity==4 | gp_16cat_ethnicity==5 | gp_16cat_ethnicity==12 | gp_16cat_ethnicity==13 | gp_16cat_ethnicity==14 | gp_16cat_ethnicity==15)) |
+         (gp_5cat_ethnicity==2 & (gp_16cat_ethnicity==1 | gp_16cat_ethnicity==2 | gp_16cat_ethnicity==3 | gp_16cat_ethnicity==6 | gp_16cat_ethnicity==8 | gp_16cat_ethnicity==9 | gp_16cat_ethnicity==10 | gp_16cat_ethnicity==11 | gp_16cat_ethnicity==15)), NA, gp_16cat_ethnicity),
+         
+         gp_qrisk2_ethnicity=ifelse((gp_5cat_ethnicity==0 & (gp_qrisk2_ethnicity==2 | gp_qrisk2_ethnicity==3 | gp_qrisk2_ethnicity==4 | gp_qrisk2_ethnicity==5 | gp_qrisk2_ethnicity==6 | gp_qrisk2_ethnicity==7 | gp_qrisk2_ethnicity==8)) |
+(gp_5cat_ethnicity==1 & (gp_qrisk2_ethnicity==1 | gp_qrisk2_ethnicity==6 | gp_qrisk2_ethnicity==7 | gp_qrisk2_ethnicity==8)) |
+(gp_5cat_ethnicity==2 & (gp_qrisk2_ethnicity==1 | gp_qrisk2_ethnicity==2 | gp_qrisk2_ethnicity==3 | gp_qrisk2_ethnicity==4 | gp_qrisk2_ethnicity==5 | gp_qrisk2_ethnicity==8)), NA, gp_qrisk2_ethnicity),
+
+         ethnicity_5cat=coalesce(gp_5cat_ethnicity, hes_5cat_ethnicity),
          ethnicity_16cat=coalesce(gp_16cat_ethnicity, hes_16cat_ethnicity),
          ethnicity_qrisk2=coalesce(gp_qrisk2_ethnicity, hes_qrisk2_ethnicity)) %>%
   
   select(patid, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2) %>%
   
-  analysis$cached("ethnicity",unique_indexes="patid")
+  analysis$cached("ethnicity", unique_indexes="patid")
 
