@@ -91,7 +91,7 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 |**template_smoking**: finds smoking status at cohort index dates | **{cohort_prefix}\_smoking**: 1 row per patid-index date combination, with smoking status and QRISK2 smoking category at index date where available |
 |**template_alcohol**: finds alcohol status at cohort index dates | **{cohort_prefix}\_alcohol**: 1 row per patid-index date combination, with alcohol status at index date where available |
 |**template_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **{cohort_prefix}\_ckd_stages**: 1 row per patid-index date combination, with baseline CKD stage at index date where available |
-|**template_final_merge**: pulls together variables from all of the above tables | **{cohort_prefix}\_final_merge**: 1 row per patid-index date combination with relevant biomarker/comorbidity/smoking/alcohol variables |
+|**template_final_merge**: pulls together variables from all of the above tables and adds age and diabetes duration at index date | **{cohort_prefix}\_final_merge**: 1 row per patid-index date combination with relevant biomarker/comorbidity/smoking/alcohol variables |
 
 &nbsp;
 
