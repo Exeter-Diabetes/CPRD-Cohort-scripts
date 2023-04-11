@@ -1,5 +1,5 @@
 
-# Extracts and cleans all biomarker values (and creates eGFR readings from creatinine)
+# Extracts and cleans all biomarker values (and creates eGFR readings from creatinine if not already done in all_patid_ckd_stages script)
 
 # Merges with index dates
 
@@ -33,6 +33,7 @@ analysis = cprd$analysis(cohort_prefix)
 
 # Define biomarkers
 ## Keep HbA1c separate as processed differently
+## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'baseline_biomarkers' table
 
 biomarkers <- c("weight", "height", "bmi", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr")
 
@@ -165,7 +166,7 @@ analysis = cprd$analysis(cohort_prefix)
 index_dates <- index_dates %>% analysis$cached("index_dates")
 
 
-## Merge with biomarkers and calculate date difference between biomarker and drug start date
+## Merge with biomarkers and calculate date difference between biomarker and index dates
 
 for (i in biomarkers) {
   
@@ -178,7 +179,7 @@ for (i in biomarkers) {
     inner_join(index_dates, by="patid") %>%
     mutate(datediff=datediff(date, index_date))
   
-  assign(drug_merge_tablename, data)
+  assign(index_date_merge_tablename, data)
   
 }
 
@@ -188,7 +189,7 @@ for (i in biomarkers) {
 full_hba1c_index_date_merge <- clean_hba1c_medcodes %>%
   
   inner_join(index_dates, by="patid") %>%
-  mutate(datediff=datediff(hba1cdate, index_date))
+  mutate(datediff=datediff(date, index_date))
 
 
 ############################################################################################
@@ -199,11 +200,10 @@ full_hba1c_index_date_merge <- clean_hba1c_medcodes %>%
 ## May be multiple values; use minimum test result, except for eGFR - use maximum
 ## Can get duplicates where person has identical results on the same day/days equidistant from the index date - choose first row when ordered by datediff
 
-baseline_biomarkers <- index_dates %>%
-  select(patid, index_date)
+baseline_biomarkers <- index_dates
 
 
-## For all except HbA1c and height: between 2 years prior and 7 days after drug start date
+## For all except HbA1c and height: between 2 years prior and 7 days after index date
 
 biomarkers_no_height <- setdiff(biomarkers, "height")
 
@@ -248,7 +248,7 @@ for (i in biomarkers_no_height) {
 }
 
 
-## Height - only keep readings at/post drug start date, and find mean
+## Height - only keep readings at/post-index date, and find mean
 
 baseline_height <- full_height_index_date_merge %>%
   
@@ -264,7 +264,8 @@ baseline_biomarkers <- baseline_biomarkers %>%
   left_join(baseline_height, by=c("patid", "index_date"))
 
   
-## HbA1c: only between 6 months prior and 7 days after drug start date
+## HbA1c: only between 6 months prior and 7 days after index date
+### NB: in treatment response cohort, baseline HbA1c set to missing if occurs before previous treatment change
 
 baseline_hba1c <- full_hba1c_index_date_merge %>%
   
@@ -292,6 +293,6 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
 ## Join HbA1c to main table
 
 baseline_biomarkers <- baseline_biomarkers %>%
-  left_join(baseline_hba1c, by=c("patid", "dstartdate", "drugclass")) %>% 
-  analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
+  left_join(baseline_hba1c, by=c("patid", "index_date")) %>% 
+  analysis$cached("baseline_biomarkers", indexes=c("patid", "index_date"))
 
