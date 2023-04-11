@@ -99,7 +99,7 @@ NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from we
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
-| pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate) |
+| pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate). HbA1c before timeprevcombo excluded |
 | pre{biomarker}date | date of baseline biomarker | |
 | pre{biomarker}drugdiff | days between dstartdate and baseline biomarker (negative: biomarker measured before drug start date) | |
 | height | height in cm | Mean of all values on/post- drug start date |
