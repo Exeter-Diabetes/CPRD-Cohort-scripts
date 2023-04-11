@@ -4,7 +4,6 @@
 # Merges with drug start and stop dates
 
 # Then finds earliest predrug, latest predrug, and earliest postdrug occurrence for each comorbidity
-## And include which code is used for heart failure
 
 # Plus binary 'is there a predrug occurrence?' variables
 
