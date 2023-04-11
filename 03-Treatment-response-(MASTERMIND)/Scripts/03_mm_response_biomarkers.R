@@ -29,6 +29,7 @@ analysis = cprd$analysis("mm")
 ############################################################################################
 
 # Define biomarkers (can include HbA1c as processed the same as others; don't include height)
+## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'mm_response_biomarkers' table
 
 biomarkers <- c("weight", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "hba1c", "egfr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "acr_from_separate")
 
