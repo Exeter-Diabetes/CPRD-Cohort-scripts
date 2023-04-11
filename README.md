@@ -84,7 +84,7 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 | ---- | ---- |
 | **all_patid_ckd_stages**: uses eGFR calculated from serum creatinine to define longitudinal CKD stages for all patids as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage) |  **all_patid_ckd_stages_from_algorithm**:  1 row per patid, with onset of different CKD stages in wide format |
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
-| **all_t1t2_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2 diabetes cohort plus additional patient variables | **all_t1t2_cohort**: 1 row per patid of those in the T1/T2 cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
+| **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_t1t2_cohort**: 1 row per patid of those in the T1/T2 cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
 |**template_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **{cohort_prefix}\_baseline_biomarkers**: 1 row per patid-index date combination with with all biomarker values at index date where available (including HbA1c and height) |
 |**template_comorbidities**: finds onset of comorbidities relative to cohort index dates | **{cohort_prefix}\_comorbidities**:  1 row per patid-index date combination, with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
 |**template_smoking**: finds smoking status at cohort index dates | **{cohort_prefix}\_smoking**: 1 row per patid-index date combination, with smoking status and QRISK2 smoking category at index date where available |
@@ -124,7 +124,7 @@ Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelist
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
-| diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />NB: we now have a few 'unclassified's - not included in any T2D cohorts. Date/age of diagnosis, time to insulin from diagnosis, and whether diagnosis is before registration is likely to be unreliable for these people.<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
