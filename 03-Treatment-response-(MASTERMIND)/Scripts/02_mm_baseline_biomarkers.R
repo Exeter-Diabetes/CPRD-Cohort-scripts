@@ -29,6 +29,7 @@ analysis = cprd$analysis("mm")
 
 # Define biomarkers
 ## Keep HbA1c separate as processed differently
+## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'mm_baseline_biomarkers' table
 
 biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "albumin_urine", "creatinine_urine")
 
@@ -327,7 +328,7 @@ baseline_biomarkers <- baseline_biomarkers %>%
 
   
 ## HbA1c: only between 6 months prior and 7 days after drug start date
-## Exclude if after timeprevcombo
+## Exclude if before timeprevcombo
 
 baseline_hba1c <- full_hba1c_drug_merge %>%
   

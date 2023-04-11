@@ -1,7 +1,7 @@
 
-# Identify those in mixed T1/T2 cohort as per https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms
+# Identify those in mixed T1/T2/'Other' (those with codes for other types of diabetes) diabetes cohort as per https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms
 
-# Add useful baseline features including diabetes diagnosis variables (date of diagnosis, type of diabetes) and ethnicity
+# Add useful baseline features including diabetes diagnosis variables (date of diagnosis, type of diabetes for Type 1/Type 2) and ethnicity
 
 # Uses other pre-made tables:
 ## validDateLookup has min_dob (earliest possible DOB), ons_death (date of death [dod] or date of death registration [dor] if dod missing from ONS death records, and gp_ons_end_date (earliest of last collection date from practice, deregistration, cprd_ddate and ons_death)
@@ -20,6 +20,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
+analysis = cprd$analysis("diabetes_cohort")
 
 ############################################################################################
 
@@ -35,14 +36,15 @@ acceptable_patids <- cprd$tables$patient %>%
 
 acceptable_patids %>% count()
 #1,480,985
+## Also removes all patients with a patienttypeid!=3 ('Regular') - all with different patienttypeids have registration start date in 2020
 
 
 ############################################################################################
 
-# T1T2 cohort definition
+# T1/T2/other cohort definition
 
-# Define T1T2 cohort (has diabetes QOF code with valid date, has no diabetes exclusion codes)
-## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. Codes for non-T1/T2 types of diabetes were not excluded, but these codes are also in the 'exclusion_diabetes' codelist.
+# Define diabetes cohort (has diabetes QOF code with valid date)
+## QOF codelist uses Read codes from version 38 and SNOMED codes from version 44, which include all codes from previous versions. This includes QOF codes for non-T1/T2 types of diabetes (NB: no gestational diabetes QOF codes)
 
 analysis = cprd$analysis("all_patid")
 
@@ -50,44 +52,25 @@ raw_qof_diabetes_medcodes <- cprd$tables$observation %>%
   inner_join(codes$qof_diabetes, by="medcodeid") %>%
   analysis$cached("raw_qof_diabetes_medcodes", indexes=c("patid", "obsdate", "qof_diabetes_cat"))
 
-analysis = cprd$analysis("diagnosis_date")
+analysis = cprd$analysis("diabetes_cohort")
 
-qof_ids <- raw_qof_diabetes_medcodes %>%
+diabetes_ids <- raw_qof_diabetes_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
   semi_join(acceptable_patids, by="patid") %>%
   distinct(patid) %>%
-  analysis$cached("qof_ids", unique_indexes="patid")
+  analysis$cached("ids", unique_indexes="patid")
 
-qof_ids %>% count()
+diabetes_ids %>% count()
 #1,138,193
-
-
-analysis = cprd$analysis("all_patid")
-
-raw_exclusion_diabetes_medcodes <- cprd$tables$observation %>%
-  inner_join(codes$exclusion_diabetes, by="medcodeid") %>%
-  analysis$cached("raw_exclusion_diabetes_medcodes", indexes=c("patid", "obsdate", "exclusion_diabetes_cat"))
-
-analysis = cprd$analysis("diagnosis_date")
-
-exclusion_ids <- raw_exclusion_diabetes_medcodes %>%
-  distinct(patid) 
-
-t1t2_ids <- qof_ids %>%
-  anti_join(exclusion_ids, by="patid") %>%
-  analysis$cached("t1t2_ids", unique_indexes="patid")
-
-t1t2_ids %>% count()
-#1,120,085
-## 4 people removed as OHA/HbA1c in year of birth later in script, giving 1,120,081 in T1T2 cohort
+## 14 people removed later in script as classified as Type 2 but OHA/HbA1c in year of birth, giving 1,138,179 in T1T2 cohort
 
 
 ############################################################################################
 
 # Diagnosis dates
 
-# Earliest of: diabetes medcode (excluding obstype==4 [family history]), HbA1c >=47.5mmol/mol, OHA script, insulin script (all - valid dates only)
+# Earliest of: diabetes medcode (including diabetes exclusion codes; excluding obstype==4 [family history]), HbA1c >=47.5mmol/mol, OHA script, insulin script (all - valid dates only)
 
 ## If Type 2 (determined later in this script), ignore any diabetes medcodes in year of birth - use next code/HbA1c/script
 ## If Type 2 and have high HbA1c or OHA/insulin script in year of birth, will exclude later
@@ -95,14 +78,19 @@ t1t2_ids %>% count()
 
 ## All diabetes medcodes, OHA scripts and insulin scripts also needed for defining diabetes type - so cache these
 ## Have also cached HbA1c as needed for later analysis
-## Haven't filtered on patids in T1T2 cohort as doesn't make much difference to numbers
 
 analysis = cprd$analysis("all_patid")
 
-## All diabetes medcodes (need for diagnosis date (cleaned) and Type 1 vs Type 2 (raw))
+
+## All diabetes medcodes (only includes Type 1/Type 2 and unspecified; need for diagnosis date (cleaned) and for defining Type 1 vs Type 2 (raw))
 raw_diabetes_medcodes <- cprd$tables$observation %>%
   inner_join(codes$all_diabetes, by="medcodeid") %>%
   analysis$cached("raw_diabetes_medcodes", indexes=c("patid", "obsdate", "all_diabetes_cat"))
+
+## All diabetes exclusion medcodes (need for diagnosis date (cleaned))
+raw_exclusion_diabetes_medcodes <- cprd$tables$observation %>%
+  inner_join(codes$exclusion_diabetes, by="medcodeid") %>%
+  analysis$cached("raw_exclusion_diabetes_medcodes", indexes=c("patid", "obsdate", "exclusion_diabetes_cat"))
 
 
 ## All HbA1cs - could clean on import but do separately for now
@@ -147,10 +135,12 @@ clean_insulin <- cprd$tables$drugIssue %>%
 # Cleaning required for diagnosis dates
 ## If construct query this way (finding earliest date from each of the diagnosis codes, HbA1cs and prescriptions, and then combining, rather than combining all dates and then finding earliest date, doesn't give error about disk space)
 
-analysis = cprd$analysis("diagnosis_date")
+analysis = cprd$analysis("diabetes_cohort")
 
-## Earliest clean (i.e. with valid date) non-family history diabetes medcode
+## Earliest clean (i.e. with valid date) non-family history diabetes medcode (including diabetes exclusion codes)
 first_diagnosis_dm_code <- raw_diabetes_medcodes %>%
+  select(patid, obsdate, obstypeid) %>%
+  union_all((raw_exclusion_diabetes_medcodes %>% select(patid, obsdate, obstypeid))) %>%
   filter(obstypeid!=4) %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
@@ -158,8 +148,10 @@ first_diagnosis_dm_code <- raw_diabetes_medcodes %>%
   summarise(dm_diag_dmcodedate=min(obsdate, na.rm=TRUE)) %>%
   analysis$cached("first_diagnosis_dm_code", unique_index="patid")
 
-## Earliest clean (i.e. with valid date) non-family history diabetes medcode excluding those in year of birth
+## Earliest clean (i.e. with valid date) non-family history diabetes medcode (including diabetes exclusion codes) excluding those in year of birth
 first_diagnosis_dm_code_post_yob <- raw_diabetes_medcodes %>%
+  select(patid, obsdate, obstypeid) %>%
+  union_all((raw_exclusion_diabetes_medcodes %>% select(patid, obsdate, obstypeid))) %>%
   filter(obstypeid!=4) %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(year(obsdate)>year(min_dob) & obsdate<=gp_ons_end_date) %>%
@@ -169,7 +161,7 @@ first_diagnosis_dm_code_post_yob <- raw_diabetes_medcodes %>%
 
 
 ## Earliest (clean) HbA1c >=48 mmol/mol
-first_high_hba1c <- clean_hba1c_clean_units %>%
+first_high_hba1c <- clean_hba1c %>%
   filter(testvalue>47.5) %>%
   group_by(patid) %>%
   summarise(dm_diag_hba1cdate=min(date, na.rm=TRUE)) %>%
@@ -191,7 +183,7 @@ first_insulin <- clean_insulin %>%
 
 
 # Calculate possible diagnosis dates (overall earliest of code/HbA1c/script, and earliest excluding codes in year of birth)
-dm_diag_dates <- t1t2_ids %>%
+dm_diag_dates <- diabetes_ids %>%
   left_join(first_diagnosis_dm_code, by="patid") %>%
   left_join(first_diagnosis_dm_code_post_yob, by="patid") %>%
   left_join(first_high_hba1c, by="patid") %>%
@@ -213,11 +205,19 @@ dm_diag_dates <- t1t2_ids %>%
 
 ############################################################################################
 
-# Define diabetes type: 1 or 2
+# Define diabetes type: type 1 or type 2 or other
 
-# Make queries for variables requires
+## If they have a diabetes exclusion code, define as 'other'
 
-## Whether or not have valid insulin prescription
+exclusion_ids <- raw_exclusion_diabetes_medcodes %>%
+  distinct(patid) %>%
+  mutate(diabetes_type="other",
+         diabetes_type_post_yob="other")
+
+
+## Make tables for variables required for Type 1 vs 2 definition (do for everyone)
+
+### Whether or not have valid insulin prescription
 has_insulin <- clean_insulin %>%
   select(patid) %>%
   distinct() %>%
@@ -225,7 +225,7 @@ has_insulin <- clean_insulin %>%
   analysis$cached("has_insulin", unique_indexes="patid")
 
 
-## Type 1-specific code count (any date)
+### Type 1-specific code count (any date)
 type1_code_count <- raw_diabetes_medcodes %>%
   filter(all_diabetes_cat=="Type 1") %>%
   group_by(patid) %>%
@@ -233,17 +233,16 @@ type1_code_count <- raw_diabetes_medcodes %>%
   analysis$cached("type1_code_count", unique_indexes="patid")
 
 
-## Type 2-specific code count (any date)
-type2_code_count <-
-  raw_diabetes_medcodes %>%
+### Type 2-specific code count (any date)
+type2_code_count <- raw_diabetes_medcodes %>%
   filter(all_diabetes_cat=="Type 2") %>%
   group_by(patid) %>%
   summarise(type2_code_count=n()) %>%
   analysis$cached("type2_code_count", unique_indexes="patid")
 
 
-## Age of diagnosis
-### First need to estimate DOB: earliest of any medcode in Observation table (besides those before mob/yob), or use the 15/mob/yob if mob where provided, or 01/07/yob if only yob provided
+### Age of diagnosis
+#### First need to estimate DOB: earliest of any medcode in Observation table (besides those before mob/yob), or use the 15/mob/yob if mob where provided, or 01/07/yob if only yob provided
 
 dob <- cprd$tables$observation %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
@@ -252,11 +251,11 @@ dob <- cprd$tables$observation %>%
   summarise(earliest_medcode=min(obsdate, na.rm=TRUE)) %>%
   analysis$cached("earliest_medcode", unique_indexes="patid")
 
-### Check count
+#### Check count
 dob %>% count()
-### 1,481,294 - has everyone
+#### 1,481,294 - has everyone
 
-### No-one has missing dob or earliest_medcode so pmin (runs as 'LEAST' in MySQL) works
+#### No-one has missing dob or earliest_medcode so pmin (runs as 'LEAST' in MySQL) works
 dob <- dob %>%
   inner_join(cprd$tables$patient, by="patid") %>%
   mutate(dob=as.Date(ifelse(is.na(mob), paste0(yob,"-07-01"), paste0(yob, "-",mob,"-15")))) %>%
@@ -264,8 +263,8 @@ dob <- dob %>%
   select(patid, dob, mob, yob, regstartdate) %>%
   analysis$cached("dob", unique_indexes="patid")
 
-### Calculate from dob and diagnosis date
-### Also add in whether diagnosis date < regstartdate as will need this for time to insulin
+#### Calculate from dob and diagnosis date
+#### Also add in whether diagnosis date < regstartdate as will need this for time to insulin
 dm_diag_age <- dm_diag_dates %>%
  left_join(dob, by="patid") %>%
   mutate(dm_diag_age_all=(datediff(dm_diag_date_all, dob))/365.25,
@@ -276,8 +275,8 @@ dm_diag_age <- dm_diag_dates %>%
   analysis$cached("dm_diag_age", unique_indexes="patid", indexes=c("dm_diag_date_all", "dm_diag_age_all"))
 
 
-## Whether first insulin script within 1 year of diagnosis
-### Included even if prescription is before registration start
+### Whether first insulin script within 1 year of diagnosis
+#### Included even if prescription is before registration start
 time_to_insulin <- clean_insulin %>%
   group_by(patid) %>%
   summarise(first_insulin=min(date, na.rm=TRUE)) %>%
@@ -289,7 +288,7 @@ time_to_insulin <- clean_insulin %>%
   analysis$cached("time_to_insulin", unique_indexes="patid")
 
 
-## Current OHA status (whether have prescription for OHA in last 6 months of records)
+### Current OHA status (whether have prescription for OHA in last 6 months of records)
 current_oha <- clean_oha %>%
   group_by(patid) %>%
   summarise(latest_oha=max(date, na.rm=TRUE)) %>%
@@ -303,8 +302,9 @@ current_oha <- clean_oha %>%
 
 # Calculate diabetes type when include and exclude diabetes medcodes in year of birth (yob)
 
-diabetes_type_prelim <- t1t2_ids %>%
-  left_join(has_insulin ,by="patid") %>%
+diabetes_type_prelim <- diabetes_ids %>%
+  left_join(exclusion_ids, by="patid") %>%
+  left_join(has_insulin, by="patid") %>%
   left_join(type1_code_count, by="patid") %>%
   left_join(type2_code_count, by="patid") %>%
   inner_join(dm_diag_age, by="patid") %>%
@@ -312,22 +312,20 @@ diabetes_type_prelim <- t1t2_ids %>%
   left_join(current_oha, by="patid") %>%
   replace_na(list(has_insulin=0L, type1_code_count=0L, type2_code_count=0L, ins_in_1_year=0L, ins_in_1_year_post_yob=0L, current_oha=0L)) %>%
   mutate(diabetes_type=ifelse(
-    (
-      (has_insulin==1 & type1_code_count!=0 & type2_code_count!=0 & type1_code_count>=(2*type2_code_count)) |
-        (has_insulin==1 & type1_code_count!=0 & type2_code_count==0) |
-        (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all<35 & ins_in_1_year==1) |
-        (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all<35 & dm_diag_before_reg==1 & current_oha==0)
-    ),
-    "type 1","type 2"),
+    is.na(diabetes_type) &
+       ((has_insulin==1 & type1_code_count!=0 & type2_code_count!=0 & type1_code_count>=(2*type2_code_count)) |
+          (has_insulin==1 & type1_code_count!=0 & type2_code_count==0) |
+          (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all<35 & ins_in_1_year==1) |
+          (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all<35 & dm_diag_before_reg==1 & current_oha==0)), "type 1",
+    ifelse(is.na(diabetes_type), "type 2", diabetes_type)),
     
     diabetes_type_post_yob=ifelse(
-      (
-        (has_insulin==1 & type1_code_count!=0 & type2_code_count!=0 & type1_code_count>=(2*type2_code_count)) |
-          (has_insulin==1 & type1_code_count!=0 & type2_code_count==0) |
-          (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all_post_yob<35 & ins_in_1_year_post_yob==1) |
-          (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all_post_yob<35 & dm_diag_before_reg_post_yob==1 & current_oha==0)
-      ),
-      "type 1","type 2")) %>%
+      is.na(diabetes_type_post_yob) &
+        ((has_insulin==1 & type1_code_count!=0 & type2_code_count!=0 & type1_code_count>=(2*type2_code_count)) |
+           (has_insulin==1 & type1_code_count!=0 & type2_code_count==0) |
+           (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all_post_yob<35 & ins_in_1_year_post_yob==1) |
+           (has_insulin==1 & type1_code_count==0 & type2_code_count==0 & dm_diag_age_all_post_yob<35 & dm_diag_before_reg_post_yob==1 & current_oha==0)), "type 1",
+      ifelse(is.na(diabetes_type_post_yob), "type 2", diabetes_type_post_yob))) %>%
   
   analysis$cached("diabetes_type_prelim", unique_indexes="patid")
 
@@ -357,9 +355,7 @@ diabetes_type_final <- diabetes_type_prelim %>%
   
   filter(!((diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob) | (diabetes_type!=diabetes_type_post_yob))) %>%
   
-  mutate(diabetes_type=ifelse(diabetes_type!=diabetes_type_post_yob, "unclassifiable", diabetes_type),
-         
-         dm_diag_dmcodedate=ifelse(diabetes_type=="type 2", dm_diag_dmcodedate_post_yob, dm_diag_dmcodedate),
+  mutate(dm_diag_dmcodedate=ifelse(diabetes_type=="type 2", dm_diag_dmcodedate_post_yob, dm_diag_dmcodedate),
          
          dm_diag_date_all=ifelse(diabetes_type=="type 2", dm_diag_date_all_post_yob, dm_diag_date_all),
          
@@ -388,7 +384,7 @@ analysis = cprd$analysis("all")
 
 ethnicity <- ethnicity %>% analysis$cached("patid_ethnicity")
 
-t1t2_cohort <- diabetes_type_final %>%
+diabetes_cohort <- diabetes_type_final %>%
   mutate(dm_diag_codetype = ifelse(is.na(dm_diag_date_all), NA,
                                    ifelse(!is.na(dm_diag_dmcodedate) & dm_diag_dmcodedate==dm_diag_date_all, 1L,
                                           ifelse(!is.na(dm_diag_hba1cdate) & dm_diag_hba1cdate==dm_diag_date_all, 2L,
@@ -416,4 +412,4 @@ t1t2_cohort <- diabetes_type_final %>%
   
   select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
   
-  analysis$cached("t1t2_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+  analysis$cached("diabetes_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
