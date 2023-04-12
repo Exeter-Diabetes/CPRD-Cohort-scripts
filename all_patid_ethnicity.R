@@ -190,8 +190,8 @@ ethnicity <- cprd$tables$patient %>%
 (gp_5cat_ethnicity==2 & (gp_qrisk2_ethnicity==1 | gp_qrisk2_ethnicity==2 | gp_qrisk2_ethnicity==3 | gp_qrisk2_ethnicity==4 | gp_qrisk2_ethnicity==5 | gp_qrisk2_ethnicity==8)), NA, gp_qrisk2_ethnicity),
 
          ethnicity_5cat=coalesce(gp_5cat_ethnicity, hes_5cat_ethnicity),
-         ethnicity_16cat=coalesce(gp_16cat_ethnicity, hes_16cat_ethnicity),
-         ethnicity_qrisk2=coalesce(gp_qrisk2_ethnicity, hes_qrisk2_ethnicity)) %>%
+         ethnicity_16cat=ifelse(!is.na(hes_5cat_ethnicity) & hes_5cat_ethnicity==ethnicity_5cat, coalesce(gp_16cat_ethnicity, hes_16cat_ethnicity), gp_16cat_ethnicity),
+         ethnicity_qrisk2=ifelse(!is.na(hes_5cat_ethnicity) & hes_5cat_ethnicity==ethnicity_5cat, coalesce(gp_qrisk2_ethnicity, hes_qrisk2_ethnicity), gp_qrisk2_ethnicity)) %>%
   
   select(patid, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2) %>%
   

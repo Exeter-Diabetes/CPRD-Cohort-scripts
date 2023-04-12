@@ -355,7 +355,10 @@ diabetes_type_final <- diabetes_type_prelim %>%
   
   filter(!((diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob) | (diabetes_type!=diabetes_type_post_yob))) %>%
   
-  mutate(dm_diag_dmcodedate=ifelse(diabetes_type=="type 2", dm_diag_dmcodedate_post_yob, dm_diag_dmcodedate),
+  mutate(raw_dm_diag_dmcodedate=dm_diag_dmcodedate,
+         raw_dm_diag_date=dm_diag_date_all,
+         
+         dm_diag_dmcodedate=ifelse(diabetes_type=="type 2", dm_diag_dmcodedate_post_yob, dm_diag_dmcodedate),
          
          dm_diag_date_all=ifelse(diabetes_type=="type 2", dm_diag_date_all_post_yob, dm_diag_date_all),
          
@@ -410,6 +413,7 @@ diabetes_cohort <- diabetes_type_final %>%
   
   left_join(ethnicity, by="patid") %>%
   
-  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
+  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
   
   analysis$cached("diabetes_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+
