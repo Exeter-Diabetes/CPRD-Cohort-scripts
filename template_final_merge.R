@@ -26,7 +26,7 @@ index_dates <- index_dates %>% analysis$cached("index_dates")
 
 ## Cohort and patient characteristics
 analysis = cprd$analysis("all")
-t1t2_cohort <- t1t2_cohort %>% analysis$cached("t1t2_cohort")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("t1t2_cohort")
 
 ## Baseline biomarkers plus CKD stage
 analysis = cprd$analysis(cohort_prefix)
@@ -48,7 +48,7 @@ alcohol <- alcohol %>% analysis$cached("alcohol")
 # Make final merge table and add age and diabetes duration at index date
 
 final_merge <- index_dates %>%
-  left_join(t1t2_cohort, by="patid") %>%
+  left_join(diabetes_cohort, by="patid") %>%
   left_join(baseline_biomarkers, by=c("patid", "index_date")) %>%
   left_join(ckd_stages, by=c("patid", "index_date")) %>%
   left_join(comorbidities, by=c("patid", "index_date")) %>%
