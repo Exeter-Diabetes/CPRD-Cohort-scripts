@@ -37,8 +37,6 @@ raw_alcohol_medcodes <- cprd$tables$observation %>%
 ############################################################################################
 
 # Clean: remove if before DOB or after lcd/deregistration/death, and re-cache
-## Remove duplicates for patid, date, 2 x categories and testvalue
-## Keep testvalue, numunitid and medcodeid - need for QRISK2
 
 clean_alcohol_medcodes <- raw_alcohol_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
