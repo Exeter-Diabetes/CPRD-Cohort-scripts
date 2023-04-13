@@ -8,7 +8,7 @@
 ## Height: mean of all values >= index date
 
 # NB: creatinine_blood and eGFR tables may already have been cached as part of all_patid_ckd_stages script
-## and HbA1c tables may already have been cached as part of all_t1t2_cohort script
+## and HbA1c tables may already have been cached as part of all_diabetes_cohort script
 
 
 ############################################################################################
