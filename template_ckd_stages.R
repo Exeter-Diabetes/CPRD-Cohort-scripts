@@ -29,7 +29,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>% analysis$cached("ckd_
 
 ################################################################################################################################
 
-# Merge with index dates to get CKD stages at drug start
+# Merge with index dates to get CKD stages at index date
 
 # Get index dates
 
