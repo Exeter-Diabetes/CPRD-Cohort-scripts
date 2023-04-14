@@ -2,9 +2,11 @@
 
 The prevalent cohort consists of those actively registered on 01/02/2020 who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
 
+In addition to the 'template scripts' in the upper directory of this repository, the prevalent cohort additionally uses an 'all_patid_townsend_deprivation_score.R' script to estimate Townsend Deprivation Scores from IMD scores (used for QRISK2 and QDiabetes-Heart Failure scores), and a 'medications' script to define diabetes and blood pressure scripts relative to the index date. In addition to defining age and duration of diabetes at index date as in the template version, the 'final_merge' script also calculates QRISK2 (2017; 5-year and 10-year) and QDiabetes-Heart Failure (2015) scores at index date. See below for script overview.
+
 ## Script overview
 
-The below diagram shows the R scripts (in grey boxes) used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
+The below diagram shows the R scripts (in grey boxes) used to create the prevalent cohort.
 
 ```mermaid
 graph TD;
