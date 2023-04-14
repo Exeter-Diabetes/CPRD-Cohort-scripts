@@ -53,7 +53,8 @@ comorbids <- c("af", #atrial fibrillation
                "solid_cancer",
                "solidorgantransplant",
                "stroke",
-               "tia"  #transient ischaemic attack
+               "tia",  #transient ischaemic attack
+               "fh_premature_cvd"
 )
 
 

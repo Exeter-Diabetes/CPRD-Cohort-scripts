@@ -62,7 +62,7 @@ pre_index_date_alcohol_codes <- clean_alcohol_medcodes %>%
 ## Find if ever previously a 'harmful' drinker (category 3)
 harmful_drinker_ever <- pre_index_date_alcohol_codes %>%
   filter(alcohol_cat=="AlcoholConsumptionLevel3") %>%
-  distinct(patid, index_date) %>%
+  distinct(patid) %>%
   mutate(harmful_drinker_ever=1L)
 
 ## Find most recent code
@@ -81,8 +81,8 @@ most_recent_code <- pre_index_date_alcohol_codes %>%
 ## Pull together
 alcohol_cat <- cprd$tables$patient %>%
   select(patid) %>%
-  left_join(harmful_drinker_ever, by=c("patid", "index_date")) %>%
-  left_join(most_recent_code, by=c("patid", "index_date")) %>%
+  left_join(harmful_drinker_ever, by="patid") %>%
+  left_join(most_recent_code, by="patid") %>%
   mutate(alcohol_cat_numeric=ifelse(!is.na(harmful_drinker_ever) & harmful_drinker_ever==1, 3L, alcohol_cat_numeric),
          
          alcohol_cat=case_when(

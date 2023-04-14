@@ -77,7 +77,7 @@ pre_index_date_smoking_codes <- clean_smoking_medcodes %>%
 ### Find if ever previously an active smoker
 smoker_ever <- pre_index_date_smoking_codes %>%
   filter(smoking_cat=="Active smoker") %>%
-  distinct(patid, index_date) %>%
+  distinct(patid) %>%
   mutate(smoked_ever_flag=1L)
 
 ### Find most recent code (ignore testvalue)
@@ -110,7 +110,7 @@ next_most_recent_code <- pre_index_date_smoking_codes %>%
   mutate(smoking_cat=ifelse(`Active smoker`==1 & `Non-smoker`==0 & `Ex-smoker`==0, "Active smoker",
                             ifelse(`Active smoker`==0 & `Ex-smoker`==1, "Ex-smoker",
                                    ifelse(`Active smoker`==0 & `Ex-smoker`==0 & `Non-smoker`==1, "Non-smoker", NA)))) %>%
-  select(patid, index_date, next_most_recent_code=smoking_cat) %>%
+  select(patid, next_most_recent_code=smoking_cat) %>%
   analysis$cached("smoking_interim_2", unique_indexes="patid")
 
 ### Pull together
@@ -137,7 +137,7 @@ qrisk2_smoking_cat <- pre_index_date_smoking_codes %>%
   mutate(qrisk2_smoking=ifelse(is.na(testvalue) | qrisk2_smoking_cat==1 | medcodeid==1780396011 | (!is.na(numunitid) & numunitid!=39 & numunitid!=118 & numunitid!=247 & numunitid!=98 & numunitid!=120 & numunitid!=237 & numunitid!=478 & numunitid!=1496 & numunitid!=1394 & numunitid!=1202 & numunitid!=38), qrisk2_smoking_cat,
                                ifelse(testvalue<10, 2L,
                                       ifelse(testvalue<20, 3L, 4L)))) %>%
-  analysis$cached("smoking_interim_4", unique_indexes="patid")
+  analysis$cached("smoking_interim_4", indexes="patid")
 
 ## If both non- and ex-smoker, use ex-smoker
 ## If conflicting categories (non- and active- / ex- and active-), use minimum

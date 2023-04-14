@@ -1,5 +1,5 @@
 
-# Pull together static patient data from all_t1t2_cohort table with biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the index dates
+# Pull together static patient data from all_diabetes_cohort table with biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the index dates
 
 ############################################################################################
 
@@ -26,7 +26,7 @@ index_dates <- index_dates %>% analysis$cached("index_dates")
 
 ## Cohort and patient characteristics
 analysis = cprd$analysis("all")
-diabetes_cohort <- diabetes_cohort %>% analysis$cached("t1t2_cohort")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 ## Baseline biomarkers plus CKD stage
 analysis = cprd$analysis(cohort_prefix)
