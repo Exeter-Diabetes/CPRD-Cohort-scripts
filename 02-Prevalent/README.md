@@ -1,3 +1,7 @@
+# Prevalent cohort
+
+The prevalent cohort consists of those actively registered on 01/02/2020 who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
+
 ## Script overview
 
 The below diagram shows the R scripts (in grey boxes) used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
