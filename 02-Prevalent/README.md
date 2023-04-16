@@ -15,12 +15,12 @@ graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     A-->|"all_patid_townsend_ <br> deprivation_score"|D["<b>Townsend Deprivation <br> Scores</b> for all patients"]
-    A-->|"baseline_biomarkers <br> (at 01/02/2020)"|E["<b>Biomarkers</b> <br> at index date"]
-    A-->|"comorbidities <br> (at 01/02/2020)"|F["<b>Comorbidities</b> <br> at index date"]
-    A-->|"smoking <br> (at 01/02/2020)"|G["<b>Smoking status</b> <br> at index date"]
-    A-->|"alcohol <br> (at 01/02/2020)"|H["<b>Alcohol status</b> <br> at index date"]
-    A-->|"medications <br> (at 01/02/2020)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at index date"]
-    C-->|"ckd_stages <br> (at 01/02/2020)"|I["<b>CKD stage </b> <br> at 01/02/2020"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at 01/02/2020"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at 01/02/2020"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at 01/02/2020"]
+    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at 01/02/2020"]
+    A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at 01/02/2020"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at 01/02/2020"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     D-->|"final_merge"|J
     E-->|"final_merge"|J
