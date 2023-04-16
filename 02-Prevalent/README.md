@@ -25,10 +25,10 @@ graph TD;
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
-    I-->|"final_merge"|J
     K-->|"final_merge"|J
+    I-->|"final_merge"|J    
 ```
-\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015.
+\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient. As Townsend Deprivation Scores are derived from these, they are also 'static'.
 
 &nbsp;
 
