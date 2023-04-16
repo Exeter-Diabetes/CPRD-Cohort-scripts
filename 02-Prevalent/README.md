@@ -48,7 +48,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 |**prev_alcohol**: finds alcohol status at cohort index dates | **prev_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
 |**prev_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **prev_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
 |**prev_medications**: finds dates of diabetes and blood pressure medication prescriptions relative to index dates | **prev_medications**: 1 row per patid (as there are no patids with >1 index date) with earliest pre-index date script, latest pre-index date script, and earliest post-index date script for diabetes / blood pressure medications where available |
-|**prev_final_merge**: pulls together variables from all of the above tables and adds age, diabetes duration, QRISK2 and QDiabetes-Heart Failure score at index date (where variables required are available to calculate these scores) | **prev_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol/medication variables |
+|**prev_final_merge**: defines patient IDs in prevalent cohort, adds in variables from all of the above tables and additionally calculates age, diabetes duration, QRISK2 and QDiabetes-Heart Failure score at index date (where variables required are available to calculate these scores) | **prev_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol/medication variables |
 
 &nbsp;
 
