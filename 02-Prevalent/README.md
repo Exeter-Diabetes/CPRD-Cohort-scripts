@@ -1,6 +1,6 @@
 # Prevalent cohort
 
-The prevalent cohort consists of those actively registered on 01/02/2020 who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
+The prevalent cohort consists of those actively registered on 01/02/2020 (the index date) who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
 
 In addition to the 'template scripts' in the upper directory of this repository, the prevalent cohort additionally uses an 'all_patid_townsend_deprivation_score.R' script to estimate Townsend Deprivation Scores from IMD scores (used for QRISK2 and QDiabetes-Heart Failure scores), and a 'medications' script to define diabetes and blood pressure medication scripts relative to the index date (the latter is required for QRISK2). In addition to defining age and duration of diabetes at index date as in the template version, the 'final_merge' script also calculates QRISK2 (2017; 5-year and 10-year) and QDiabetes-Heart Failure (2015) scores at index date. See below for script overview.
 
@@ -41,12 +41,12 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **all_patid_ckd_stages**: uses eGFR calculated from serum creatinine to define longitudinal CKD stages for all patids as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage) |  **all_patid_ckd_stages_from_algorithm**:  1 row per patid, with onset of different CKD stages in wide format |
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
-|**template_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **{cohort_prefix}\_baseline_biomarkers**: 1 row per patid-index date combination with with all biomarker values at index date where available (including HbA1c and height) |
-|**template_comorbidities**: finds onset of comorbidities relative to cohort index dates | **{cohort_prefix}\_comorbidities**:  1 row per patid-index date combination, with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
-|**template_smoking**: finds smoking status at cohort index dates | **{cohort_prefix}\_smoking**: 1 row per patid-index date combination, with smoking status and QRISK2 smoking category at index date where available |
-|**template_alcohol**: finds alcohol status at cohort index dates | **{cohort_prefix}\_alcohol**: 1 row per patid-index date combination, with alcohol status at index date where available |
-|**template_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **{cohort_prefix}\_ckd_stages**: 1 row per patid-index date combination, with baseline CKD stage at index date where available |
-|**template_final_merge**: pulls together variables from all of the above tables and adds age and diabetes duration at index date | **{cohort_prefix}\_final_merge**: 1 row per patid-index date combination with relevant biomarker/comorbidity/smoking/alcohol variables |
+|**prev_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **{cohort_prefix}\_baseline_biomarkers**: 1 row per patid-index date combination with with all biomarker values at index date where available (including HbA1c and height) |
+|**prev_comorbidities**: finds onset of comorbidities relative to cohort index dates | **{cohort_prefix}\_comorbidities**:  1 row per patid-index date combination, with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
+|**prev_smoking**: finds smoking status at cohort index dates | **{cohort_prefix}\_smoking**: 1 row per patid-index date combination, with smoking status and QRISK2 smoking category at index date where available |
+|**prev_alcohol**: finds alcohol status at cohort index dates | **{cohort_prefix}\_alcohol**: 1 row per patid-index date combination, with alcohol status at index date where available |
+|**prev_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **{cohort_prefix}\_ckd_stages**: 1 row per patid-index date combination, with baseline CKD stage at index date where available |
+|**prev_final_merge**: pulls together variables from all of the above tables and adds age and diabetes duration at index date | **{cohort_prefix}\_final_merge**: 1 row per patid-index date combination with relevant biomarker/comorbidity/smoking/alcohol variables |
 
 &nbsp;
 
