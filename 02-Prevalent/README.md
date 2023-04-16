@@ -18,7 +18,7 @@ graph TD;
     A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at index date"]
     A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at index date"]
     A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at index date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage</b <br> at index date"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at index date"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     D-->|"final_merge"|J
     E-->|"final_merge"|J
