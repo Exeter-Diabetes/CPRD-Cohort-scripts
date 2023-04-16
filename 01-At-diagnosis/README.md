@@ -12,11 +12,11 @@ The below diagram shows the R scripts (in grey boxes) used to create the prevale
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
-    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes diagnosis date"]
-    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes diagnosis date"]
-    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at diabetes diagnosis date"]
-    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes diagnosis date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes diagnosis date"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes <br> diagnosis date"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes <br> diagnosis date"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at diabetes <br> diagnosis date"]
+    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes <br> diagnosis date"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
