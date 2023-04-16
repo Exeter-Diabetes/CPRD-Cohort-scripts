@@ -1,8 +1,8 @@
-# Prevalent cohort
+# At-diagnosis cohort
 
-The prevalent cohort consists of those actively registered on 01/02/2020 (the index date) who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
+The diagnosis cohort consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction), with added biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
 
-In addition to the 'template scripts' in the upper directory of this repository, the prevalent cohort additionally uses an 'all_patid_townsend_deprivation_score.R' script to estimate Townsend Deprivation Scores from IMD scores (used for QRISK2 and QDiabetes-Heart Failure scores), and a 'medications' script to define diabetes and blood pressure medication scripts relative to the index date (the latter is required for QRISK2). In addition to defining age and duration of diabetes at index date as in the template version, the 'final_merge' script also calculates QRISK2 (2017; 5-year and 10-year) and QDiabetes-Heart Failure (2015) scores at index date. See below for script overview.
+&nbsp;
 
 ## Script overview
 
@@ -12,23 +12,19 @@ The below diagram shows the R scripts (in grey boxes) used to create the prevale
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
-    A-->|"all_patid_townsend_ <br> deprivation_score"|D["<b>Townsend Deprivation <br> Scores</b> for all patients"]
-    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at index date"]
-    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at index date"]
-    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at index date"]
-    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at index date"]
-    A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at index date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at index date"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes diagnosis date"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes diagnosis date"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at diabetes diagnosis date"]
+    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes diagnosis date"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes diagnosis date"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
-    D-->|"final_merge"|J
     E-->|"final_merge"|J
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
-    K-->|"final_merge"|J
     I-->|"final_merge"|J    
 ```
-\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient. As Townsend Deprivation Scores are derived from these, they are also 'static'.
+\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
 The scripts shown in the above diagram (in grey boxes) can be found in this directory, except those which are common to the other cohorts (all_diabetes_cohort, all_patid_ethnicity, and all_patid_ckd_stages) which are in the upper directory of this repository.
 
@@ -41,8 +37,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **all_patid_ckd_stages**: uses eGFR calculated from serum creatinine to define longitudinal CKD stages for all patids as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage) |  **all_patid_ckd_stages_from_algorithm**:  1 row per patid, with onset of different CKD stages in wide format |
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
-| **all_patid_townsend_deprivation_score**: approximate Townsend Deprivation Scores of all patids in download | **all_patid_townsend_score**: 1 row per patid with approximate Townsend Deprivation Scores derived from Index of Multiple Deprivation scores |
-|**prev_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **prev_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
+|**at_diag_baseline_biomarkers**: pulls biomarkers value at diagnosis dates | **prev_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
 |**prev_comorbidities**: finds onset of comorbidities relative to cohort index dates | **prev_comorbidities**:  1 row per patid (as there are no patids with >1 index date) with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
 |**prev_smoking**: finds smoking status at cohort index dates | **prev_smoking**: 1 row per patid (as there are no patids with >1 index date) with smoking status and QRISK2 smoking category at index date where available |
 |**prev_alcohol**: finds alcohol status at cohort index dates | **prev_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
