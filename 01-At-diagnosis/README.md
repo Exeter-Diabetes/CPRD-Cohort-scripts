@@ -1,6 +1,6 @@
 # At-diagnosis cohort
 
-The diagnosis cohort consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction), with added biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
+The diagnosis cohort consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with added biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
 
 &nbsp;
 
@@ -37,13 +37,12 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **all_patid_ckd_stages**: uses eGFR calculated from serum creatinine to define longitudinal CKD stages for all patids as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage) |  **all_patid_ckd_stages_from_algorithm**:  1 row per patid, with onset of different CKD stages in wide format |
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
-|**at_diag_baseline_biomarkers**: pulls biomarkers value at diagnosis dates | **prev_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
-|**prev_comorbidities**: finds onset of comorbidities relative to cohort index dates | **prev_comorbidities**:  1 row per patid (as there are no patids with >1 index date) with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
-|**prev_smoking**: finds smoking status at cohort index dates | **prev_smoking**: 1 row per patid (as there are no patids with >1 index date) with smoking status and QRISK2 smoking category at index date where available |
-|**prev_alcohol**: finds alcohol status at cohort index dates | **prev_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
-|**prev_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **prev_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
-|**prev_medications**: finds dates of diabetes and blood pressure medication prescriptions relative to index dates | **prev_medications**: 1 row per patid (as there are no patids with >1 index date) with earliest pre-index date script, latest pre-index date script, and earliest post-index date script for diabetes / blood pressure medications where available |
-|**prev_final_merge**: defines patient IDs in prevalent cohort, adds in variables from all of the above tables and additionally calculates age, diabetes duration, QRISK2 and QDiabetes-Heart Failure score at index date (where variables required are available to calculate these scores) | **prev_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol/medication variables |
+|**at_diag_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **at_diag_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
+|**at_diag_comorbidities**: finds onset of comorbidities relative to cohort index dates | **at_diag_comorbidities**:  1 row per patid (as there are no patids with >1 index date) with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
+|**at_diag_smoking**: finds smoking status at cohort index dates | **at_diag_smoking**: 1 row per patid (as there are no patids with >1 index date) with smoking status and QRISK2 smoking category at index date where available |
+|**at_diag_alcohol**: finds alcohol status at cohort index dates | **at_diag_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
+|**at_diag_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **at_diag_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
+|**at_diag_final_merge**: brings together variables from all of the above tables | **at_diag_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol variables |
 
 &nbsp;
 
@@ -51,15 +50,11 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 
 Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), HDL (mmol/L), triglycerides (mmol/L), blood creatinine (umol/L), LDL (mmol/L), ALT (U/L), AST (U/L), total cholesterol (mmol/L), DBP (mmHg), SBP (mmHg), ACR (mg/mmol / g/mol).
 
-Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension, IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA.
-
-Medications included: blood pressure medications (different classes processed separately: ACE-inhibitors, beta-blockers, calcium channel blockers, thiazide-like diuretics, loop diuretics, potassium-sparing diuretics), diabetes medications (different classes processed separately: acarbose, DPP4-inhibitors, glinides, GLP1-receptor agonist, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, insulin).
+Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension, IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA, family history of premature cardiovascular disease.
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
 | patid | unique patient identifier | |
-| index_date_age | age of patient at index date (01/02/2020) in years | index_date - dob |
-| index_date_dm_dur_all | diabetes duration at index date (01/02/2020) in years for all patients (see below note on dm_diag_date_all) | index_date - dm_diag_date_all |
 | gender | gender (1=male, 2=female) | |
 | dob | date of birth | if month and date missing, 1st July used, if date but not month missing, 15th of month used, or earliest medcode in year of birth if this is earlier |
 | pracid | practice ID | |
@@ -105,11 +100,3 @@ Medications included: blood pressure medications (different classes processed se
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at index date: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
-| pre_index_date_earliest_{med} | earliest script for medication before/at index date | |
-| pre_index_date_latest_{med} | latest script for medication before/at index date | |
-| pre_index_date_first_{med} | earliest script for medication after (not at) index date | |
-| qdiabeteshf_5yr_score | 5-year QDiabetes-heart failure score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing HbA1c, ethnicity or smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
-| qdiabeteshf_lin_predictor | QDiabetes heart failure linear predictor<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing HbA1c, ethnicity or smoking info)<br />NB: NOT missing if have pre-existing HF but obviously not valid |
-| qrisk2_5yr_score | 5-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing ethnicity or smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
-| qrisk2_10yr_score | 10-year QRISK2-2017 score (in %)<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing ethnicity or smoking info)<br />NB: NOT missing if have CVD but obviously not valid |
-| qrisk2_lin_predictor | QRISK2-2017 linear predictor<br />NB: NOT missing if have CVD but obviously not valid<br />Missing for anyone with age/BMI/biomarkers outside of range for model (or missing ethnicity or smoking info) |
