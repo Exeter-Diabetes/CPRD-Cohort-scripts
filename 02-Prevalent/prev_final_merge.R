@@ -45,22 +45,18 @@ medications <- medications %>% analysis$cached("medications")
 
 ############################################################################################
 
-# Define prevalent cohort and add in variables from other tables plusage and diabetes duration at index date and QRISK2 and QDiabetes-HF
+# Define prevalent cohort and add in variables from other tables plus age and diabetes duration at index date and QRISK2 and QDiabetes-HF
+## Prevalent cohort: registered on 01/02/2020 and with diagnosis at/before then and with linked HES records (and n_patid_hes<=20).
 
 cohort_ids <- diabetes_cohort %>%
-  filter(dm_diag_date_all<=index_date) %>%
-  inner_join(cprd$tables$patient, by="patid") %>%
-  filter(regstartdate<=index_date) %>%
-  inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(gp_ons_end_date>=index_date) %>%
-  inner_join(cprd$tables$patidsWithLinkage, by="patid") %>%
+  filter(dm_diag_date_all<=index_date & regstartdate<=index_date & gp_record_end>=index_date & (is.na(death_date) | death_date>=index_date) & with_hes==1) %>%
   select(patid) %>%
   analysis$cached("cohort_ids", unique_indexes="patid")
 
 
 final_merge <- cohort_ids %>%
   left_join(diabetes_cohort, by="patid") %>%
-  left_join(townsend_score, by="patid") %>%
+  left_join((townsend_score %>% select(patid, tds_2011)), by="patid") %>%
   left_join(baseline_biomarkers, by="patid") %>%
   left_join(ckd_stages, by="patid") %>%
   left_join(comorbidities, by="patid") %>%
@@ -69,6 +65,8 @@ final_merge <- cohort_ids %>%
   left_join(medications, by="patid") %>%
   mutate(index_date_age=datediff(index_date, dob)/365.25,
          index_date_dm_dur_all=datediff(index_date, dm_diag_date_all)/365.25) %>%
+  relocate(c(index_date_age, index_date_dm_dur_all), .before=gender) %>%
+  relocate(tds_2011, after=imd2015_10) %>%
   analysis$cached("final_merge_interim_1", unique_indexes="patid")
 
 
@@ -184,3 +182,4 @@ qscores <- qscores %>%
 final_merge <- final_merge %>%
   left_join(qscores, by="patid") %>%
   analysis$cached("final_merge", unique_indexes="patid")
+
