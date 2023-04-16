@@ -1,7 +1,7 @@
 
 # Extracts and cleans all biomarker values (and creates eGFR readings from creatinine if not already done in all_patid_ckd_stages script)
 
-# Merges with index date
+# Merges with index dates (diagnosis dates)
 
 # Finds biomarker values at baseline (index date): -2 years to +7 days relative to index date for all except:
 ## HbA1c: -6 months to +7 days
@@ -23,7 +23,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -154,16 +154,21 @@ biomarkers <- c("egfr", biomarkers)
 
 ############################################################################################
 
-# Combine each biomarker with index date
+# Combine each biomarker with index dates
 
-## Get index date
+## Get index dates (diagnosis dates)
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("all")
 
-index_date <- as.Date("2020-02-01")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
+index_dates <- diabetes_cohort %>%
+  select(patid, index_date=dm_diag_date_all)
+  
 
 ## Merge with biomarkers and calculate date difference between biomarker and index date
+
+analysis = cprd$analysis("at_diag")
 
 for (i in biomarkers) {
   
@@ -173,6 +178,7 @@ for (i in biomarkers) {
   index_date_merge_tablename <- paste0("full_", i, "_index_date_merge")
   
   data <- get(clean_tablename) %>%
+    inner_join(index_dates, by="patid") %>%
     mutate(datediff=datediff(date, index_date))
   
   assign(index_date_merge_tablename, data)
@@ -183,6 +189,7 @@ for (i in biomarkers) {
 # HbA1c
 
 full_hba1c_index_date_merge <- clean_hba1c_medcodes %>%
+  inner_join(index_dates, by="patid") %>%
   mutate(datediff=datediff(date, index_date))
 
 
@@ -194,8 +201,7 @@ full_hba1c_index_date_merge <- clean_hba1c_medcodes %>%
 ## May be multiple values; use minimum test result, except for eGFR - use maximum
 ## Can get duplicates where person has identical results on the same day/days equidistant from the index date - choose first row when ordered by datediff
 
-baseline_biomarkers <- cprd$tables$patient %>%
-  select(patid)
+baseline_biomarkers <- index_dates
 
 
 ## For all except HbA1c and height: between 2 years prior and 7 days after index date
@@ -259,7 +265,7 @@ baseline_biomarkers <- baseline_biomarkers %>%
 ### NB: in treatment response cohort, baseline HbA1c set to missing if occurs before previous treatment change
 
 baseline_hba1c <- full_hba1c_index_date_merge %>%
-  
+
   filter(datediff<=7 & datediff>=-183) %>%
   
   group_by(patid) %>%

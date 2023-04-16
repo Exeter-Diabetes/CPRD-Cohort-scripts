@@ -131,7 +131,7 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
 ## Use DOBs produced in all_t1t2_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
 ## Also need gender from Patient table for eGFR
 
-analysis = cprd$analysis("diagnosis_date")
+analysis = cprd$analysis("diabetes_cohort")
 
 dob <- dob %>% analysis$cached("dob")
 
@@ -187,7 +187,6 @@ for (i in biomarkers) {
 # HbA1c
 
 full_hba1c_index_date_merge <- clean_hba1c_medcodes %>%
-  
   inner_join(index_dates, by="patid") %>%
   mutate(datediff=datediff(date, index_date))
 
@@ -251,13 +250,9 @@ for (i in biomarkers_no_height) {
 ## Height - only keep readings at/post-index date, and find mean
 
 baseline_height <- full_height_index_date_merge %>%
-  
   filter(datediff>=0) %>%
-  
   group_by(patid, index_date) %>%
-  
   summarise(height=mean(testvalue, na.rm=TRUE)) %>%
-  
   ungroup()
 
 baseline_biomarkers <- baseline_biomarkers %>%
