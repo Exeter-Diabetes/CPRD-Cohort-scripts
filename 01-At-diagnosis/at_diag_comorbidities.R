@@ -19,7 +19,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -131,18 +131,23 @@ comorbids <- c("primary_hhf", comorbids)
 ## NB: for baseline_biomarkers, cleaning and combining with index date is 2 separate steps, but as there are fewer cleaning steps for comorbidities I have made this one step here
 
 
-## Get index date
+## Get index dates (diagnosis dates)
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("all")
 
-index_date <- as.Date("2020-02-01")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+
+index_dates <- diabetes_cohort %>%
+  select(patid, index_date=dm_diag_date_all)
 
 
-## Clean comorbidity data and combine with index date
+## Clean comorbidity data and combine with index 
+
+analysis = cprd$analysis("at_diag")
 
 for (i in comorbids) {
   
-  print(paste("merging index date with", i, "code occurrences"))
+  print(paste("merging index dates with", i, "code occurrences"))
   
   index_date_merge_tablename <- paste0("full_", i, "_index_date_merge")
   
@@ -220,6 +225,7 @@ for (i in comorbids) {
   rm(all_codes)
   
   data <- all_codes_clean %>%
+    inner_join(index_dates, by="patid") %>%
     mutate(datediff=datediff(date, index_date)) %>%
     analysis$cached(index_date_merge_tablename, index="patid")
   
@@ -236,8 +242,7 @@ for (i in comorbids) {
 
 # Find earliest pre-index date, latest pre-index date and first post-index date dates
 
-comorbidities <- cprd$tables$patient %>%
-  select(patid)
+comorbidities <- index_dates
 
 for (i in comorbids) {
   

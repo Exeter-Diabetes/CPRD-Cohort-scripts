@@ -1,7 +1,7 @@
 
 # Extracts dates for smoking code occurrences in GP records
 
-# Merges with index date
+# Merges with index dates (diagnosis dates)
 
 # Defines smoking status at index date according to both our algorithm, and QRISK2 algorithm (both described here: https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking)
 
@@ -58,15 +58,22 @@ clean_smoking_medcodes <- raw_smoking_medcodes %>%
 
 # Find smoking status according to both algorithms at index date
 
-## Get index date
+## Get index dates (diagnosis dates)
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("all")
 
-index_date <- as.Date("2020-02-01")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+
+index_dates <- diabetes_cohort %>%
+  select(patid, index_date=dm_diag_date_all)
 
 
 ## Join with smoking codes on patid and retain codes before index date or up to 7 days after
-pre_index_date_smoking_codes <- clean_smoking_medcodes %>%
+
+analysis = cprd$analysis("at_diag")
+
+pre_index_date_smoking_codes <- index_dates %>%
+  inner_join(clean_smoking_medcodes, by="patid") %>%
   filter(datediff(date, index_date)<=7) %>%
   analysis$cached("pre_index_date_smoking_merge", indexes=c("patid", "smoking_cat", "qrisk2_smoking_cat"))
 

@@ -1,7 +1,7 @@
 
 # Extracts dates for alcohol consumption code occurrences in GP records
 
-# Merges with index date
+# Merges with index dates (diagnosis dates)
 
 # Defines alcohol status at index date according to our algorithm, described here: https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol-consumption
 
@@ -17,7 +17,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -47,15 +47,22 @@ clean_alcohol_medcodes <- raw_alcohol_medcodes %>%
 
 # Find alcohol status according to algorithm at index dates
 
-## Get index date
+## Get index dates (diagnosis dates)
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("all")
 
-index_date <- as.Date("2020-02-01")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+
+index_dates <- diabetes_cohort %>%
+  select(patid, index_date=dm_diag_date_all)
 
 
 ## Join with alcohol codes on patid and retain codes before index date or up to 7 days after
-pre_index_date_alcohol_codes <- clean_alcohol_medcodes %>%
+
+analysis = cprd$analysis("at_diag")
+
+pre_index_date_alcohol_codes <- index_dates %>%
+  inner_join(clean_alcohol_medcodes, by="patid") %>%
   filter(datediff(date, index_date)<=7) %>%
   analysis$cached("pre_index_date_alcohol_merge", indexes=c("patid", "alcohol_cat"))
 
@@ -79,8 +86,7 @@ most_recent_code <- pre_index_date_alcohol_codes %>%
   analysis$cached("alcohol_interim_1", unique_indexes="patid")
     
 ## Pull together
-alcohol_cat <- cprd$tables$patient %>%
-  select(patid) %>%
+alcohol_cat <- index_dates %>%
   left_join(harmful_drinker_ever, by="patid") %>%
   left_join(most_recent_code, by="patid") %>%
   mutate(alcohol_cat_numeric=ifelse(!is.na(harmful_drinker_ever) & harmful_drinker_ever==1, 3L, alcohol_cat_numeric),

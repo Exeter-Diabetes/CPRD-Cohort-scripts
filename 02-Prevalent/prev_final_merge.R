@@ -1,5 +1,6 @@
 
 # Pull together static patient data from all_diabetes_cohort table with biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the index dates
+## Add in age and duration of diabetes at index date, plus QRISK2 and QDiabetes-Heart Failure scores at index date
 
 ############################################################################################
 

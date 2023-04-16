@@ -1,6 +1,6 @@
 
 # Longitudinal CKD stages already defined from all_patid_ckd_stages script
-# This script: define baseline CKD stage at index date
+# This script: define baseline CKD stage at index date (diagnosis date)
 
 ############################################################################################
 
@@ -12,7 +12,7 @@ rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -26,20 +26,24 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>% analysis$cached("ckd_
 
 ################################################################################################################################
 
-# Merge with index date to get CKD stages at index date
+# Merge with index dates to get CKD stages at index date
 
 
-## Get index date
+## Get index dates (diagnosis dates)
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("all")
 
-index_date <- as.Date("2020-02-01")
+diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+
+index_dates <- diabetes_cohort %>%
+  select(patid, index_date=dm_diag_date_all)
 
 
 # Merge with CKD stages (1 row per patid)
 
-ckd_stage_drug_merge <- cprd$tables$patient %>%
-  select(patid) %>%
+analysis = cprd$analysis("at_diag")
+
+ckd_stage_drug_merge <- index_dates %>%
   left_join(ckd_stages_from_algorithm, by="patid") %>%
   mutate(preckdstage=ifelse(!is.na(stage_5) & datediff(stage_5, index_date)<=7, "stage_5",
                             ifelse(!is.na(stage_4) & datediff(stage_4, index_date)<=7, "stage_4",
