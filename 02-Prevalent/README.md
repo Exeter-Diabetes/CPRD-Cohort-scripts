@@ -30,9 +30,7 @@ graph TD;
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient. As Townsend Deprivation Scores are derived from these, they are also 'static'.
 
-&nbsp;
-
-The scripts can be found in this directory.
+The scripts shown in the above diagram (in grey boxes) can be found in this directory.
 
 &nbsp;
 
