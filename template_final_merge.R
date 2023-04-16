@@ -56,6 +56,6 @@ final_merge <- index_dates %>%
   left_join(alcohol, by=c("patid", "index_date")) %>%
   mutate(index_date_age=datediff(index_date, dob)/365.25,
          index_date_dm_dur_all=datediff(index_date, dm_diag_date_all)/365.25) %>%
-  relocate(c(index_date_age, index_date_dm_dur_all), .after=index_date) %>%
+  relocate(c(index_date_age, index_date_dm_dur_all), .before=gender) %>%
   analysis$cached("final_merge", indexes=c("patid", "index_date"))
 
