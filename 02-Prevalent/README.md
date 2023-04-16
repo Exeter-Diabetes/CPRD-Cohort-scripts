@@ -12,39 +12,31 @@ The below diagram shows the R scripts (in grey boxes) used to create the prevale
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
+    A-->|"all_patid_townsend_deprivation_score"|D["<b>Townsend Deprivation Scores</b> <br> for all patients"]
     A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at index date"]
     A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at index date"]
     A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at index date"]
     A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at index date"]
+    A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood pressure medications</b> <br> at index date"]
     C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage</b <br> at index date"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
+    D-->|"final_merge"|J
     E-->|"final_merge"|J
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
     I-->|"final_merge"|J
+    K-->|"final_merge"|J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015.
 
 &nbsp;
 
-Each of the three final cohorts (at-diagnosis, prevalent, and treatment response) contains static patient data e.g. ethnicity, IMD and diabetes type from the diabetes cohort dataset, plus biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the (cohort-specific) index date.
-
-
-This directory contains the scripts which are common to all three cohorts: 'all_diabetes_cohort', 'all_patid_ckd_stages', and 'all_patid_ethnicity'. These pull out static patient characteristics or features based on longitudinal data which may go beyond the index date of the cohorts (e.g. all_patid_ethnicity uses ethnicity codes from all time for each patient, which may occur later than the index date for a cohort).
-
-
-In addition, this directory contains templates for the scripts which pull out data relative to the cohort index dates ('baseline_biomarkers', 'comorbidities', 'smoking', 'alcohol', 'ckd_stages' and 'final_merge'). The final cohorts each use tailored versions of these to account for the different index dates, the different biomarkers/comorbidities required for the different cohorts, and different additional inclusion/exclusion criteria which are applied in the 'final_merge' script. In addition to these differences, the cohorts have different additional scripts which pull in additional information e.g. the treatment response cohort has a 'drug_sorting_and_combos' script which defines the drug start dates which are used as the index dates, as well as scripts for biomarker responses (6/12 month post-index), which are used to evaluate treatment response.
-
-The exact 'tailored' and additional scripts used to create each cohort dataset can be found in the relevant subdirectory: [01-At-diagnosis](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/tree/main/01-At-diagnosis), [02-Prevalent](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/tree/main/02-Prevalent), [03-Treatment-response-(MASTERMIND)](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/tree/main/03-Treatment-response-(MASTERMIND)), along with a data dictionary of all variables in the final cohort dataset.
+The scripts can be found in this directory.
 
 &nbsp;
 
 ## Script details
-
-Data from CPRD was provided as raw text files which were imported into a MySQL database using a custom-built package ([aurum](https://github.com/Exeter-Diabetes/CPRD-analysis-package)) built by Dr Robert Challen. This package also includes functions to allow easy querying of the MySQL tables from R, using the 'dbplyr' tidyverse package. Codelists used for querying the data (denoted as 'codes${codelist_name}' in scripts) can be found in our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists). 
-
-Our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists) also contains more details on the algorithms used to define variables such as ethnicity and diabetes type - see individual scripts for links to the appropriate part of the CPRD-Codelists repository.
 
 | Script description | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Outputs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | ---- | ---- |
