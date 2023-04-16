@@ -1,12 +1,39 @@
-# CPRD Aurum MASTERMIND scripts
+# Treatment response cohort 
 
-MASTERMIND (MRC APBI Stratification and Extreme Response Mechanism IN Diabetes) is a UK Medical Research Council funded (MR/N00633X/1 and MR/W003988/1) study consortium exploring stratified (precision) treatment in Type 2 diabetes. Part of this work uses data from the Clinical Practice Research Datalink (CPRD); originally the 'GOLD' version which was processed as per [Rodgers et al. 2017](https://bmjopen.bmj.com/content/7/10/e017989).
+The treatment response cohort consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) who have at least one script for a glucose-lowering medication (drug classes: acarbose, DPP4-inhibitor, glinide, GLP1-receptor agonist, metformin, SGLT2-inhibitor, sulphonylurea, thiazolidinedione, or insulin). The index date is the drug start date of the glucose-lowering medication. Patients can appear in the cohort multiple times with different drug classes or if they stop and then re-start a medication. Scripts are processed by drug class (i.e. changes from one medication to another within the same class are ignored). The final dataset contains biomarker, comorbidity, sociodemographic and medication info at drug start dates, as well as 6-/12-month biomarker response.
 
-Recently we have recreated the above processing pipeline in CPRD Aurum, and this repository contains the scripts used to do this. Raw text files from CPRD were imported into a MySQL database using a custom-built package ([aurum](https://github.com/drkgyoung/Exeter_Diabetes_aurum_package)) built by Dr Robert Challen. This package also includes functions to allow easy querying of the MySQL tables from R, using the 'dbplyr' tidyverse package. Codelists used for querying the data (denoted as 'codes$\{codelist_name\}' in scripts) can be found in our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists).
+MASTERMIND (MRC APBI Stratification and Extreme Response Mechanism IN Diabetes) is a UK Medical Research Council funded (MR/N00633X/1 and MR/W003988/1) study consortium exploring stratified (precision) treatment in Type 2 diabetes. Part of this work uses the Type 2 subset of the treatment response cohort. Originally CPRD GOLD was used and processed as per [Rodgers et al. 2017](https://bmjopen.bmj.com/content/7/10/e017989). Recently we have recreated this processing pipeline in CPRD Aurum, and this directory contains the scripts used to do this.
 
 &nbsp;
 
-## Summary of scripts and their outputs
+## Script overview
+
+The below diagram shows the R scripts (in grey boxes) used to create the treatment response cohort.
+
+```mermaid
+graph TD;
+    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
+    B-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
+    A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at drug <br> start date"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at drug <br> start date"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at drug <br> start date"]
+    H-->E
+    H-->I
+    H-->F
+    H-->G    
+    B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
+    E-->|"final_merge"|J
+    F-->|"final_merge"|J
+    G-->|"final_merge"|J
+    I-->|"final_merge"|J    
+```
+\*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
+
+
+
+Summary of scripts and their outputs
 
 'Drug' refers to diabetes medications unless otherwise stated, and the drug classes analysed by these scripts are acarbose, DPP4-inhibitors, glinides, GLP1 receptor agonists, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, and insulin. 'Outputs' are the primary MySQL tables produced by each script. Various scripts link to our [CPRD-Codelists repository](https://github.com/Exeter-Diabetes/CPRD-Codelists) which contains more details on the algorithms used to define variables such as ethnicity and diabetes type - see individual scripts for links to the appropriate part of the CPRD-Codelists repository. The variables in each of the output tables and their definitions are listed in the [Data Dictionary](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/MASTERMIND/Scripts/readme.md).
 
