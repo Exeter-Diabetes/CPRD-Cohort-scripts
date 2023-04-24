@@ -11,23 +11,48 @@ MASTERMIND (MRC APBI Stratification and Extreme Response Mechanism IN Diabetes) 
 The below diagram shows the R scripts (in grey boxes) used to create the treatment response cohort.
 
 ```mermaid
-graph TD;
-    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
-    B-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
+    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
+    A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
+    
+    A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
+
+    A---Y[ ]:::empty
+    H---Y
+    Y-->|"02_mm_baseline_<br>biomarkers"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
+    
+    A---T[ ]:::empty
+    H---T
+    T-->|"03_mm_response_<br>biomarkers"|L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
+    
+    A---W[ ]:::empty
+    H---W
+    W-->|"04_mm_<br>comorbidities"|F["<b>Comorbidities</b> <br> at drug <br> start date"]
+    
+    H---U[ ]:::empty
+    A---U
+    U-->|"06_mm_non_<br>diabetes_meds"|M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
+    
+    H---X[ ]:::empty
+    A---X
+    X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
+    
+    H-->|"08_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
+    
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
-    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
-    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at drug <br> start date"]
-    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at drug <br> start date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at drug <br> start date"]
-    H-->E
-    H-->I
-    H-->F
-    H-->G    
+    H---Z[ ]:::empty
+    C---Z
+    Z-->|"05_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
+    
+    
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"final_merge"|J
     E-->|"final_merge"|J
+    L-->|"final_merge"|J
     F-->|"final_merge"|J
+    M-->|"final_merge"|J  
     G-->|"final_merge"|J
-    I-->|"final_merge"|J    
+    V-->|"final_merge"|J
+    I-->|"final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
