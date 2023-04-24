@@ -14,7 +14,7 @@ The below diagram shows the R scripts (in grey boxes) used to create the treatme
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
     A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
-    
+    A-->|"09_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
     A---Y[ ]:::empty
@@ -45,15 +45,16 @@ graph TD;
     Z-->|"05_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
     
     
-    B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"final_merge"|J
-    E-->|"final_merge"|J
-    L-->|"final_merge"|J
-    F-->|"final_merge"|J
-    M-->|"final_merge"|J  
-    G-->|"final_merge"|J
-    V-->|"final_merge"|J
-    I-->|"final_merge"|J  
+    B-->|"10_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"10_mm_<br>final_merge"|J
+    O-->|"10_mm_<br>final_merge"|J
+    E-->|"10_mm_<br>final_merge"|J
+    L-->|"10_mm_<br>final_merge"|J
+    F-->|"10_mm_<br>final_merge"|J
+    M-->|"10_mm_<br>final_merge"|J  
+    G-->|"10_mm_<br>final_merge"|J
+    V-->|"10_mm_<br>final_merge"|J
+    I-->|"10_mm_<br>final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
