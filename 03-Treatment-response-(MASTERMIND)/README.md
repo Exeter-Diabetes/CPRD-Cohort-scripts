@@ -11,6 +11,7 @@ MASTERMIND (MRC APBI Stratification and Extreme Response Mechanism IN Diabetes) 
 The below diagram shows the R scripts (in grey boxes) used to create the treatment response cohort.
 
 ```mermaid
+graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
     A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
     
