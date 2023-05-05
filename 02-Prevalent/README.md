@@ -1,8 +1,10 @@
 # Prevalent cohort
 
-The prevalent cohort consists of those actively registered on 01/02/2020 (the index date) who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20).
+The prevalent cohort consists of those actively registered on 01/02/2020 (the index date) who have a diabetes diagnosis before/on this date, and who have linked HES records (with n_patid_hes<=20), with added biomarker/comorbidity/sociodemographic/medication info at this date.
 
 In addition to the 'template scripts' in the upper directory of this repository, the prevalent cohort additionally uses an 'all_patid_townsend_deprivation_score.R' script to estimate Townsend Deprivation Scores from IMD scores (used for QRISK2 and QDiabetes-Heart Failure scores), and a 'medications' script to define diabetes and blood pressure medication scripts relative to the index date (the latter is required for QRISK2). In addition to defining age and duration of diabetes at index date as in the template version, the 'final_merge' script also calculates QRISK2 (2017; 5-year and 10-year) and QDiabetes-Heart Failure (2015) scores at index date. See below for script overview.
+
+&nbsp;
 
 ## Script overview
 
@@ -13,12 +15,12 @@ graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     A-->|"all_patid_townsend_ <br> deprivation_score"|D["<b>Townsend Deprivation <br> Scores</b> for all patients"]
-    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at index date"]
-    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at index date"]
-    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at index date"]
-    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at index date"]
-    A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at index date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at index date"]
+    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at 01/02/2020"]
+    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at 01/02/2020"]
+    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at 01/02/2020"]
+    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at 01/02/2020"]
+    A-->|"medications <br> (requires index date)"|K["<b>Diabetes and blood <br> pressure medications</b> <br> at 01/02/2020"]
+    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at 01/02/2020"]
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     D-->|"final_merge"|J
     E-->|"final_merge"|J
@@ -35,6 +37,8 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 &nbsp;
 
 ## Script details
+
+'Outputs' are the primary MySQL tables produced by each script. See also notes on the [aurum package](https://github.com/Exeter-Diabetes/CPRD-analysis-package) and [CPRD-Codelists respository](https://github.com/Exeter-Diabetes/CPRD-Codelists) in the upper directory of this repository ([here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts#script-details)).
 
 | Script description | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Outputs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | ---- | ---- |
@@ -56,7 +60,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 
 Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), HDL (mmol/L), triglycerides (mmol/L), blood creatinine (umol/L), LDL (mmol/L), ALT (U/L), AST (U/L), total cholesterol (mmol/L), DBP (mmHg), SBP (mmHg), ACR (mg/mmol / g/mol).
 
-Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension, IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA.
+Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension, IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA, family history of premature cardiovascular disease.
 
 Medications included: blood pressure medications (different classes processed separately: ACE-inhibitors, beta-blockers, calcium channel blockers, thiazide-like diuretics, loop diuretics, potassium-sparing diuretics), diabetes medications (different classes processed separately: acarbose, DPP4-inhibitors, glinides, GLP1-receptor agonist, metformin, SGLT2-inhibitors, sulphonylureas, thiazolidinediones, insulin).
 
@@ -79,7 +83,7 @@ Medications included: blood pressure medications (different classes processed se
 | type2_code_count | number of Type 2-specific codes in records (any date) | |
 | raw_dm_diag_dmcodedate | earliest diabetes medcode (including diabetes exclusion codes; excluding those with obstypeid=4 (family history) and invalid dates). 'Raw' indicates that this is before codes in the year of birth are removed for those with Type 2 diabetes | |
 | raw_dm_diag_date_all | diabetes diagnosis date | earliest of raw_dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate. |
-| dm_diag_dmcodedate | earliest diabetes medcode (including diabetes exclusion codes; excluding those with obstypeid=4 (family history) and invalid dates). Codes in year fof birth removed for those with Type 2 diabetes | |
+| dm_diag_dmcodedate | earliest diabetes medcode (including diabetes exclusion codes; excluding those with obstypeid=4 (family history) and invalid dates). Codes in year of birth removed for those with Type 2 diabetes | |
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
