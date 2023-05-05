@@ -243,7 +243,7 @@ for (i in biomarkers_no_height) {
   
   
   baseline_biomarkers <- baseline_biomarkers %>%
-    left_join(data, by="patid") %>%
+    left_join((data %>% select(-index_date)), by="patid") %>%
     analysis$cached(interim_baseline_biomarker_table, unique_indexes="patid")
     
 }
@@ -284,7 +284,7 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
   rename(prehba1cdate=date,
          prehba1cdatediff=datediff) %>%
     
-  select(-c(testvalue, min_timediff))
+  select(-c(testvalue, min_timediff, index_date))
 
 
 ## Join HbA1c to main table

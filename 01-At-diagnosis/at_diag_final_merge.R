@@ -42,9 +42,27 @@ alcohol <- alcohol %>% analysis$cached("alcohol")
 # Bring together
 
 final_merge <- diabetes_cohort %>%
-  left_join(baseline_biomarkers, by="patid") %>%
+  left_join((baseline_biomarkers %>% select(-index_date)), by="patid") %>%
   left_join(ckd_stages, by="patid") %>%
-  left_join(comorbidities, by="patid") %>%
+  left_join((comorbidities %>% select(-index_date)), by="patid") %>%
   left_join(smoking, by="patid") %>%
   left_join(alcohol, by="patid") %>%
   analysis$cached("final_merge", unique_indexes="patid")
+
+
+############################################################################################
+
+# Export to R data object
+## Convert integer64 datatypes to double
+
+at_diag_cohort <- collect(final_merge %>% mutate(patid=as.character(patid)))
+
+is.integer64 <- function(x){
+  class(x)=="integer64"
+}
+
+at_diag_cohort <- at_diag_cohort %>%
+  mutate_if(is.integer64, as.integer)
+
+save(at_diag_cohort, file="20230423_at_diagnosis_cohort.Rda")
+

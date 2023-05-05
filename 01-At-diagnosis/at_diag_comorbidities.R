@@ -1,7 +1,7 @@
 
 # Extracts dates for comorbidity code occurrences in GP and HES records
 
-# Merges with index date
+# Merges with index dates (diagnosis dates)
 
 # Then finds earliest and latest pre-index date occurrence, and earliest post-index date occurrence for each comorbidity
 
