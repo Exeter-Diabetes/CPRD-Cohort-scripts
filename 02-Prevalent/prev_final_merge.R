@@ -54,6 +54,11 @@ cohort_ids <- diabetes_cohort %>%
   select(patid) %>%
   analysis$cached("cohort_ids", unique_indexes="patid")
 
+cohort_ids %>% count()
+#643,143
+
+## If same diabetes codelists had been used for extract and for finding diagnosis dates, then everyone would be diagnosed before 01/02/2020 as extract specifications were that they had to have a diabetes-related medcode with at least one year of data (up to October 2020) afterwards. However, diabetes codelist used for diagnosis dates is narrower and so some people have diagnosis dates after 01/02/2020.
+
 
 final_merge <- cohort_ids %>%
   left_join(diabetes_cohort, by="patid") %>%
