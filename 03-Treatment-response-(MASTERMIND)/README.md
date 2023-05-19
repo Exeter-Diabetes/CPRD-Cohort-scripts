@@ -128,7 +128,6 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
-| pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to index date within window of -730 days (2 years before index date) and +7 days (a week after index date)<br /><br />For HbA1c: prehba1c is closest HbA1c to index date within window of -183 days (6 months before index date) and +7 days (a week after index date) |
 | dm_diag_date ||
 | dm_diag_age ||
 | drugclass ||
