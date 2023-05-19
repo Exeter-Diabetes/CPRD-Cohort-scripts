@@ -116,10 +116,10 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
-| dm_diag_date_all | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate. Labelled 'all' as may wish to remove those before registration for analysis where exact diagnosis date is required (can create new variable 'dm_diag_date' with only those during registration)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date_all / dm_diag_date | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate<br />Variable labelled 'all' has no missingness; other variable is missing where diagnoses before registration (which may be inaccurate)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
 | dm_diag_flag | whether diagnosis date is <91 days following registration | |
-| dm_diag_age_all | age at diabetes diagnosis | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age_all/dm_diag_age | age at diabetes diagnosis | dm_diag_date - dob<br />Variable labelled 'all' has no missingness; other variable is missing for those with diagnoses before registration (which may be inaccurate).<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
@@ -128,9 +128,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
-| dm_diag_date ||
-| dm_diag_age ||
-| drugclass ||
+| drugclass | class of drug being started | |
 | dstartdate | drug class start date | uses dstart=1 - see above |
 | dstopdate | drug class stop date | uses dstop=1 - see above |
 | dstopdatepluscov | drug class stop date + coverage from last prescription | |
@@ -164,7 +162,6 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | timetoaddrem | time until another drug class added or removed in days | NA if last combination before end of prescriptions |
 | timeprevcombo | time since started previous drug combo in days | NA if no previous combo - i.e. at start of prescriptions<br />does not take into account breaks (i.e. if patient stops all drug classes) |
 | multi_drug_start | whether multiple drug classes started on this dcstartdate | If add>1, multi_drug_start= 1 (yes), otherwise multi_drug_start=0 (no) |
-| drugline ||
 | height | height in cm | Mean of all values on/post- drug start date |
 | pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For HbA1c: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate). HbA1c before timeprevcombo excluded |
 | pre{biomarker}date | date of baseline biomarker | |
