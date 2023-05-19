@@ -228,7 +228,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 
 &nbsp;
 
-## Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table
+### Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
