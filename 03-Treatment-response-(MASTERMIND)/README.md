@@ -33,7 +33,7 @@ graph TD;
     A---U
     U-->|"06_mm_non_<br>diabetes_meds"|M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
     
-    M-->|"genital<br>infection<br>meds<br>and<br>flu<br>vaccine<br>data<br>needed to<br>combine<br>with<br>medcodes"|F
+    M-->|"genital<br>infection<br>meds and<br>flu<br>vaccine<br>data<br>needed to<br>combine<br>with<br>medcodes"|F
     
     H---X[ ]:::empty
     A---X
