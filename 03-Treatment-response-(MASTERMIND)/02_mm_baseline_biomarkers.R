@@ -297,6 +297,10 @@ for (i in biomarkers_no_height) {
     
     ungroup() %>%
     
+    relocate(pre_biomarker, .after=patid) %>%
+    relocate(date, after=pre_biomarker) %>%
+    relocate(drugdatediff, after=date) %>%
+    
     rename({{pre_biomarker_variable}}:=pre_biomarker,
            {{pre_biomarker_date_variable}}:=date,
            {{pre_biomarker_drugdiff_variable}}:=drugdatediff) %>%
@@ -346,6 +350,10 @@ baseline_hba1c <- full_hba1c_drug_merge %>%
   filter(row_number()==1) %>%
   
   ungroup() %>%
+  
+  relocate(prehba1c, .after=patid) %>%
+  relocate(date, after=pre_biomarker) %>%
+  relocate(drugdatediff, after=date) %>%
     
   rename(prehba1cdate=date,
          prehba1cdrugdiff=drugdatediff) %>%
