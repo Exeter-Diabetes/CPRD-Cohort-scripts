@@ -6,7 +6,7 @@ The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes coho
 
 ## Script overview
 
-The below diagram shows the R scripts (in grey boxes) used to create the prevalent cohort.
+The below diagram shows the R scripts (in grey boxes) used to create the at-diagnosis cohort.
 
 ```mermaid
 graph TD;
