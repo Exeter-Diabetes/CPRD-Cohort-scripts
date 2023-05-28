@@ -74,7 +74,7 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
-| dm_diag_date | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate, but note that cohort only excludes those with diagnosis before or up to 90 days (inclusive) after registration start)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
 | dm_diag_age | age at diabetes diagnosis | dm_diag_date - dob<br />See above note next to dm_diag_date variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
