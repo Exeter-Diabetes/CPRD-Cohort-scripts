@@ -6,23 +6,39 @@ The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes coho
 
 ## Script overview
 
-The below diagram shows the R scripts (in grey boxes) used to create the at-diagnosis cohort.
+The below diagram shows the R scripts (in grey boxes) used to create the at-diagnosis cohort. The diabetes diagnosis dates from the "all_diabetes_cohort" script are required to define the baseline biomarkers, comorbidities, smoking status, alcohol status and CKD stage at diagnosis.
 
 ```mermaid
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
-    A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes <br> diagnosis date"]
-    A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes <br> diagnosis date"]
-    A-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at diabetes <br> diagnosis date"]
-    A-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes <br> diagnosis date"]
-    C-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
+
+    A---M[ ]:::empty
+    B---M
+    M-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes <br> diagnosis date"]
+   
+    A---N[ ]:::empty
+    B---N
+    N-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes <br> diagnosis date"]
+
+    B---O[ ]:::empty
+    A---O
+    O-->|"smoking <br> (requires index date)"|G["<b>Smoking status</b> <br> at diabetes <br> diagnosis date"]
+    
+    B---P[ ]:::empty
+    A---P
+    P-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes <br> diagnosis date"]
+    
+    B---Q[ ]:::empty
+    C---Q
+    Q-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
+    
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
-    I-->|"final_merge"|J    
+    I-->|"final_merge"|J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
