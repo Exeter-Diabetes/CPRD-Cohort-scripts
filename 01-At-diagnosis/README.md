@@ -1,12 +1,12 @@
 # At-diagnosis cohort
 
-The diagnosis cohort consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with added biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
+The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with a valid diagnosis date (i.e. excluding those with a diagnosis date set to missing as it was with -30 to +90 days of the registration start date, n=60,530). Additionally, those with a diagnosis date before registration start were excluded (additional n=305,971). The cohort dataset includes biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
 
 &nbsp;
 
 ## Script overview
 
-The below diagram shows the R scripts (in grey boxes) used to create the prevalent cohort.
+The below diagram shows the R scripts (in grey boxes) used to create the at-diagnosis cohort.
 
 ```mermaid
 graph TD;
@@ -48,7 +48,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 
 &nbsp;
 
-## Data dictionary of variables in 'prev_final_merge' table
+## Data dictionary of variables in 'at_diag_final_merge' table
 
 Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), HDL (mmol/L), triglycerides (mmol/L), blood creatinine (umol/L), LDL (mmol/L), ALT (U/L), AST (U/L), total cholesterol (mmol/L), DBP (mmHg), SBP (mmHg), ACR (mg/mmol / g/mol). NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements.
 
@@ -74,10 +74,9 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
-| dm_diag_date_all | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate<br />Labelled 'all' as may wish to remove those before registration for analysis where exact diagnosis date is required (can create new variable 'dm_diag_date' with only those during registration)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate, but note that cohort only excludes those with diagnosis before or up to 90 days (inclusive) after registration start)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
-| dm_diag_flag | whether diagnosis date is <91 days following registration | |
-| dm_diag_age_all | age at diabetes diagnosis | dm_diag_date - dob<br />Labelled 'all' as may wish to remove those before registration for analysis where exact diagnosis date is required (can create new variable 'dm_diag_age' with only those during registration)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age | age at diabetes diagnosis | dm_diag_date - dob<br />See above note next to dm_diag_date variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
