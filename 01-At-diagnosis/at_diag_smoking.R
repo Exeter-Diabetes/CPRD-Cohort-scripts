@@ -19,7 +19,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-analysis = cprd$analysis("prev")
+analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -65,7 +65,8 @@ analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 index_dates <- diabetes_cohort %>%
-  select(patid, index_date=dm_diag_date_all)
+  filter(!is.na(dm_diag_date)) %>%
+  select(patid, index_date=dm_diag_date)
 
 
 ## Join with smoking codes on patid and retain codes before index date or up to 7 days after

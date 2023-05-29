@@ -138,7 +138,8 @@ analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 index_dates <- diabetes_cohort %>%
-  select(patid, index_date=dm_diag_date_all)
+  filter(!is.na(dm_diag_date)) %>%
+  select(patid, index_date=dm_diag_date)
 
 
 ## Clean comorbidity data and combine with index 

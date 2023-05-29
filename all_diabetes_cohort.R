@@ -375,8 +375,10 @@ diabetes_type_final <- diabetes_type_prelim %>%
 
 ############################################################################################
 
-# Add in other variables and cache
-## Whether diagnosis date needs flag (if within 90 days of start of registration), and what type of code diagnosis is based on
+# Remove unreliable diagnosis dates, add in other variables, and cache
+## Set diagnosis date to missing if between -30 and +90 days (inclusive) of registration start
+## Add dm_diag_date and dm_diag_age - missing if diagnosis date is before registration
+## Add variable for what type of code diagnosis is based on
 ## Also add in gender, registration end, practice ID, and cprd_ddate from patient table
 ## Also add in last collection date for practice, death date from ONS records, and whether has HES data from patidsWithLinkage lookup and derive/keep: regstartdate, gp_record_end (earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records)), death_date (earliest of 'cprddeathdate' (derived by CPRD) and ONS death date), and with_hes (patients with HES linkage and n_patid_hes<=20)
 ## Also add in IMD score from patient IMD table
@@ -388,12 +390,16 @@ analysis = cprd$analysis("all")
 ethnicity <- ethnicity %>% analysis$cached("patid_ethnicity")
 
 diabetes_cohort <- diabetes_type_final %>%
-  mutate(dm_diag_codetype = ifelse(is.na(dm_diag_date_all), NA,
+  mutate(dm_diag_date_all=if_else(datediff(dm_diag_date_all, regstartdate)>=-30 & datediff(dm_diag_date_all, regstartdate)<=90, as.Date(NA), dm_diag_date_all),
+         
+         dm_diag_date=if_else(dm_diag_date_all<regstartdate, as.Date(NA), dm_diag_date_all),
+         
+         dm_diag_age=ifelse(dm_diag_date_all<regstartdate, NA, dm_diag_age_all),
+         
+         dm_diag_codetype = ifelse(is.na(dm_diag_date_all), NA,
                                    ifelse(!is.na(dm_diag_dmcodedate) & dm_diag_dmcodedate==dm_diag_date_all, 1L,
                                           ifelse(!is.na(dm_diag_hba1cdate) & dm_diag_hba1cdate==dm_diag_date_all, 2L,
-                                                 ifelse(!is.na(dm_diag_ohadate) & dm_diag_ohadate==dm_diag_date_all, 3L, 4L)))),
-         
-         dm_diag_flag=(dm_diag_date_all>=regstartdate & datediff(dm_diag_date_all,regstartdate)<91)) %>%
+                                                 ifelse(!is.na(dm_diag_ohadate) & dm_diag_ohadate==dm_diag_date_all, 3L, 4L))))) %>%
   
   left_join((cprd$tables$patient %>% select(patid, gender, regenddate, pracid, cprd_ddate)), by="patid") %>%
   left_join((cprd$tables$practice %>% select(pracid, lcd, region)), by="pracid") %>%
@@ -413,7 +419,7 @@ diabetes_cohort <- diabetes_type_final %>%
   
   left_join(ethnicity, by="patid") %>%
   
-  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_codetype, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
+  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd2015_10, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_date, dm_diag_codetype, dm_diag_age_all, dm_diag_age, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date, with_hes) %>% 
   
-  analysis$cached("diabetes_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+  analysis$cached("diabetes_cohort", unique_indexes="patid", indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_date", "dm_diag_age_all", "dm_diag_age", "diabetes_type"))
 

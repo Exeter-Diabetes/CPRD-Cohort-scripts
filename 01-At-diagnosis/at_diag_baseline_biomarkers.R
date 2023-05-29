@@ -163,8 +163,9 @@ analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 index_dates <- diabetes_cohort %>%
-  select(patid, index_date=dm_diag_date_all)
-  
+  filter(!is.na(dm_diag_date)) %>%
+  select(patid, index_date=dm_diag_date)
+
 
 ## Merge with biomarkers and calculate date difference between biomarker and index date
 
@@ -236,8 +237,8 @@ for (i in biomarkers_no_height) {
     ungroup() %>%
     
     relocate(pre_biomarker, .after=patid) %>%
-    relocate(date, after=pre_biomarker) %>%
-    relocate(datediff, after=date) %>%
+    relocate(date, .after=pre_biomarker) %>%
+    relocate(datediff, .after=date) %>%
     
     rename({{pre_biomarker_variable}}:=pre_biomarker,
            {{pre_biomarker_date_variable}}:=date,
@@ -286,8 +287,8 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
   ungroup() %>%
   
   relocate(prehba1c, .after=patid) %>%
-  relocate(date, after=pre_biomarker) %>%
-  relocate(datediff, after=date) %>%
+  relocate(date, .after=prehba1c) %>%
+  relocate(datediff, .after=date) %>%
     
   rename(prehba1cdate=date,
          prehba1cdatediff=datediff) %>%
