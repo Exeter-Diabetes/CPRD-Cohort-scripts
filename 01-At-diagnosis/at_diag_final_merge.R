@@ -6,7 +6,6 @@
 # Setup
 library(tidyverse)
 library(aurum)
-library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
@@ -42,6 +41,8 @@ alcohol <- alcohol %>% analysis$cached("alcohol")
 # Bring together
 
 final_merge <- diabetes_cohort %>%
+  filter(!is.na(dm_diag_date)) %>%
+  select(-c(dm_diag_date_all, dm_diag_age_all)) %>%
   left_join((baseline_biomarkers %>% select(-index_date)), by="patid") %>%
   left_join(ckd_stages, by="patid") %>%
   left_join((comorbidities %>% select(-index_date)), by="patid") %>%
@@ -64,5 +65,5 @@ is.integer64 <- function(x){
 at_diag_cohort <- at_diag_cohort %>%
   mutate_if(is.integer64, as.integer)
 
-save(at_diag_cohort, file="20230423_at_diagnosis_cohort.Rda")
+save(at_diag_cohort, file="20230529_at_diagnosis_cohort.Rda")
 
