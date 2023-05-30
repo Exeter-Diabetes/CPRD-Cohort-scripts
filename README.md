@@ -145,8 +145,8 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | preckdstagedatediff | days between index date and preckdstagedate | |
 | pre_index_date_earliest_{comorbidity} | earliest occurrence of comorbidity before/at index date | |
 | pre_index_date_latest_{comorbidity} | latest occurrence of comorbidity before/at index date | |
-| post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
 | pre_index_date_{comorbidity} | binary 0/1 if any instance of comorbidity before/at index date | |
+| post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
 | smoking_cat | Smoking category at index date: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
