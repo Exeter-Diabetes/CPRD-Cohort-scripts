@@ -87,10 +87,11 @@ Medications included: blood pressure medications (different classes processed se
 | dm_diag_hba1cdate | earliest HbA1c >47.5 mmol/mol (excluding invalid dates, including those with valid value and unit codes only) | |
 | dm_diag_ohadate | earliest OHA prescription (excluding invalid dates) | |
 | dm_diag_insdate | earliest insulin prescription (excluding invalid dates) | |
-| dm_diag_date_all | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate<br />Labelled 'all' as may wish to remove those before registration for analysis where exact diagnosis date is required (can create new variable 'dm_diag_date' with only those during registration)<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date_all | diabetes diagnosis date | earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate, but set to missing if this date is within -30 to +90 days (inclusive) of registration start<br />NB: as at-diagnosis cohort excludes those with diagnosis dates before registration start, this variable is missing and only dm_diag_age (below) is present<br />It's worth noting that we have a number of people classified as Type 2 who appear to have been diagnosed at a young age, which is likely to be a coding error. This small proportion shouldn't affect any analysis results greatly, but might need to be considered for other analysis |
+| dm_diag_date | diabetes diagnosis date for those with diagnosis at/after registration start | as per dm_diag_date_all, but also missing if dm_diag_date_all is before registration start (so is missing if earliest of dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, and dm_diag_insdate is before or up to 90 days (inclusive) after registration start)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
-| dm_diag_flag | whether diagnosis date is <91 days following registration | |
-| dm_diag_age_all | age at diabetes diagnosis | dm_diag_date - dob<br />Labelled 'all' as may wish to remove those before registration for analysis where exact diagnosis date is required (can create new variable 'dm_diag_age' with only those during registration)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age_all | age at diabetes diagnosis | dm_diag_date_all - dob<br />NB: as at-diagnosis cohort excludes those with diagnosis dates before registration start, this variable is missing and only dm_diag_age (below) is present<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_age | age at diabetes diagnosis for those with diagnosis at/after registration start | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
@@ -108,8 +109,8 @@ Medications included: blood pressure medications (different classes processed se
 | preckdstagedatediff | days between index date and preckdstagedate | |
 | pre_index_date_earliest_{comorbidity} | earliest occurrence of comorbidity before/at index date | |
 | pre_index_date_latest_{comorbidity} | latest occurrence of comorbidity before/at index date | |
-| post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
 | pre_index_date_{comorbidity} | binary 0/1 if any instance of comorbidity before/at index date | |
+| post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
 | smoking_cat | Smoking category at index date: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
