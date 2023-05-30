@@ -72,7 +72,7 @@ final_merge <- cohort_ids %>%
   mutate(index_date_age=datediff(index_date, dob)/365.25,
          index_date_dm_dur_all=datediff(index_date, dm_diag_date_all)/365.25) %>%
   relocate(c(index_date_age, index_date_dm_dur_all), .before=gender) %>%
-  relocate(tds_2011, after=imd2015_10) %>%
+  relocate(tds_2011, .after=imd2015_10) %>%
   analysis$cached("final_merge_interim_1", unique_indexes="patid")
 
 
