@@ -17,7 +17,6 @@
 # Setup
 library(tidyverse)
 library(aurum)
-library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
@@ -73,22 +72,19 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 
 ## Define T2D cohort (1 line per patient) with HES linkage
 ## Add in Townsend Deprivation Scores
-## Make new variables for diabetes diagnosis date and age which are missing if diagnosed with diabetes within 91 days following registration (dm_diag_flag==1)
 t2ds <- diabetes_cohort %>%
   inner_join((townsend_score %>% select(patid, tds_2011)), by="patid") %>%
   relocate(tds_2011, .after=imd2015_10) %>%
-  filter(diabetes_type=="type 2" & with_hes==1) %>%
-  mutate(dm_diag_date=ifelse(dm_diag_flag==1, as.Date(NA), dm_diag_date_all),
-         dm_diag_age=ifelse(dm_diag_flag==1, NA, dm_diag_age_all))
+  filter(diabetes_type=="type 2" & with_hes==1)
 
 
 ## Get info for first instance drug periods for cohort (1 line per patid-drugclass period)
-### Make new drugline variable which is missing where diagnosed before registration
+### Make new drugline variable which is missing where diagnosed before registration or within 90 days following
 
 t2d_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
   inner_join(combo_start_stop, by=c("patid", c("dstartdate"="dcstartdate"))) %>%
-  mutate(drugline=ifelse(dm_diag_date_all<regstartdate, NA, drugline_all))
+  mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all))
 
 t2d_drug_periods %>% distinct(patid) %>% count()
 # 864,404
@@ -102,15 +98,15 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 # 864,404 as above
 
 
-### Exclude drug periods starting within 91 days of registration
+### Exclude drug periods starting within 90 days of registration
 t2d_1stinstance <- t2d_1stinstance %>%
-  filter(datediff(dstartdate, regstartdate)>91)
+  filter(datediff(dstartdate, regstartdate)>90)
 
 t2d_1stinstance %>% count()
-# 1,661,416
+# 1,662,178
 
 t2d_1stinstance %>% distinct(patid) %>% count()
-# 768,565
+# 768,815
 
 
 
@@ -138,10 +134,10 @@ t2d_1stinstance <- t2d_1stinstance %>%
 # Check counts
 
 t2d_1stinstance %>% count()
-# 1,661,416
+# 1,662,178
 
 t2d_1stinstance %>% distinct(patid) %>% count()
-# 768,565
+# 768,815
 
 
 ############################################################################################
