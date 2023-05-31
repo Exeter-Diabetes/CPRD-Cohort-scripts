@@ -123,6 +123,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | dm_diag_codetype | whether diagnosis date represents diabetes medcode (1), high HbA1c (2), OHA prescription (3) or insulin (4) - if multiple on same day, use lowest number | |
 | dm_diag_age_all | age at diabetes diagnosis | dm_diag_date_all - dob<br />NB: as at-diagnosis cohort excludes those with diagnosis dates before registration start, this variable is missing and only dm_diag_age (below) is present<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_age | age at diabetes diagnosis for those with diagnosis at/after registration start | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
+| dm_diag_before_reg | whether diagnosed before registration start | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
 | current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
@@ -153,7 +154,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | rem | number of drug classes removed compared to previous drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />0 if none removed / no previous drug combo as this is the first |
 | remdrug | names of drug classes removed from previous drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none removed / no previous drug combo as this is the first |
 | nextadd | number of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />0 if none added / no next drug combo as this is the last before end of prescriptions |
-| nextaddrug | names of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none added / no next drug combo as this is the last before end of prescriptions |
+| nextadddrug | names of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none added / no next drug combo as this is the last before end of prescriptions |
 | nextrem | number of drug classes added to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />0 if none removed / no next drug combo as this is the last before end of prescriptions |
 | nextremdrug | names of drug classes removed to get next drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />NA if none removed / no next drug combo as this is the last before end of prescriptions |
 | swap | 1 if at least one drug class added and at least one drug class removed compared to previous drug combo (doesn't take into account breaks when patient is on no diabetes meds) | uses add and rem<br />0 if no swap (i.e. drugs only added or removed) / no previous drug combo as this is the first |
@@ -201,18 +202,18 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | ttc3m | 1 if timeondrug<=3 months | |
 | ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
 | ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months) | |
-| stopdrug3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br /><br />These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
-| stopdrug3m_6mFU | 1 if discontinue within 3 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 3 months | |
-| stopdrug6m_3mFU | 1 if discontinue within 6 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 6 months | |
-| stopdrug6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
-| stopdrug12m_3mFU | 1 if discontinue within 12 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 12 months | |
-| stopdrug12m_6mFU | 1 if discontinue within 12 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 12 months | |
+| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br /><br />These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
+| stopdrug_3m_6mFU | 1 if discontinue within 3 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 3 months | |
+| stopdrug_6m_3mFU | 1 if discontinue within 6 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 6 months | |
+| stopdrug_6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
+| stopdrug_12m_3mFU | 1 if discontinue within 12 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 12 months | |
+| stopdrug_12m_6mFU | 1 if discontinue within 12 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 12 months | |
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
 | secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) |
-| cv_death_primary | 1 if primary cause of death is CV |
-| cv_death_any | 1 if any (primary or secondary) cause of death is CV |
-| hf_death_primary | 1 if primary cause of death is heart failure |
-| hf_death_any | 1 if any (primary or secondary) cause of death is heartfailure |
+| cv_death_primary_cause | 1 if primary cause of death is CV |
+| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary_cause | 1 if primary cause of death is heart failure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heartfailure |
 | dstartdate_age | age of patient at dstartdate in years | dstartdate - dob |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years | dstartdate - dm_diag_date_all<br />No missingness) |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years | dstartdate-dm_diag_date<br />Missing if diabetes diagnosis date is <91 days following registration (i.e. dm_diag_flag==1), as final merge script sets dm_diag_date to missing where this is the case - this is the only reason why this variable would be missing |
