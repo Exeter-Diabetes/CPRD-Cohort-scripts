@@ -37,15 +37,15 @@ clean_insulin_prodcodes <- clean_insulin_prodcodes %>% analysis$cached("clean_in
 
 
 insulin <- clean_insulin_prodcodes %>%
-  mutate(Acarbose=0,
-         DPP4=0,
-         Glinide=0,
-         GLP1=0,
-         MFN=0,
-         SGLT2=0,
-         SU=0,
-         TZD=0,
-         INS=1,
+  mutate(Acarbose=0L,
+         DPP4=0L,
+         Glinide=0L,
+         GLP1=0L,
+         MFN=0L,
+         SGLT2=0L,
+         SU=0L,
+         TZD=0L,
+         INS=1L,
          drug_substance1=insulin_cat,
          drug_substance2=NA) %>%
   select(-insulin_cat)
@@ -208,8 +208,73 @@ all_scripts <- all_scripts %>%
   fill(INS_stopdate, .direction="up") %>%
   mutate(INS_startdate=if_else(INS==0, as.Date(NA), INS_startdate),
          INS_stopdate=if_else(INS==0, as.Date(NA), INS_stopdate)) %>%
-  ungroup() %>% 
-  analysis$cached("all_scripts_interim_3", indexes=c("patid", "date"))
+  ungroup() %>%
+  analysis$cached("all_scripts_interim_3", indexes=c("patid", "date", "INS"))
+
+
+# Add in insulin subtypes within last 6 months
+
+basal_scripts <- all_scripts %>%
+  filter(INS==1) %>%
+  filter(drugsubstances_INS %like% '%Basal%') %>%
+  select(patid, date) %>%
+  analysis$cached("all_scripts_interim_basal", indexes=c("patid", "date"))
+
+bolus_scripts <- all_scripts %>%
+  filter(INS==1) %>%
+  filter(drugsubstances_INS %like% '%Bolus%') %>%
+  select(patid, date) %>%
+  analysis$cached("all_scripts_interim_bolus", indexes=c("patid", "date"))
+
+mix_scripts <- all_scripts %>%
+  filter(INS==1) %>%
+  filter(drugsubstances_INS %like% '%Mix%') %>%
+  select(patid, date) %>%
+  analysis$cached("all_scripts_interim_mix", indexes=c("patid", "date"))
+
+intermediate_scripts <- all_scripts %>%
+  filter(drugsubstances_INS %like% '%Intermediate%') %>%
+  select(patid, date) %>%
+  analysis$cached("all_scripts_interim_intermediate", indexes=c("patid", "date"))
+
+all_scripts_basal <- all_scripts %>%
+  left_join(basal_scripts, by = "patid") %>%
+  filter(date.x >= date.y & 
+           datediff(date.x, date.y)<=183) %>%
+  distinct(patid, date=date.x) %>%
+  mutate(basal_ins_within_6_months = 1L) %>%
+  analysis$cached("all_scripts_interim_basal_joined", indexes=c("patid", "date"))
+  
+all_scripts_bolus <- all_scripts %>%
+  left_join(bolus_scripts, by = "patid") %>%
+  filter(date.x >= date.y & 
+           datediff(date.x, date.y)<=183) %>%
+  distinct(patid, date=date.x) %>%
+  mutate(bolus_ins_within_6_months = 1L) %>%
+  analysis$cached("all_scripts_interim_bolus_joined", indexes=c("patid", "date"))
+
+all_scripts_mix <- all_scripts %>%
+  left_join(mix_scripts, by = "patid") %>%
+  filter(date.x >= date.y & 
+           datediff(date.x, date.y)<=183) %>%
+  distinct(patid, date=date.x) %>%
+  mutate(mix_ins_within_6_months = 1L) %>%
+  analysis$cached("all_scripts_interim_mix_joined", indexes=c("patid", "date"))
+
+all_scripts_intermediate <- all_scripts %>%
+  left_join(intermediate_scripts, by = "patid") %>%
+  filter(date.x >= date.y & 
+           datediff(date.x, date.y)<=183) %>%
+  distinct(patid, date=date.x) %>%
+  mutate(intermediate_ins_within_6_months = 1L) %>%
+  analysis$cached("all_scripts_interim_intermediate_joined", indexes=c("patid", "date"))
+
+all_scripts <- all_scripts %>%
+  left_join(all_scripts_basal, by=c("patid", "date")) %>%
+  left_join(all_scripts_bolus, by=c("patid", "date")) %>%
+  left_join(all_scripts_mix, by=c("patid", "date")) %>%
+  left_join(all_scripts_intermediate, by=c("patid", "date")) %>%
+  analysis$cached("all_scripts_interim_4", indexes=c("patid", "date"))
 
 
 ## Use binary drug class columns to make single 'drugcombo' column with the names of all the drug classes patient is on at each date
@@ -235,7 +300,7 @@ all_scripts <- all_scripts %>%
 all_scripts <- all_scripts %>%
   mutate(numdrugs2=Acarbose + DPP4 + Glinide + GLP1 + MFN + SGLT2 + SU + TZD + INS)
 
-all_scripts <- all_scripts %>% analysis$cached("all_scripts_interim_4", indexes=c("patid", "date", "drugcombo"))
+all_scripts <- all_scripts %>% analysis$cached("all_scripts_interim_5", indexes=c("patid", "date", "drugcombo"))
 
 #all_scripts %>% filter(numdrugs!=numdrugs2 | (is.na(numdrugs) & !is.na(numdrugs2)) | (!is.na(numdrugs) & is.na(numdrugs2))) %>% count()
 # 0 - perfect
@@ -395,7 +460,7 @@ combo_start_stop <- all_scripts %>%
 
 combo_start_stop <- combo_start_stop %>%
   filter(dcstart==1) %>%
-  select(patid, all_of(drugclasses), drugcombo, numdrugs, dcstartdate, dcstopdate, INS_startdate, INS_stopdate)
+  select(patid, all_of(drugclasses), drugcombo, numdrugs, dcstartdate, dcstopdate, INS_startdate, INS_stopdate, INS_bolus, INS_basal, INS_intermediate)
 
 
 # Add drugcomborder count within each patid: how many periods of medication have they had
@@ -419,7 +484,7 @@ combo_start_stop <- combo_start_stop %>%
          nextadd=0L,
          nextadddrug=NA,
          nextrem=0L,
-         nextremdrug=NA,
+         nextremdrug=NA
          )
 
 for (i in drugclasses) {
@@ -489,4 +554,3 @@ combo_start_stop <- combo_start_stop %>%
 # Cache
 
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop", indexes=c("patid", "dcstartdate"))
-

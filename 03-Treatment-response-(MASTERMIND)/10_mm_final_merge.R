@@ -1,7 +1,6 @@
 
 # Extract dataset of all first instance drug periods (i.e. the first time patient has taken this particular drug class) for T2Ds WITH HES LINKAGE
-## Set diabetes diagnosis date (dm_diag_date) and diabetes diagnosis age (dm_diag_age) to missing where diagnosed in the 91 days following registration (i.e. where dm_diag_flag==1)
-## Exclude drug periods starting within 91 days of registration
+## Exclude drug periods starting within 90 days of registration
 ## Set drugline to missing where diagnosed before registration
 
 ## Do not exclude where first line
@@ -17,6 +16,7 @@
 # Setup
 library(tidyverse)
 library(aurum)
+library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
@@ -73,7 +73,7 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 ## Define T2D cohort (1 line per patient) with HES linkage
 ## Add in Townsend Deprivation Scores
 t2ds <- diabetes_cohort %>%
-  inner_join((townsend_score %>% select(patid, tds_2011)), by="patid") %>%
+  left_join((townsend_score %>% select(patid, tds_2011)), by="patid") %>%
   relocate(tds_2011, .after=imd2015_10) %>%
   filter(diabetes_type=="type 2" & with_hes==1)
 
@@ -87,7 +87,7 @@ t2d_drug_periods <- t2ds %>%
   mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all))
 
 t2d_drug_periods %>% distinct(patid) %>% count()
-# 864,404
+# 865,054
   
 
 ### Keep first instance only
@@ -95,7 +95,7 @@ t2d_1stinstance <- t2d_drug_periods %>%
   filter(druginstance==1)
 
 t2d_1stinstance %>% distinct(patid) %>% count()
-# 864,404 as above
+# 865,054 as above
 
 
 ### Exclude drug periods starting within 90 days of registration
@@ -103,10 +103,10 @@ t2d_1stinstance <- t2d_1stinstance %>%
   filter(datediff(dstartdate, regstartdate)>90)
 
 t2d_1stinstance %>% count()
-# 1,662,178
+# 1,663,398
 
 t2d_1stinstance %>% distinct(patid) %>% count()
-# 768,815
+# 769,394
 
 
 
@@ -128,16 +128,16 @@ t2d_1stinstance <- t2d_1stinstance %>%
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25,
          hosp_admission_prev_year=ifelse(is.na(hosp_admission_prev_year) & with_hes==1, 0L,
                                          ifelse(hosp_admission_prev_year==1, 1L, NA))) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "", "drugclass"))
 
 
 # Check counts
 
 t2d_1stinstance %>% count()
-# 1,662,178
+# 1,663,398
 
 t2d_1stinstance %>% distinct(patid) %>% count()
-# 768,815
+# 769,394
 
 
 ############################################################################################
