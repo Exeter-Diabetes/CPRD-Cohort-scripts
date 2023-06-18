@@ -147,6 +147,10 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | dcstopdate | drug combo stop date | uses dcstop - see below |
 | INS_startdate | start date for insulin which is being taken on this date | uses dstart=1 - see above |
 | INS_stopdate | stop date for insulin which is being taken on this date | uses dstop=1 - see above |
+| basal_ins_within_6_months | whether there is a prescription for a basal insulin within the last 6 months (1 or NA) | |
+| bolus_ins_within_6_months | whether there is a prescription for a bolus/rapid-acting insulin within the last 6 months (1 or NA) | |
+| mix_ins_within_6_months | whether there is a prescription for a mixed insulin within the last 6 months (1 or NA) | |
+| intermediate_ins_within_6_months | whether there is a prescription for an intermediate insulin within the last 6 months (1 or NA) | |
 | drugcomboorder | order within patient | e.g. patient takes MFN only, MFN+SU, MFN+SU+DPP4 in that order = 1, 2, 3 |
 | nextdcdate | date of next drug combination | doesn't include breaks i.e. when patient on none of the drug classes |
 | add | number of drug classes added compared to previous drug combo (doesn't take into account breaks when patient is on no diabetes meds) | calculated using binary {drugclass} variables - see above<br />0 if none added / no previous drug combo as this is the first |
