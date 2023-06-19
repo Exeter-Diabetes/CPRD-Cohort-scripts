@@ -84,7 +84,8 @@ t2ds <- diabetes_cohort %>%
 t2d_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
   inner_join(combo_start_stop, by=c("patid", c("dstartdate"="dcstartdate"))) %>%
-  mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all))
+  mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all)) %>%
+  relocate(drugline, after=drugline_all)
 
 t2d_drug_periods %>% distinct(patid) %>% count()
 # 865,054
@@ -128,7 +129,7 @@ t2d_1stinstance <- t2d_1stinstance %>%
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25,
          hosp_admission_prev_year=ifelse(is.na(hosp_admission_prev_year) & with_hes==1, 0L,
                                          ifelse(hosp_admission_prev_year==1, 1L, NA))) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "", "drugclass"))
+  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 # Check counts
@@ -302,7 +303,6 @@ rm(t2d_1stinstance_b)
 ############################################################################################
 
 # Make dataset of all T2D drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
-## Set drugline to missing where diagnosed before registration
 
 t2d_all_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
