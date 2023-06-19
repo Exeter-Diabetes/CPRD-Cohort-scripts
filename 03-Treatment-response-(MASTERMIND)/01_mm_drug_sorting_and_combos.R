@@ -460,7 +460,7 @@ combo_start_stop <- all_scripts %>%
 
 combo_start_stop <- combo_start_stop %>%
   filter(dcstart==1) %>%
-  select(patid, all_of(drugclasses), drugcombo, numdrugs, dcstartdate, dcstopdate, INS_startdate, INS_stopdate, INS_bolus, INS_basal, INS_intermediate)
+  select(patid, all_of(drugclasses), drugcombo, numdrugs, dcstartdate, dcstopdate, INS_startdate, INS_stopdate, basal_ins_within_6_months, bolus_ins_within_6_months, mix_ins_within_6_months, intermediate_ins_within_6_months)
 
 
 # Add drugcomborder count within each patid: how many periods of medication have they had
