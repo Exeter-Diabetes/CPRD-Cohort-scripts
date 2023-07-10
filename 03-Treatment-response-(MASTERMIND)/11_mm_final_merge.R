@@ -85,7 +85,7 @@ t2d_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
   inner_join(combo_start_stop, by=c("patid", c("dstartdate"="dcstartdate"))) %>%
   mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all)) %>%
-  relocate(drugline, after=drugline_all)
+  relocate(drugline, .after=drugline_all)
 
 t2d_drug_periods %>% distinct(patid) %>% count()
 # 865,054

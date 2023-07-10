@@ -453,7 +453,8 @@ combo_start_stop <- all_scripts %>%
   mutate(dcstartdate=if_else(dcstart==1, date, as.Date(NA)),
          dcstopdate=if_else(dcstart==1 & dcstop==1, date, 
                            if_else(dcstart==1 & dcstop==0, lead(date), as.Date(NA)))) %>%
-  ungroup()
+  ungroup() %>%
+  analysis$cached("combo_start_stop_interim_1")
 
 
 # Just keep rows where dcstart==1 - 1 row per drug combo instance, and only keep variables which apply to whole instance
@@ -509,7 +510,7 @@ for (i in drugclasses) {
     ungroup()
 }
 
-combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop_interim_1", indexes=c("patid", "dcstartdate"))
+combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop_interim_2", indexes=c("patid", "dcstartdate"))
 
 
 combo_start_stop <- combo_start_stop %>%

@@ -171,7 +171,7 @@ hes_ethnicity <- cprd$tables$hesPatient %>%
 ############################################################################################
 
 ## Combine GP and HES ethnicity
-## Set 16- and QRISK-category ethnicity to missing if drirectly conflicts with 5-category ethnicity, before using HES ethnicity for missing
+## Set 16- and QRISK-category ethnicity to missing if directly conflicts with 5-category ethnicity, before using HES ethnicity for missing
 
     
 ethnicity <- cprd$tables$patient %>%
