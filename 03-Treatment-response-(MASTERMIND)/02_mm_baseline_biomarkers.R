@@ -1,7 +1,7 @@
 
 # Extracts and cleans all biomarker values (and creates eGFR readings from creatinine)
 
-# Merges with drug start and stop dates plus timetochange, timeaddrem and multi_drug_start variables from mm_combo_start_stop (combination start and stop dates) table - these 3 variables needed for working out response biomarkers in script 3_mm_response_biomarkers
+# Merges with drug start and stop dates plus timetochange, timeaddrem, multi_drug_start, nextdrugchange and nextdcdate variables from mm_combo_start_stop (combination start and stop dates) table - first 3 variables needed for working out response biomarkers in script 03_mm_response_biomarkers; nextdrugchange and nextdcdate needed for HbA1c for glycaemic failure in 09_mm_glycaemic_failure
 
 # Finds biomarker values at baseline: -2 years to +7 days relative to drug start for all except:
 ## HbA1c: -6 months to +7 days, and excludes any before timeprevcombo
@@ -54,7 +54,7 @@ for (i in biomarkers) {
 
 }
 
-# HbA1c table should already be present from all_t1t2_cohort script
+# HbA1c table should already be present from all_diabetes_cohort script
 
 raw_hba1c_medcodes <- cprd$tables$observation %>%
     inner_join(codes$hba1c, by="medcodeid") %>%
@@ -78,7 +78,7 @@ raw_hba1c_medcodes <- cprd$tables$observation %>%
 ## Haematocrit only: convert all to proportion by dividing those >1 by 100
 ## Haemoglobin only: convert all to g/L (some in g/dL) by multiplying values <30 by 10
 ## HbA1c only: remove before 1990, and convert all values to mmol/mol
-### NB: HbA1c table already present from all_t1t2_cohort script
+### NB: HbA1c table already present from all_diabetes_cohort script
 
 
 analysis = cprd$analysis("all_patid")
@@ -140,7 +140,7 @@ for (i in biomarkers) {
 }
 
 
-# HbA1c table should already be present from all_t1t2_cohort script
+# HbA1c table should already be present from all_diabetes_cohort script
 
 clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
   
@@ -162,10 +162,10 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
 
 
 # Make eGFR table from creatinine readings and add to list of biomarkers
-## Use DOBs produced in all_t1t2_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
+## Use DOBs produced in all_diabetes_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
 ## Also need gender for eGFR
 
-analysis = cprd$analysis("diagnosis_date")
+analysis = cprd$analysis("diabetes_cohort")
 
 dob <- dob %>% analysis$cached("dob")
 
@@ -217,8 +217,8 @@ drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 drug_start_dates <- drug_start_stop %>%
-  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem, multi_drug_start)), by=c("patid","dstartdate"="dcstartdate")) %>%
-  select(patid, dstartdate, drugclass, druginstance, timetochange, timetoaddrem, multi_drug_start)
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate)), by=c("patid","dstartdate"="dcstartdate")) %>%
+  select(patid, dstartdate, drugclass, druginstance, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate)
 
 
 ## Merge with biomarkers and calculate date difference between biomarker and drug start date
@@ -246,7 +246,7 @@ for (i in biomarkers) {
 full_hba1c_drug_merge <- clean_hba1c_medcodes %>%
   
   inner_join(drug_start_dates, by="patid") %>%
-  mutate(hba1cdrugdiff=datediff(hba1cdate, dstartdate)) %>%
+  mutate(hba1cdrugdiff=datediff(date, dstartdate)) %>%
   
   rename(hba1c=testvalue,
          hba1cdate=date) %>%
@@ -298,14 +298,14 @@ for (i in biomarkers_no_height) {
     ungroup() %>%
     
     relocate(pre_biomarker, .after=patid) %>%
-    relocate(date, after=pre_biomarker) %>%
-    relocate(drugdatediff, after=date) %>%
+    relocate(date, .after=pre_biomarker) %>%
+    relocate(drugdatediff, .after=date) %>%
     
     rename({{pre_biomarker_variable}}:=pre_biomarker,
            {{pre_biomarker_date_variable}}:=date,
            {{pre_biomarker_drugdiff_variable}}:=drugdatediff) %>%
     
-    select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start))
+    select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate))
   
   
   baseline_biomarkers <- baseline_biomarkers %>%
@@ -358,7 +358,7 @@ baseline_hba1c <- full_hba1c_drug_merge %>%
   rename(prehba1cdate=date,
          prehba1cdrugdiff=drugdatediff) %>%
     
-  select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start))
+  select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange))
 
 
 ### timeprevcombo in combo_start_stop table
