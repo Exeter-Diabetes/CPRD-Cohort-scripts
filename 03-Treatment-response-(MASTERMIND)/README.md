@@ -39,7 +39,7 @@ graph TD;
     A---X
     X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
     
-    H-->|"08_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
+    H-->|"09_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
     
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
@@ -47,16 +47,16 @@ graph TD;
     Z-->|"05_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
     
     
-    B-->|"10_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"10_mm_<br>final_merge"|J
-    O-->|"10_mm_<br>final_merge"|J
-    E-->|"10_mm_<br>final_merge"|J
-    L-->|"10_mm_<br>final_merge"|J
-    F-->|"10_mm_<br>final_merge"|J
-    M-->|"10_mm_<br>final_merge"|J  
-    G-->|"10_mm_<br>final_merge"|J
-    V-->|"10_mm_<br>final_merge"|J
-    I-->|"10_mm_<br>final_merge"|J  
+    B-->|"11_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"11_mm_<br>final_merge"|J
+    O-->|"11_mm_<br>final_merge"|J
+    E-->|"11_mm_<br>final_merge"|J
+    L-->|"11_mm_<br>final_merge"|J
+    F-->|"11_mm_<br>final_merge"|J
+    M-->|"11_mm_<br>final_merge"|J  
+    G-->|"11_mm_<br>final_merge"|J
+    V-->|"11_mm_<br>final_merge"|J
+    I-->|"11_mm_<br>final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
