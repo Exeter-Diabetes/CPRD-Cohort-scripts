@@ -213,12 +213,24 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | ttc3m | 1 if timeondrug<=3 months | |
 | ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
 | ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months) | |
-| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br /><br />These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
+| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br>These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
 | stopdrug_3m_6mFU | 1 if discontinue within 3 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 3 months | |
 | stopdrug_6m_3mFU | 1 if discontinue within 6 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_12m_3mFU | 1 if discontinue within 12 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 12 months | |
 | stopdrug_12m_6mFU | 1 if discontinue within 12 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 12 months | |
+| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: two HbA1cs > threshold, or if this doesn’t occur, one HbA1c > threshold and nextdrugchange==”add”, where HbA1cs are at least 92 days after drug start date and before 
+hba1c_fail_7.5_reason
+hba1c_fail_7.5_reached
+hba1c_fail_8.5_date
+hba1c_fail_8.5_reason
+hba1c_fail_8.5_reached
+hba1c_fail_baseline_date
+hba1c_fail_baseline_reason
+hba1c_fail_baseline_0.5_date
+hba1c_fail_baseline_0.5_reason
+
+
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
 | secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) |
 | cv_death_primary_cause | 1 if primary cause of death is CV |
