@@ -224,9 +224,6 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate |
 | hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs
 | hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after drug start date (so could include baseline HbA1c but doesn't always), before or on nextdrugchangedate, and prior to glycaemic failure hba1c_fail_{threshold}_date |
-
-
-
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
 | secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) |
 | cv_death_primary_cause | 1 if primary cause of death is CV |
