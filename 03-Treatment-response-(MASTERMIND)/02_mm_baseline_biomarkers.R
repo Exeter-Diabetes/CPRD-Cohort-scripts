@@ -336,29 +336,29 @@ baseline_biomarkers <- baseline_biomarkers %>%
 
 baseline_hba1c <- full_hba1c_drug_merge %>%
   
-  filter(drugdatediff<=7 & drugdatediff>=-183) %>%
+  filter(hba1cdrugdiff<=7 & hba1cdrugdiff>=-183) %>%
   
   group_by(patid, dstartdate, drugclass) %>%
     
-  mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
-  filter(abs(drugdatediff)==min_timediff) %>%
+  mutate(min_timediff=min(abs(hba1cdrugdiff), na.rm=TRUE)) %>%
+  filter(abs(hba1cdrugdiff)==min_timediff) %>%
     
-  mutate(prehba1c=min(testvalue, na.rm=TRUE)) %>%
-  filter(prehba1c==testvalue) %>%
+  mutate(prehba1c=min(hba1c, na.rm=TRUE)) %>%
+  filter(prehba1c==hba1c) %>%
     
-  dbplyr::window_order(drugdatediff) %>%
+  dbplyr::window_order(hba1cdrugdiff) %>%
   filter(row_number()==1) %>%
   
   ungroup() %>%
   
   relocate(prehba1c, .after=patid) %>%
-  relocate(date, after=pre_biomarker) %>%
-  relocate(drugdatediff, after=date) %>%
+  relocate(hba1cdate, .after=prehba1c) %>%
+  relocate(hba1cdrugdiff, .after=hba1cdate) %>%
     
-  rename(prehba1cdate=date,
-         prehba1cdrugdiff=drugdatediff) %>%
+  rename(prehba1cdate=hba1cdate,
+         prehba1cdrugdiff=hba1cdrugdiff) %>%
     
-  select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange))
+  select(-c(hba1c, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange))
 
 
 ### timeprevcombo in combo_start_stop table
