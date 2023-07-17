@@ -17,9 +17,9 @@ graph TD;
     A-->|"10_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
-    E---P[ ]:::empty
-    A---P
+    A---P[ ]:::empty
     H---P
+    E---P
     P-->|"09_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
 
     A---Y[ ]:::empty
