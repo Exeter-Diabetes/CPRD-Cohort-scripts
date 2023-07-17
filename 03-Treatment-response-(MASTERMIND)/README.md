@@ -102,6 +102,8 @@ Comorbidities included: atrial fibrillation, angina (overall and specifically un
 
 Non-diabetes medications included: blood pressure medications (different classes processed separately: ACE-inhibitors, beta-blockers, calcium channel blockers, thiazide-like diuretics, loop diuretics, potassium-sparing diuretics), medication for genital infections (candidiasis), immunosuppressants, oral steroids, oestrogens, statins and flu vaccine.
 
+Thresholds for glycaemic failure included: 7.5% ('7.5'), 8.5% ('8.5'), baseline HbA1c ('baseline'), and baseline HbA1c-0.5% ('baseline_0.5').
+
 Death causes included: cardiovascular (CV) death as the primary cause or any cause, and heart failure as the primary cause or any cause.
 
 | Variable name | Description | Notes on derivation |
@@ -219,16 +221,10 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | stopdrug_6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_12m_3mFU | 1 if discontinue within 12 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 12 months | |
 | stopdrug_12m_6mFU | 1 if discontinue within 12 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 12 months | |
-| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: two HbA1cs > threshold, or if this doesn’t occur, one HbA1c > threshold and nextdrugchange==”add”, where HbA1cs are at least 92 days after drug start date and before 
-hba1c_fail_7.5_reason
-hba1c_fail_7.5_reached
-hba1c_fail_8.5_date
-hba1c_fail_8.5_reason
-hba1c_fail_8.5_reached
-hba1c_fail_baseline_date
-hba1c_fail_baseline_reason
-hba1c_fail_baseline_0.5_date
-hba1c_fail_baseline_0.5_reason
+| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate |
+| hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs
+| hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after drug start date (so could include baseline HbA1c but doesn't always), before or on nextdrugchangedate, and prior to glycaemic failure hba1c_fail_{threshold}_date |
+
 
 
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
