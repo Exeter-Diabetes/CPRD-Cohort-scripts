@@ -22,6 +22,7 @@ graph TD;
     Y-->|"02_mm_baseline_<br>biomarkers"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
     
     A---T[ ]:::empty
+    E---T
     H---T
     T-->|"03_mm_response_<br>biomarkers"|L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
     
