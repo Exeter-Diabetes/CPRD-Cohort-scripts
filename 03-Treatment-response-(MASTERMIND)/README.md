@@ -57,7 +57,6 @@ graph TD;
     N-->|"11_mm_<br>final_merge"|J
     O-->|"11_mm_<br>final_merge"|J
     Q-->|"11_mm_<br>final_merge"|J
-    E-->|"11_mm_<br>final_merge"|J
     L-->|"11_mm_<br>final_merge"|J
     F-->|"11_mm_<br>final_merge"|J
     M-->|"11_mm_<br>final_merge"|J  
