@@ -17,12 +17,17 @@ graph TD;
     A-->|"10_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
+    E---P[ ]:::empty
+    A---P
+    H---P
+    P-->|"09_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
+
     A---Y[ ]:::empty
     H---Y
     Y-->|"02_mm_baseline_<br>biomarkers"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
-    
-    A---T[ ]:::empty
-    E---T
+
+    E---T[ ]:::empty
+    A---T
     H---T
     T-->|"03_mm_response_<br>biomarkers"|L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
     
@@ -40,7 +45,7 @@ graph TD;
     A---X
     X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
     
-    H-->|"09_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
+    H-->|"08_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
     
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
