@@ -45,7 +45,7 @@ graph TD;
     A---X
     X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
     
-    H-->|"08_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
+    H-->|"08_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
     
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
@@ -56,6 +56,7 @@ graph TD;
     B-->|"11_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
     N-->|"11_mm_<br>final_merge"|J
     O-->|"11_mm_<br>final_merge"|J
+    Q-->|"11_mm_<br>final_merge"|J
     E-->|"11_mm_<br>final_merge"|J
     L-->|"11_mm_<br>final_merge"|J
     F-->|"11_mm_<br>final_merge"|J
