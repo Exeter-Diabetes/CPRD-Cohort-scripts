@@ -62,6 +62,9 @@ smoking <- smoking %>% analysis$cached("smoking")
 ## Discontinuation
 discontinuation <- discontinuation %>% analysis$cached("discontinuation")
 
+## Glycaemic failure
+glycaemic_failure <- glycaemic_failure %>% analysis$cached("glycaemic_failure")
+
 ## Death causes
 death_causes <- death_causes %>% analysis$cached("death_causes")
 
@@ -123,6 +126,7 @@ t2d_1stinstance <- t2d_1stinstance %>%
   inner_join((non_diabetes_meds %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((smoking %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((discontinuation %>% select(-c(druginstance, timeondrug, nextremdrug, timetolastpx))), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join((glycaemic_failure %>% select(-c(dstopdate, timetochange, timetoaddrem, nextdrugchange, nextdcdate, prehba1c, threshold_7.5, threshold_8.5, threshold_baseline, threshold_baseline_0.5))), by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(death_causes, by="patid") %>%
   mutate(dstartdate_age=datediff(dstartdate, dob)/365.25,
          dstartdate_dm_dur_all=datediff(dstartdate, dm_diag_date_all)/365.25,
