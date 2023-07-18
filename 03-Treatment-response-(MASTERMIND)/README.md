@@ -14,14 +14,20 @@ The below diagram shows the R scripts (in grey boxes) used to create the treatme
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
     A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
-    A-->|"09_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
+    A-->|"10_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
+
+    A---P[ ]:::empty
+    H---P
+    E---P
+    P-->|"09_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
 
     A---Y[ ]:::empty
     H---Y
     Y-->|"02_mm_baseline_<br>biomarkers"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
-    
-    A---T[ ]:::empty
+
+    E---T[ ]:::empty
+    A---T
     H---T
     T-->|"03_mm_response_<br>biomarkers"|L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
     
@@ -39,7 +45,7 @@ graph TD;
     A---X
     X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
     
-    H-->|"08_mm_discontinuation"|V["<b>Discontinuation</b><br> information"]
+    H-->|"08_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
     
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
@@ -47,16 +53,16 @@ graph TD;
     Z-->|"05_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
     
     
-    B-->|"10_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"10_mm_<br>final_merge"|J
-    O-->|"10_mm_<br>final_merge"|J
-    E-->|"10_mm_<br>final_merge"|J
-    L-->|"10_mm_<br>final_merge"|J
-    F-->|"10_mm_<br>final_merge"|J
-    M-->|"10_mm_<br>final_merge"|J  
-    G-->|"10_mm_<br>final_merge"|J
-    V-->|"10_mm_<br>final_merge"|J
-    I-->|"10_mm_<br>final_merge"|J  
+    B-->|"11_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"11_mm_<br>final_merge"|J
+    O-->|"11_mm_<br>final_merge"|J
+    Q-->|"11_mm_<br>final_merge"|J
+    L-->|"11_mm_<br>final_merge"|J
+    F-->|"11_mm_<br>final_merge"|J
+    M-->|"11_mm_<br>final_merge"|J  
+    G-->|"11_mm_<br>final_merge"|J
+    V-->|"11_mm_<br>final_merge"|J
+    I-->|"11_mm_<br>final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2015 so only 1 value per patient.
 
@@ -82,8 +88,9 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **06_mm_non_diabetes_meds**: dates of various non-diabetes medication prescriptions relative to drug start dates | **mm_non_diabetes_meds**: as per mm_drug_start_stop, with earliest predrug script, latest predrug script, and earliest postdrug script for all non-diabetes medications where available |
 | **07_mm_smoking**: finds smoking status at drug start dates | **mm_smoking**: as per mm_drug_start_stop, with smoking status and QRISK2 smoking category at drug start date where available |
 | **08_mm_discontinuation**: defines whether drug was discontinued within 3/6 months | **mm_discontinuation**: as per mm_drug_start_stop, with discontinuation variables added |
-| **09_mm_death_causes**: adds variables on causes of death | **mm_death_causes**: 1 row per patid in ONS death data table, with primary and secondary death causes plus variables for whether CV/heart failure are primary/secondary causes |
-| **10_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table) |
+| **09_mm_glycaemic_failure**: defines whether patinet ended up with high HbA1c(s) (range of thresholds tested) whilst on drug | **mm_glycaemic_failure**: as per mm_drug_start_stop, with glycaemic failure variables added |
+| **10_mm_death_causes**: adds variables on causes of death | **mm_death_causes**: 1 row per patid in ONS death data table, with primary and secondary death causes plus variables for whether CV/heart failure are primary/secondary causes |
+| **11_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table) |
 
 &nbsp;
 
@@ -94,6 +101,8 @@ Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), fas
 Comorbidities included: atrial fibrillation, angina (overall and specifically unstable angina recorded in hospital), asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension (uses primary care data only, see note in script), IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA, family history of premature cardiovascular disease, 'primary_hhf' (hospitalisation for HF with HF as primary cause), 'medspecific_gi' (from genital_infection codelist), 'unspecific_gi' (from genital_infection_nonspec medcodelist and definite_genital_infection_meds prodcodelist), anxiety disorders, benign prostate hyperplasia, osmotic symptoms (micturition control, volume depletion, urinary frequency), falls, lower limb fracture, DKA (hospital data only), major and minor amputations in hospital (doesn't only inlcude primary cause), osteoporosis. Also medcode-coded flu vaccination (combined with prodcode-recorded flu vaccination from 06_mm_non_diabetes_med script).
 
 Non-diabetes medications included: blood pressure medications (different classes processed separately: ACE-inhibitors, beta-blockers, calcium channel blockers, thiazide-like diuretics, loop diuretics, potassium-sparing diuretics), medication for genital infections (candidiasis), immunosuppressants, oral steroids, oestrogens, statins and flu vaccine.
+
+Thresholds for glycaemic failure included: 7.5% ('7.5'), 8.5% ('8.5'), baseline HbA1c ('baseline'), and baseline HbA1c-0.5% ('baseline_0.5').
 
 Death causes included: cardiovascular (CV) death as the primary cause or any cause, and heart failure as the primary cause or any cause.
 
@@ -206,12 +215,15 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | ttc3m | 1 if timeondrug<=3 months | |
 | ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
 | ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months) | |
-| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br /><br />These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
+| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 3 months | Followup time is time between last prescription of any glucose lowering medication and last prescription of this particular drug (the one they are discontinuing)<br>These variables are missing if either a) the person does discontinue in the time period stated, but there is another glucose-lowering medication added or removed before this discontinuation, OR b) the person does discontinue in the time period stated, but the discontinuation represents a break in the current medication before restarting, OR c) the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
 | stopdrug_3m_6mFU | 1 if discontinue within 3 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 3 months | |
 | stopdrug_6m_3mFU | 1 if discontinue within 6 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_12m_3mFU | 1 if discontinue within 12 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 12 months | |
 | stopdrug_12m_6mFU | 1 if discontinue within 12 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 12 months | |
+| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate |
+| hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs
+| hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after the baseline HbA1c (so may include HbA1cs before drug start), before or on nextdrugchangedate, and before/on hba1c_fail_{threshold}_date |
 | primary_death_cause | primary death cause from ONS data (ICD10; 'cause' in ONS death table) |
 | secondary_death_cause1-15 | secondary death cases from ONS data (ICD10; 'cause1'-'cause15' in ONS death table) |
 | cv_death_primary_cause | 1 if primary cause of death is CV |
