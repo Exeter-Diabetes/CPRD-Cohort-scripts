@@ -125,7 +125,7 @@ glycaemic_failure_threshold_hba1cs <- glycaemic_failure %>%
   left_join((full_hba1c_drug_merge %>%
                filter(hba1cdate<=nextdcdate) %>%
                select(patid, dstartdate, drugclass, hba1c, hba1cdate)), by=c("patid", "dstartdate", "drugclass")) %>%
-  filter(hba1cdate>=prehba1cdate) %>%
+  filter(!is.na(hba1cdate) | hba1cdate>=prehba1cdate) %>%
   analysis$cached("glycaemic_failure_threshold_hba1cs", indexes=c("patid", "dstartdate", "drugclass"))
 
 
