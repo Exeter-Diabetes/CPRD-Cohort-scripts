@@ -122,10 +122,15 @@ glycaemic_failure <- glycaemic_failure %>%
 ## Join failure dates and thresholds with HbA1cs going right back to and including baseline HbA1c and no later than when diabetes drugs changed (doesn't take into account gaps) so that we can find if they were ever at/below the threshold
 
 glycaemic_failure_threshold_hba1cs <- glycaemic_failure %>%
-  left_join((full_hba1c_drug_merge %>%
+  inner_join((full_hba1c_drug_merge %>%
                filter(hba1cdate<=nextdcdate) %>%
                select(patid, dstartdate, drugclass, hba1c, hba1cdate)), by=c("patid", "dstartdate", "drugclass")) %>%
-  filter(is.na(hba1cdate) | hba1cdate>=prehba1cdate) %>%
+  filter(hba1cdate>=prehba1cdate) %>%
+  select(patid, dstartdate, drugclass, hba1c, hba1cdate) %>%
+  analysis$cached("glycaemic_failure_threshold_hba1cs_interim", indexes=c("patid", "dstartdate", "drugclass"))
+
+glycaemic_failure_threshold_hba1cs <- glycaemic_failure %>%
+  left_join(glycaemic_failure_threshold_hba1cs, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached("glycaemic_failure_threshold_hba1cs", indexes=c("patid", "dstartdate", "drugclass"))
 
 
@@ -143,6 +148,7 @@ for (i in thresholds) {
     group_by(patid, dstartdate, drugclass) %>%
     
     mutate(threshold_reached=ifelse(!is.na(hba1c) & hba1c<=!!as.name(threshold_value) & hba1cdate<=!!as.name(fail_date), 1L, 0L),
+           threshold_reached=ifelse(is.na(!!as.name(threshold_value)), NA, threshold_reached),
            {{fail_threshold_reached}}:=max(threshold_reached, na.rm=TRUE)) %>%
     
     ungroup() %>%

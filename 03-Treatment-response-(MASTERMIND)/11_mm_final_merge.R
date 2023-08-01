@@ -87,8 +87,10 @@ t2ds <- diabetes_cohort %>%
 t2d_drug_periods <- t2ds %>%
   inner_join(drug_start_stop, by="patid") %>%
   inner_join(combo_start_stop, by=c("patid", c("dstartdate"="dcstartdate"))) %>%
+  inner_join((glycaemic_failure %>% select(-c(dstopdate, timetochange, timetoaddrem, nextdrugchange, nextdcdate, prehba1c, prehba1cdate, threshold_7.5, threshold_8.5, threshold_baseline, threshold_baseline_0.5))), by=c("patid", "dstartdate", "drugclass")) %>%
   mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all)) %>%
-  relocate(drugline, .after=drugline_all)
+  relocate(drugline, .after=drugline_all) %>%
+  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
 
 t2d_drug_periods %>% distinct(patid) %>% count()
 # 865,054
@@ -118,22 +120,25 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 ### Could merge on druginstance too, but quicker not to
 ### Remove some variables to avoid duplicates
 ### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores
+### Now in two stages to speed it up
 
 t2d_1stinstance <- t2d_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((ckd_stages %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((comorbidities %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached(paste0(today, "_t2d_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
+
+t2d_1stinstance <- t2d_1stinstance %>%
   inner_join((non_diabetes_meds %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((smoking %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((discontinuation %>% select(-c(druginstance, timeondrug, nextremdrug, timetolastpx))), by=c("patid", "dstartdate", "drugclass")) %>%
-  inner_join((glycaemic_failure %>% select(-c(dstopdate, timetochange, timetoaddrem, nextdrugchange, nextdcdate, prehba1c, prehba1cdate, threshold_7.5, threshold_8.5, threshold_baseline, threshold_baseline_0.5))), by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(death_causes, by="patid") %>%
   mutate(dstartdate_age=datediff(dstartdate, dob)/365.25,
          dstartdate_dm_dur_all=datediff(dstartdate, dm_diag_date_all)/365.25,
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25,
          hosp_admission_prev_year=ifelse(is.na(hosp_admission_prev_year) & with_hes==1, 0L,
                                          ifelse(hosp_admission_prev_year==1, 1L, NA))) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_t2d_1stinstance_interim_3"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 # Check counts
