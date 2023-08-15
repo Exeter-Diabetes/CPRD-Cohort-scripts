@@ -230,8 +230,8 @@ for (i in biomarkers_no_height) {
     ungroup() %>%
     
     relocate(pre_biomarker, .after=patid) %>%
-    relocate(date, after=pre_biomarker) %>%
-    relocate(datediff, after=date) %>%
+    relocate(date, .after=pre_biomarker) %>%
+    relocate(datediff, .after=date) %>%
     
     rename({{pre_biomarker_variable}}:=pre_biomarker,
            {{pre_biomarker_date_variable}}:=date,
@@ -280,8 +280,8 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
   ungroup() %>%
   
   relocate(prehba1c, .after=patid) %>%
-  relocate(date, after=pre_biomarker) %>%
-  relocate(datediff, after=date) %>%
+  relocate(date, .after=pre_biomarker) %>%
+  relocate(datediff, .after=date) %>%
     
   rename(prehba1cdate=date,
          prehba1cdatediff=datediff) %>%
