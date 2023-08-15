@@ -280,7 +280,7 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
   ungroup() %>%
   
   relocate(prehba1c, .after=patid) %>%
-  relocate(date, .after=pre_biomarker) %>%
+  relocate(date, .after=prehba1c) %>%
   relocate(datediff, .after=date) %>%
     
   rename(prehba1cdate=date,
