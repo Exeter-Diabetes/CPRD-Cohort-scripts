@@ -32,7 +32,7 @@ analysis = cprd$analysis("prev")
 ## Keep HbA1c separate as processed differently
 ## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'baseline_biomarkers' table
 
-biomarkers <- c("weight", "height", "bmi", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr")
+biomarkers <- c("weight", "height", "bmi", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_urine", "creatinine_urine")
 
 
 ############################################################################################
@@ -150,6 +150,21 @@ clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   analysis$cached("clean_egfr_medcodes", indexes=c("patid", "date", "testvalue"))
 
 biomarkers <- c("egfr", biomarkers)
+
+
+# Make ACR from separate urine albumin and urine creatinine measurements on the same day
+# Then clean values
+
+clean_acr_from_separate_medcodes <- clean_albumin_urine_medcodes %>%
+  inner_join((clean_creatinine_urine_medcodes %>% select(patid, creat_date=date, creat_value=testvalue)), by="patid") %>%
+  filter(date==creat_date) %>%
+  mutate(new_testvalue=testvalue/creat_value) %>%
+  select(patid, date, testvalue=new_testvalue) %>%
+  clean_biomarker_values(testvalue, "acr") %>%
+  analysis$cached("clean_acr_from_separate_medcodes", indexes=c("patid", "date", "testvalue"))
+
+biomarkers <- setdiff(biomarkers, c("albumin_urine", "creatinine_urine"))
+biomarkers <- c("acr_from_separate", biomarkers)
 
 
 ############################################################################################
