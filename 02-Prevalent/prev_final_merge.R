@@ -106,7 +106,7 @@ qscore_vars <- final_merge %>%
            ifelse(is.na(pre_index_date_latest_thiazide_diuretics),as.Date("1900-01-01"),pre_index_date_latest_thiazide_diuretics),
            na.rm=TRUE
          ),
-         bp_meds=ifelse(earliest_bp_med!=as.Date("2050-01-01") & latest_bp_med!=as.Date("1900-01-01") & datediff(latest_bp_med, index_date)<=28 & earliest_bp_med!=latest_bp_med, 1L, 0L),
+         bp_meds=ifelse(earliest_bp_med!=as.Date("2050-01-01") & latest_bp_med!=as.Date("1900-01-01") & datediff(index_date, latest_bp_med)<=28 & earliest_bp_med!=latest_bp_med, 1L, 0L),
          
          type1=0L,
          type2=1L,
@@ -200,39 +200,48 @@ final_merge <- final_merge %>%
 
 ## Make separate table with additional variables
 
-ckdpc_score_vars <- t2d_1stinstance %>%
+ckdpc_score_vars <- final_merge %>%
   
   mutate(sex=ifelse(gender==1, "male", ifelse(gender==2, "female", "NA")),
          
          black_ethnicity=ifelse(!is.na(ethnicity_5cat) & ethnicity_5cat==2, 1L, ifelse(is.na(ethnicity_5cat), NA, 0L)),
          
-         cvd=predrug_myocardialinfarction==1 | predrug_revasc==1 | predrug_heartfailure==1 | predrug_stroke==1,
+         cvd=pre_index_date_myocardialinfarction==1 | pre_index_date_revasc==1 | pre_index_date_heartfailure==1 | pre_index_date_stroke==1,
          
-         oha=ifelse(Acarbose+MFN+DPP4+Glinide+GLP1+SGLT2+SU+TZD>add, 1L, 0L),
+         oha=ifelse(datediff(index_date, pre_index_date_latest_acarbose)<=183 | 
+                      datediff(index_date, pre_index_date_latest_mfn)<=183 |
+                      datediff(index_date, pre_index_date_latest_dpp4)<=183 |
+                      datediff(index_date, pre_index_date_latest_glinide)<=183 |
+                      datediff(index_date, pre_index_date_latest_glp1)<=183 |
+                      datediff(index_date, pre_index_date_latest_sglt2)<=183 |
+                      datediff(index_date, pre_index_date_latest_su)<=183 |
+                      datediff(index_date, pre_index_date_latest_tzd)<=183, 1L, 0L),
+         
+         INS=ifelse(datediff(index_date, pre_index_date_latest_insulin)<=183, 1L, 0L),
          
          ever_smoker=ifelse(!is.na(smoking_cat) & (smoking_cat=="Ex-smoker" | smoking_cat=="Active smoker"), 1L, ifelse(is.na(smoking_cat), NA, 0L)),
          
          latest_bp_med=pmax(
-           ifelse(is.na(predrug_latest_ace_inhibitors), as.Date("1900-01-01"), predrug_latest_ace_inhibitors),
-           ifelse(is.na(predrug_latest_beta_blockers), as.Date("1900-01-01"), predrug_latest_beta_blockers),
-           ifelse(is.na(predrug_latest_calcium_channel_blockers), as.Date("1900-01-01"), predrug_latest_calcium_channel_blockers),
-           ifelse(is.na(predrug_latest_thiazide_diuretics), as.Date("1900-01-01"), predrug_latest_thiazide_diuretics),
+           ifelse(is.na(pre_index_date_latest_ace_inhibitors), as.Date("1900-01-01"), pre_index_date_latest_ace_inhibitors),
+           ifelse(is.na(pre_index_date_latest_beta_blockers), as.Date("1900-01-01"), pre_index_date_latest_beta_blockers),
+           ifelse(is.na(pre_index_date_latest_calcium_channel_blockers), as.Date("1900-01-01"), pre_index_date_latest_calcium_channel_blockers),
+           ifelse(is.na(pre_index_date_latest_thiazide_diuretics), as.Date("1900-01-01"), pre_index_date_latest_thiazide_diuretics),
            na.rm=TRUE
          ),
          
-         bp_meds=ifelse(latest_bp_med!=as.Date("1900-01-01") & datediff(latest_bp_med, dstartdate)<=183, 1L, 0L),
+         bp_meds=ifelse(latest_bp_med!=as.Date("1900-01-01") & datediff(index_date, latest_bp_med)<=183, 1L, 0L),
          
          hypertension=ifelse((!is.na(presbp) & presbp>=140) | (!is.na(predbp) & predbp>=90) | bp_meds==1, 1L,0L),
          
          uacr=ifelse(!is.na(preacr), preacr, ifelse(!is.na(preacr_from_separate), preacr_from_separate, NA)),
          
-         chd=predrug_myocardialinfarction==1 | predrug_revasc==1,
+         chd=pre_index_date_myocardialinfarction==1 | pre_index_date_revasc==1,
          
          current_smoker=ifelse(!is.na(smoking_cat) & smoking_cat=="Active smoker", 1L, ifelse(is.na(smoking_cat), NA, 0L)),
          
          ex_smoker=ifelse(!is.na(smoking_cat) & smoking_cat=="Ex-smoker", 1L, ifelse(is.na(smoking_cat), NA, 0L))) %>%
   
-  select(patid, dstartdate, drugclass, dstartdate_age, sex, black_ethnicity, preegfr, cvd, prehba1c, INS, oha, ever_smoker, hypertension, prebmi, uacr, presbp, bp_meds, predrug_heartfailure, chd, predrug_af, current_smoker, ex_smoker, preckdstage) %>%
+  select(patid, index_date_age, sex, black_ethnicity, preegfr, cvd, prehba1c, INS, oha, ever_smoker, hypertension, prebmi, uacr, presbp, bp_meds, pre_index_date_heartfailure, chd, pre_index_date_af, current_smoker, ex_smoker, preckdstage) %>%
   
   analysis$cached("final_merge_interim_ckd1", unique_indexes="patid")
 
@@ -260,7 +269,7 @@ ckdpc_scores <- ckdpc_score_vars %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, complete_acr=TRUE, remote=TRUE) %>%
+  calculate_ckdpc_egfr60_risk(age=index_date_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, complete_acr=TRUE, remote=TRUE) %>%
   
   rename(ckdpc_egfr60_total_score_complete_acr=ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor_complete_acr=ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score_complete_acr=ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor_complete_acr=ckdpc_egfr60_confirmed_lin_predictor) %>%
   
@@ -272,7 +281,7 @@ ckdpc_scores <- ckdpc_scores %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, remote=TRUE) %>%
+  calculate_ckdpc_egfr60_risk(age=index_date_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, remote=TRUE) %>%
   
   analysis$cached("final_merge_interim_ckd3", unique_indexes="patid")
 
@@ -282,7 +291,7 @@ ckdpc_scores <- ckdpc_scores %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_40egfr_risk(age=dstartdate_age, sex=sex2, egfr=preegfr, acr=uacr, sbp=presbp, bp_meds=bp_meds, hf=predrug_heartfailure, chd=chd, af=predrug_af, current_smoker=current_smoker, ex_smoker=ex_smoker, bmi=prebmi, hba1c=prehba1c, oha=oha, insulin=INS, remote=TRUE) %>%
+  calculate_ckdpc_40egfr_risk(age=index_date_age, sex=sex2, egfr=preegfr, acr=uacr, sbp=presbp, bp_meds=bp_meds, hf=pre_index_date_heartfailure, chd=chd, af=pre_index_date_af, current_smoker=current_smoker, ex_smoker=ex_smoker, bmi=prebmi, hba1c=prehba1c, oha=oha, insulin=INS, remote=TRUE) %>%
   
   mutate(across(starts_with("ckdpc_egfr60"),
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &

@@ -180,7 +180,7 @@ qscore_vars <- t2d_1stinstance %>%
            ifelse(is.na(predrug_latest_thiazide_diuretics),as.Date("1900-01-01"),predrug_latest_thiazide_diuretics),
            na.rm=TRUE
          ),
-         bp_meds=ifelse(earliest_bp_med!=as.Date("2050-01-01") & latest_bp_med!=as.Date("1900-01-01") & datediff(latest_bp_med, dstartdate)<=28 & earliest_bp_med!=latest_bp_med, 1L, 0L),
+         bp_meds=ifelse(earliest_bp_med!=as.Date("2050-01-01") & latest_bp_med!=as.Date("1900-01-01") & datediff(dstartdate, latest_bp_med)<=28 & earliest_bp_med!=latest_bp_med, 1L, 0L),
          
          type1=0L,
          type2=1L,
@@ -306,7 +306,7 @@ ckdpc_score_vars <- t2d_1stinstance %>%
            na.rm=TRUE
          ),
          
-         bp_meds=ifelse(latest_bp_med!=as.Date("1900-01-01") & datediff(latest_bp_med, dstartdate)<=183, 1L, 0L),
+         bp_meds=ifelse(latest_bp_med!=as.Date("1900-01-01") & datediff(dstartdate, latest_bp_med)<=183, 1L, 0L),
          
          hypertension=ifelse((!is.na(presbp) & presbp>=140) | (!is.na(predbp) & predbp>=90) | bp_meds==1, 1L,0L),
          
