@@ -208,16 +208,16 @@ ckdpc_score_vars <- final_merge %>%
          
          cvd=pre_index_date_myocardialinfarction==1 | pre_index_date_revasc==1 | pre_index_date_heartfailure==1 | pre_index_date_stroke==1,
          
-         oha=ifelse(datediff(index_date, pre_index_date_latest_acarbose)<=183 | 
-                      datediff(index_date, pre_index_date_latest_mfn)<=183 |
-                      datediff(index_date, pre_index_date_latest_dpp4)<=183 |
-                      datediff(index_date, pre_index_date_latest_glinide)<=183 |
-                      datediff(index_date, pre_index_date_latest_glp1)<=183 |
-                      datediff(index_date, pre_index_date_latest_sglt2)<=183 |
-                      datediff(index_date, pre_index_date_latest_su)<=183 |
-                      datediff(index_date, pre_index_date_latest_tzd)<=183, 1L, 0L),
+         oha=ifelse((!is.na(pre_index_date_latest_acarbose) & datediff(index_date, pre_index_date_latest_acarbose)<=183) | 
+                      (!is.na(pre_index_date_latest_mfn) & datediff(index_date, pre_index_date_latest_mfn)<=183) |
+                      (!is.na(pre_index_date_latest_dpp4) & datediff(index_date, pre_index_date_latest_dpp4)<=183) |
+                      (!is.na(pre_index_date_latest_glinide) & datediff(index_date, pre_index_date_latest_glinide)<=183) |
+                      (!is.na(pre_index_date_latest_glp1) & datediff(index_date, pre_index_date_latest_glp1)<=183) |
+                      (!is.na(pre_index_date_latest_sglt2) & datediff(index_date, pre_index_date_latest_sglt2)<=183) |
+                      (!is.na(pre_index_date_latest_su) & datediff(index_date, pre_index_date_latest_su)<=183) |
+                      (!is.na(pre_index_date_latest_tzd) & datediff(index_date, pre_index_date_latest_tzd)<=183), 1L, 0L),
          
-         INS=ifelse(datediff(index_date, pre_index_date_latest_insulin)<=183, 1L, 0L),
+         INS=ifelse(!is.na(pre_index_date_latest_insulin) & datediff(index_date, pre_index_date_latest_insulin)<=183, 1L, 0L),
          
          ever_smoker=ifelse(!is.na(smoking_cat) & (smoking_cat=="Ex-smoker" | smoking_cat=="Active smoker"), 1L, ifelse(is.na(smoking_cat), NA, 0L)),
          
@@ -296,21 +296,16 @@ ckdpc_scores <- ckdpc_scores %>%
   mutate(across(starts_with("ckdpc_egfr60"),
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &
                           (is.na(preegfr) | preegfr>=60) &
-                          dstartdate_age>=20 & dstartdate_age<=80 &
-                          uacr>=0.6 & uacr<=56.5 &
-                          prebmi>=20 & prebmi<=40 &
-                          prehba1c>=42 & prehba1c<=97, .x, NA))) %>%
+                          index_date_age>=20 & index_date_age<=80 &
+                          prebmi>=20, .x, NA))) %>%
   
   mutate(across(starts_with("ckdpc_40egfr"),
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &
                           (is.na(preegfr) | preegfr>=60) &
-                          dstartdate_age>=20 & dstartdate_age<=80 &
-                          uacr>=0.6 & uacr<=113 &
-                          presbp>=80 & presbp<=180 &
-                          prebmi>=20 & prebmi<=40 &
-                          prehba1c>=42 & prehba1c<=97, .x, NA))) %>%
+                          index_date_age>=20 & index_date_age<=80 &
+                          prebmi>=20, .x, NA))) %>%
   
-  select(patid, dstartdate, drugclass, ckdpc_egfr60_total_score_complete_acr, ckdpc_egfr60_total_lin_predictor_complete_acr, ckdpc_egfr60_confirmed_score_complete_acr, ckdpc_egfr60_confirmed_lin_predictor_complete_acr, ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor, ckdpc_40egfr_score, ckdpc_40egfr_lin_predictor) %>%
+  select(patid, ckdpc_egfr60_total_score_complete_acr, ckdpc_egfr60_total_lin_predictor_complete_acr, ckdpc_egfr60_confirmed_score_complete_acr, ckdpc_egfr60_confirmed_lin_predictor_complete_acr, ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor, ckdpc_40egfr_score, ckdpc_40egfr_lin_predictor) %>%
   
   analysis$cached("final_merge_interim_ckd4", unique_indexes="patid")
 

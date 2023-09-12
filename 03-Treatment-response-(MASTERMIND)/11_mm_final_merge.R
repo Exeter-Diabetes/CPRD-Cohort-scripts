@@ -374,18 +374,13 @@ ckdpc_scores <- ckdpc_scores %>%
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &
                           (is.na(preegfr) | preegfr>=60) &
                           dstartdate_age>=20 & dstartdate_age<=80 &
-                          uacr>=0.6 & uacr<=56.5 &
-                          prebmi>=20 & prebmi<=40 &
-                          prehba1c>=42 & prehba1c<=97, .x, NA))) %>%
+                          prebmi>=20, .x, NA))) %>%
   
   mutate(across(starts_with("ckdpc_40egfr"),
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &
                           (is.na(preegfr) | preegfr>=60) &
                           dstartdate_age>=20 & dstartdate_age<=80 &
-                          uacr>=0.6 & uacr<=113 &
-                          presbp>=80 & presbp<=180 &
-                          prebmi>=20 & prebmi<=40 &
-                          prehba1c>=42 & prehba1c<=97, .x, NA))) %>%
+                          prebmi>=20, .x, NA))) %>%
   
   select(patid, dstartdate, drugclass, ckdpc_egfr60_total_score_complete_acr, ckdpc_egfr60_total_lin_predictor_complete_acr, ckdpc_egfr60_confirmed_score_complete_acr, ckdpc_egfr60_confirmed_lin_predictor_complete_acr, ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor, ckdpc_40egfr_score, ckdpc_40egfr_lin_predictor) %>%
   
