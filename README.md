@@ -15,9 +15,9 @@ graph TD;
     B -->|"With a diabetes QOF code with a valid date** (quality check to remove those without diabetes)"|C["n=1,138,193"]
     C --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=14"]
     C --> E["<b>Diabetes cohort</b>: n=1,138,179"]
-    E --> F["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
+    E --> F["<b>01 At-diagnosis cohort</b>: <br> n=771,678 <br> Index date=diagnosis date"]
     E --> G["<b>02 Prevalent cohort</b>: <br> n=643,143 <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
-    E --> H["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= <br> With script for diabetes medication <br> Index date=drug start date"]
+    E --> H["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n=995,036 with 3,218,100 unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
 \* Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition](https://cprd.com/sites/default/files/2023-02/CPRD%20Aurum%20Glossary%20Terms%20v2.pdf)). NB: removing those with registration start date in 2020 also removed all of those with a 'patienttypeid' not equal to 3 ('regular'). See next section for further details on the extract.
 &nbsp;
