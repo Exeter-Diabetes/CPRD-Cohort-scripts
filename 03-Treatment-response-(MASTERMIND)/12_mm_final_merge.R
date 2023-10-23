@@ -59,6 +59,9 @@ non_diabetes_meds <- non_diabetes_meds %>% analysis$cached("non_diabetes_meds")
 ## Smoking status at drug start
 smoking <- smoking %>% analysis$cached("smoking")
 
+#Alcohol at drug start
+alcohol <- alcohol %>% analysis$cached("alcohol")
+
 ## Discontinuation
 discontinuation <- discontinuation %>% analysis$cached("discontinuation")
 
@@ -116,7 +119,7 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 
 
 
-## Merge in biomarkers, comorbidities, non-diabetes meds, smoking status
+## Merge in biomarkers, comorbidities, non-diabetes meds, smoking status, alcohol
 ### Could merge on druginstance too, but quicker not to
 ### Remove some variables to avoid duplicates
 ### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores
@@ -131,6 +134,7 @@ t2d_1stinstance <- t2d_1stinstance %>%
 t2d_1stinstance <- t2d_1stinstance %>%
   inner_join((non_diabetes_meds %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((smoking %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join((alcohol %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((discontinuation %>% select(-c(druginstance, timeondrug, nextremdrug, timetolastpx))), by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(death_causes, by="patid") %>%
   mutate(dstartdate_age=datediff(dstartdate, dob)/365.25,
