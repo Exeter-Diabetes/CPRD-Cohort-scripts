@@ -396,7 +396,7 @@ ckdpc_scores <- ckdpc_scores %>%
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   left_join(ckdpc_scores, by=c("patid", "dstartdate", "drugclass")) %>%
-  analysis$cached(paste0(today, "_all_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_diabetes_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
 ##Filter just type 2s
 t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") %>%
@@ -419,7 +419,7 @@ is.integer64 <- function(x){
 all_diabetes_1stinstance_a <- all_diabetes_1stinstance_a %>%
   mutate_if(is.integer64, as.integer)
 
-save(all_diabetes_1stinstance_a, file=paste0(today, "_all_1stinstance_a.Rda"))
+save(all_diabetes_1stinstance_a, file=paste0(today, "_all_diabetes_1stinstance_a.Rda"))
 
 rm(all_diabetes_1stinstance_a)
 
@@ -429,7 +429,7 @@ all_diabetes_1stinstance_b <- collect(all_diabetes_1stinstance %>% filter(patid>
 all_diabetes_1stinstance_b <- all_diabetes_1stinstance_b %>%
   mutate_if(is.integer64, as.integer)
 
-save(all_diabetes_1stinstance_b, file=paste0(today, "_all_1stinstance_b.Rda"))
+save(all_diabetes_1stinstance_b, file=paste0(today, "_all_diabetes_1stinstance_b.Rda"))
 
 rm(all_diabetes_1stinstance_b)
 
