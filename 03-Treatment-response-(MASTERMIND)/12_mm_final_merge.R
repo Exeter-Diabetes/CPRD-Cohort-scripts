@@ -1,5 +1,5 @@
 
-# Extract dataset of all first instance drug periods (i.e. the first time patient has taken this particular drug class) for T2Ds WITH HES LINKAGE
+# Extract dataset of all first instance drug periods (i.e. the first time patient has taken this particular drug class) for ALL DIABETES/T2Ds ONLY WITH HES LINKAGE
 ## Exclude drug periods starting within 90 days of registration
 ## Set drugline to missing where diagnosed before registration
 
@@ -9,7 +9,7 @@
 
 ## Set hosp_admission_prev_year to 0/1 rather than NA/1
 
-# Also extract all T2D drug start and stop dates for T2Ds so that you can see if people later initiate SGLT2is/GLP1s etc.
+# Also extract all drug start and stop dates so that you can see if people later initiate SGLT2is/GLP1s etc.
 
 ############################################################################################
 
@@ -76,46 +76,46 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 
 # Make first instance drug period dataset
 
-## Define T2D cohort (1 line per patient) with HES linkage
+## Define all diabetes cohort (1 line per patient) with HES linkage
 ## Add in Townsend Deprivation Scores
-t2ds <- diabetes_cohort %>%
+all_diabetes <- diabetes_cohort %>%
   left_join((townsend_score %>% select(patid, tds_2011)), by="patid") %>%
   relocate(tds_2011, .after=imd2015_10) %>%
-  filter(diabetes_type=="type 2" & with_hes==1)
+  filter(with_hes==1)
 
 
 ## Get info for first instance drug periods for cohort (1 line per patid-drugclass period)
 ### Make new drugline variable which is missing where diagnosed before registration or within 90 days following
 
-t2d_drug_periods <- t2ds %>%
+all_diabetes_drug_periods <- all_diabetes %>%
   inner_join(drug_start_stop, by="patid") %>%
   inner_join(combo_start_stop, by=c("patid", c("dstartdate"="dcstartdate"))) %>%
   inner_join((glycaemic_failure %>% select(-c(dstopdate, timetochange, timetoaddrem, nextdrugchange, nextdcdate, prehba1c, prehba1cdate, threshold_7.5, threshold_8.5, threshold_baseline, threshold_baseline_0.5))), by=c("patid", "dstartdate", "drugclass")) %>%
   mutate(drugline=ifelse(dm_diag_date_all<regstartdate | is.na(dm_diag_date), NA, drugline_all)) %>%
   relocate(drugline, .after=drugline_all) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_1"), indexes=c("patid", "dstartdate", "drugclass"))
 
-t2d_drug_periods %>% distinct(patid) %>% count()
-# 865,054
+all_diabetes_drug_periods %>% distinct(patid) %>% count()
+# 959587
   
 
 ### Keep first instance only
-t2d_1stinstance <- t2d_drug_periods %>%
+all_diabetes_1stinstance <- all_diabetes_drug_periods %>%
   filter(druginstance==1)
 
-t2d_1stinstance %>% distinct(patid) %>% count()
-# 865,054 as above
+all_diabetes_1stinstance %>% distinct(patid) %>% count()
+# 959587 as above
 
 
 ### Exclude drug periods starting within 90 days of registration
-t2d_1stinstance <- t2d_1stinstance %>%
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   filter(datediff(dstartdate, regstartdate)>90)
 
-t2d_1stinstance %>% count()
-# 1,663,398
+all_diabetes_1stinstance %>% count()
+# 1757512
 
-t2d_1stinstance %>% distinct(patid) %>% count()
-# 769,394
+all_diabetes_1stinstance %>% distinct(patid) %>% count()
+# 828028
 
 
 
@@ -125,13 +125,13 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 ### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores
 ### Now in two stages to speed it up
 
-t2d_1stinstance <- t2d_1stinstance %>%
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((ckd_stages %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((comorbidities %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
 
-t2d_1stinstance <- t2d_1stinstance %>%
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((non_diabetes_meds %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((smoking %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((alcohol %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
@@ -142,16 +142,16 @@ t2d_1stinstance <- t2d_1stinstance %>%
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25,
          hosp_admission_prev_year=ifelse(is.na(hosp_admission_prev_year) & with_hes==1, 0L,
                                          ifelse(hosp_admission_prev_year==1, 1L, NA))) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_3"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_3"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 # Check counts
 
-t2d_1stinstance %>% count()
-# 1,663,398
+all_diabetes_1stinstance %>% count()
+# 1757512
 
-t2d_1stinstance %>% distinct(patid) %>% count()
-# 769,394
+all_diabetes_1stinstance %>% distinct(patid) %>% count()
+# 828028
 
 
 ############################################################################################
@@ -160,7 +160,7 @@ t2d_1stinstance %>% distinct(patid) %>% count()
 
 ## Make separate table with additional variables for QRISK2 and QDiabetes-HF
 
-qscore_vars <- t2d_1stinstance %>%
+qscore_vars <- all_diabetes_1stinstance %>%
   mutate(precholhdl=pretotalcholesterol/prehdl,
          ckd45=preckdstage=="stage_4" | preckdstage=="stage_5",
          cvd=predrug_myocardialinfarction==1 | predrug_angina==1 | predrug_stroke==1,
@@ -193,7 +193,7 @@ qscore_vars <- t2d_1stinstance %>%
   
   select(patid, dstartdate, drugclass, sex, dstartdate_age, ethnicity_qrisk2, qrisk2_smoking_cat, dm_duration_cat, bp_meds, type1, type2, cvd, ckd45, predrug_fh_premature_cvd, predrug_af, predrug_rheumatoidarthritis, prehba1c, precholhdl, presbp, prebmi, tds_2011, surv_5yr, surv_10yr) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_q1"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_q1"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 
@@ -219,7 +219,7 @@ qscores <- qscore_vars %>%
   
   calculate_qdiabeteshf(sex=sex2, age=dstartdate_age, ethrisk=ethnicity_qrisk2, smoking=qrisk2_smoking_cat, duration=dm_duration_cat, type1=type1, cvd=cvd, renal=ckd45, af=predrug_af, hba1c=prehba1c, cholhdl=precholhdl, sbp=presbp, bmi=prebmi, town=tds_2011, surv=surv_5yr) %>%
 
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_q2"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_q2"), indexes=c("patid", "dstartdate", "drugclass"))
   
   
 
@@ -233,7 +233,7 @@ qscores <- qscores %>%
   
   select(-qrisk2_lin_predictor) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_q3"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_q3"), indexes=c("patid", "dstartdate", "drugclass"))
   
 
 
@@ -273,15 +273,15 @@ qscores <- qscores %>%
   
   select(patid, dstartdate, drugclass, qdiabeteshf_5yr_score, qdiabeteshf_lin_predictor, qrisk2_5yr_score, qrisk2_10yr_score, qrisk2_lin_predictor) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_q4"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_q4"), indexes=c("patid", "dstartdate", "drugclass"))
 
   
 
 ## Join with main dataset
 
-t2d_1stinstance <- t2d_1stinstance %>%
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   left_join(qscores, by=c("patid", "dstartdate", "drugclass")) %>%
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_4"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_4"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 ############################################################################################
@@ -290,7 +290,7 @@ t2d_1stinstance <- t2d_1stinstance %>%
 
 ## Make separate table with additional variables
 
-ckdpc_score_vars <- t2d_1stinstance %>%
+ckdpc_score_vars <- all_diabetes_1stinstance %>%
   
   mutate(sex=ifelse(gender==1, "male", ifelse(gender==2, "female", "NA")),
          
@@ -324,7 +324,7 @@ ckdpc_score_vars <- t2d_1stinstance %>%
   
   select(patid, dstartdate, drugclass, dstartdate_age, sex, black_ethnicity, preegfr, cvd, prehba1c, INS, oha, ever_smoker, hypertension, prebmi, uacr, presbp, bp_meds, predrug_heartfailure, chd, predrug_af, current_smoker, ex_smoker, preckdstage) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_ckd1"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_ckd1"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 
@@ -354,7 +354,7 @@ ckdpc_scores <- ckdpc_score_vars %>%
   
   rename(ckdpc_egfr60_total_score_complete_acr=ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor_complete_acr=ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score_complete_acr=ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor_complete_acr=ckdpc_egfr60_confirmed_lin_predictor) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_ckd2"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_ckd2"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 
@@ -364,7 +364,7 @@ ckdpc_scores <- ckdpc_scores %>%
   
   calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, remote=TRUE) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_ckd3"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_ckd3"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 
@@ -388,14 +388,18 @@ ckdpc_scores <- ckdpc_scores %>%
   
   select(patid, dstartdate, drugclass, ckdpc_egfr60_total_score_complete_acr, ckdpc_egfr60_total_lin_predictor_complete_acr, ckdpc_egfr60_confirmed_score_complete_acr, ckdpc_egfr60_confirmed_lin_predictor_complete_acr, ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor, ckdpc_40egfr_score, ckdpc_40egfr_lin_predictor) %>%
   
-  analysis$cached(paste0(today, "_t2d_1stinstance_interim_ckd4"), indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_ckd4"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 
 ## Join with main dataset
 
-t2d_1stinstance <- t2d_1stinstance %>%
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   left_join(ckdpc_scores, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached(paste0(today, "_all_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
+
+##Filter just type 2s
+t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") %>%
   analysis$cached(paste0(today, "_t2d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
@@ -403,6 +407,34 @@ t2d_1stinstance <- t2d_1stinstance %>%
 
 # Export to R data object
 ## Convert integer64 datatypes to double
+
+###All diabetes
+
+all_diabetes_1stinstance_a <- collect(all_diabetes_1stinstance %>% filter(patid<2000000000000) %>% mutate(patid=as.character(patid)))
+
+is.integer64 <- function(x){
+  class(x)=="integer64"
+}
+
+all_diabetes_1stinstance_a <- all_diabetes_1stinstance_a %>%
+  mutate_if(is.integer64, as.integer)
+
+save(all_diabetes_1stinstance_a, file=paste0(today, "_all_1stinstance_a.Rda"))
+
+rm(all_diabetes_1stinstance_a)
+
+
+all_diabetes_1stinstance_b <- collect(all_diabetes_1stinstance %>% filter(patid>=2000000000000) %>% mutate(patid=as.character(patid)))
+
+all_diabetes_1stinstance_b <- all_diabetes_1stinstance_b %>%
+  mutate_if(is.integer64, as.integer)
+
+save(all_diabetes_1stinstance_b, file=paste0(today, "_all_1stinstance_b.Rda"))
+
+rm(all_diabetes_1stinstance_b)
+
+
+###Just T2s
 
 t2d_1stinstance_a <- collect(t2d_1stinstance %>% filter(patid<2000000000000) %>% mutate(patid=as.character(patid)))
 
@@ -430,9 +462,15 @@ rm(t2d_1stinstance_b)
 
 ############################################################################################
 
-# Make dataset of all T2D drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
+# Make dataset of all drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
 
-t2d_all_drug_periods <- t2ds %>%
+all_diabetes_all_drug_periods <- all_diabetes %>%
+  inner_join(drug_start_stop, by="patid") %>%
+  select(patid, drugclass, dstartdate, dstopdate) %>%
+  analysis$cached(paste0(today, "_all_diabetes_all_drug_periods"))
+
+##Just T2s
+t2d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 2") %>%
   inner_join(drug_start_stop, by="patid") %>%
   select(patid, drugclass, dstartdate, dstopdate) %>%
   analysis$cached(paste0(today, "_t2d_all_drug_periods"))
@@ -441,6 +479,12 @@ t2d_all_drug_periods <- t2ds %>%
 ## Export to R data object
 ### No integer64 datatypes
 
+###All diabetes
+all_diabetes_all_drug_periods <- collect(all_diabetes_all_drug_periods %>% mutate(patid=as.character(patid)))
+
+save(all_diabetes_all_drug_periods, file=paste0(today, "_all_diabetes_all_drug_periods.Rda"))
+
+###Just T2s
 t2d_all_drug_periods <- collect(t2d_all_drug_periods %>% mutate(patid=as.character(patid)))
 
 save(t2d_all_drug_periods, file=paste0(today, "_t2d_all_drug_periods.Rda"))
