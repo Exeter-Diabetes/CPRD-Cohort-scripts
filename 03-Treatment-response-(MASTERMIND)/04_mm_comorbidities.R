@@ -431,7 +431,7 @@ hosp_admi_prev_year <- drug_start_stop %>%
 hosp_admi_prev_year_count <- drug_start_stop %>%
   inner_join(cprd$tables$hesPrimaryDiagHosp, by="patid") %>%
   filter(!is.na(admidate) & datediff(dstartdate, admidate)<365 & datediff(dstartdate, admidate)>0) %>%
-  group_by(patid) %>%
+  group_by(patid, dstartdate, drugclass) %>%
   summarise(hosp_admission_prev_year_count=n()) %>%
   ungroup()
 
