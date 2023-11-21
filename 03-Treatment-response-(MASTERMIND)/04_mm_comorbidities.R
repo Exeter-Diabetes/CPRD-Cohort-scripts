@@ -428,6 +428,13 @@ hosp_admi_prev_year <- drug_start_stop %>%
   distinct(patid, dstartdate, drugclass) %>%
   mutate(hosp_admission_prev_year=1L)
 
+hosp_admi_prev_year_count <- drug_start_stop %>%
+  inner_join(cprd$tables$hesPrimaryDiagHosp, by="patid") %>%
+  filter(!is.na(admidate) & datediff(dstartdate, admidate)<365 & datediff(dstartdate, admidate)>0) %>%
+  group_by(patid) %>%
+  summarise(hosp_admission_prev_year_count=n()) %>%
+  ungroup()
+
 next_hosp_admi <- drug_start_stop %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
   filter(!is.na(admidate) & admidate>dstartdate & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
@@ -437,6 +444,7 @@ next_hosp_admi <- drug_start_stop %>%
 
 hosp_admi <- drug_start_stop %>%
   left_join(hosp_admi_prev_year, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(hosp_admi_prev_year_count, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(next_hosp_admi, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached("comorbidities_interim_hosp_admi", indexes=c("patid", "dstartdate", "drugclass"))
 
