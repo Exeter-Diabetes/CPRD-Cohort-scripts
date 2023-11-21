@@ -141,7 +141,8 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
          dstartdate_dm_dur_all=datediff(dstartdate, dm_diag_date_all)/365.25,
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25,
          hosp_admission_prev_year=ifelse(is.na(hosp_admission_prev_year) & with_hes==1, 0L,
-                                         ifelse(hosp_admission_prev_year==1, 1L, NA))) %>%
+                                         ifelse(hosp_admission_prev_year==1, 1L, NA)),
+         hosp_admission_prev_year_count=ifelse(is.na(hosp_admission_prev_year_count) & with_hes==1, 0L, hosp_admission_prev_year_count)) %>%
   analysis$cached(paste0(today, "_all_1stinstance_interim_3"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
