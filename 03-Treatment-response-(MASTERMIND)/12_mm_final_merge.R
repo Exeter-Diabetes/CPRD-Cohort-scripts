@@ -399,9 +399,13 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   left_join(ckdpc_scores, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached(paste0(today, "_all_diabetes_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
-##Filter just type 2s
+## Filter just type 2s
 t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") %>%
   analysis$cached(paste0(today, "_t2d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
+
+## Filter just type 1s
+#t1d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 1") %>%
+#  analysis$cached(paste0(today, "_t1d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
 
 ############################################################################################
@@ -409,7 +413,7 @@ t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") 
 # Export to R data object
 ## Convert integer64 datatypes to double
 
-###All diabetes
+### All diabetes
 
 all_diabetes_1stinstance_a <- collect(all_diabetes_1stinstance %>% filter(patid<2000000000000) %>% mutate(patid=as.character(patid)))
 
@@ -435,13 +439,9 @@ save(all_diabetes_1stinstance_b, file=paste0(today, "_all_diabetes_1stinstance_b
 rm(all_diabetes_1stinstance_b)
 
 
-###Just T2s
+### Just T2s
 
 t2d_1stinstance_a <- collect(t2d_1stinstance %>% filter(patid<2000000000000) %>% mutate(patid=as.character(patid)))
-
-is.integer64 <- function(x){
-  class(x)=="integer64"
-}
 
 t2d_1stinstance_a <- t2d_1stinstance_a %>%
   mutate_if(is.integer64, as.integer)
@@ -461,6 +461,18 @@ save(t2d_1stinstance_b, file=paste0(today, "_t2d_1stinstance_b.Rda"))
 rm(t2d_1stinstance_b)
 
 
+### Just T1s (small enough to do in one go)
+
+#t1d_1stinstance <- collect(t1d_1stinstance %>% mutate(patid=as.character(patid)))
+
+#t1d_1stinstance <- t1d_1stinstance %>%
+#  mutate_if(is.integer64, as.integer)
+
+#save(t1d_1stinstance, file=paste0(today, "_t1d_1stinstance.Rda"))
+
+#rm(t1d_1stinstance)
+
+
 ############################################################################################
 
 # Make dataset of all drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
@@ -470,23 +482,34 @@ all_diabetes_all_drug_periods <- all_diabetes %>%
   select(patid, drugclass, dstartdate, dstopdate) %>%
   analysis$cached(paste0(today, "_all_diabetes_all_drug_periods"))
 
-##Just T2s
+## Just T2s
 t2d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 2") %>%
   inner_join(drug_start_stop, by="patid") %>%
   select(patid, drugclass, dstartdate, dstopdate) %>%
   analysis$cached(paste0(today, "_t2d_all_drug_periods"))
 
+## Just T1s
+#t1d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 1") %>%
+#  inner_join(drug_start_stop, by="patid") %>%
+#  select(patid, drugclass, dstartdate, dstopdate) %>%
+#  analysis$cached(paste0(today, "_t1d_all_drug_periods"))
+
 
 ## Export to R data object
 ### No integer64 datatypes
 
-###All diabetes
+### All diabetes
 all_diabetes_all_drug_periods <- collect(all_diabetes_all_drug_periods %>% mutate(patid=as.character(patid)))
 
 save(all_diabetes_all_drug_periods, file=paste0(today, "_all_diabetes_all_drug_periods.Rda"))
 
-###Just T2s
+### Just T2s
 t2d_all_drug_periods <- collect(t2d_all_drug_periods %>% mutate(patid=as.character(patid)))
 
 save(t2d_all_drug_periods, file=paste0(today, "_t2d_all_drug_periods.Rda"))
+
+### Just T1s
+#t1d_all_drug_periods <- collect(t1d_all_drug_periods %>% mutate(patid=as.character(patid)))
+
+#save(t1d_all_drug_periods, file=paste0(today, "_t1d_all_drug_periods.Rda"))
 
