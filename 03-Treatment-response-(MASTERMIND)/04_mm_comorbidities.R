@@ -74,7 +74,8 @@ comorbids <- c("af", #atrial fibrillation
                "hosp_cause_majoramputation",
                "hosp_cause_minoramputation",
                "osteoporosis",
-               "unstableangina"
+               "unstableangina",
+               "frailty_simple"
 )
 
 
@@ -149,6 +150,16 @@ raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
 
 ## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
 comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", comorbids)
+
+
+# Separate frailty by severity into three different categories
+raw_frailty_mild_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Mild")
+raw_frailty_moderate_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Moderate")
+raw_frailty_severe_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Severe")
+
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
+comorbids <- setdiff(comorbids, "frailty_simple")
+comorbids <- c("frailty_mild", "frailty_moderate", "frailty_severe", comorbids)
 
 
 ############################################################################################
