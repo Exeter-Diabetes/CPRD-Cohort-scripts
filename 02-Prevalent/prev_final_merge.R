@@ -332,4 +332,4 @@ is.integer64 <- function(x){
 prev_cohort <- prev_cohort %>%
   mutate_if(is.integer64, as.integer)
 
-save(prev_cohort, file="20231218_prev_cohort.Rda")
+save(prev_cohort, file="20231218_prev_2020_cohort.Rda")
