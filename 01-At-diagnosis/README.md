@@ -4,6 +4,10 @@ The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes coho
 
 &nbsp;
 
+Note that as our CPRD extract specified that patients were required to have 1 year of data following their earliest (within study/UTS) diabetes code, there are few patients with diabetes diagnosed within the registration period who die within 1 year of diagnosis.
+
+&nbsp;
+
 ## Script overview
 
 The below diagram shows the R scripts (in grey boxes) used to create the at-diagnosis cohort. The diabetes diagnosis dates from the "all_diabetes_cohort" script are required to define the baseline biomarkers, comorbidities, smoking status, alcohol status and CKD stage at diagnosis.
