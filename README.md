@@ -37,6 +37,10 @@ Patients with a diabetes-related medcode ([full list here](https://github.com/Ex
 
 &nbsp;
 
+Note that as patients were required to have 1 year of data following their earliest (within study/UTS) diabetes code, there are few patients with diabetes diagnosed within the registration period who die within 1 year of diagnosis.
+
+&nbsp;
+
 
 ## Script overview
 
