@@ -210,7 +210,8 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | predrug_{comorbidity} | binary 0/1 if any instance of comorbidity before/at dstartdate | |
 | hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
 | hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
-| postdrug_first_all_cause_hosp | earliest inpatient hospital admission after (not at) dstartdate - emegency only (excluding admimeth=11, 12, or 13) |
+| postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) |
+| postdrug_first_emergency_hosp_cause | primary cause of admission (ICD10 code) for earliest inpatient hospital admission (date of admission in postdrug_first_emergency_hosp variable) |
 | predrug_earliest_{med} | earliest script for non-diabetes medication before/at dstartdate |
 | predrug_latest_{med} | latest script for non-diabetes medication before/at dstartdate |
 | postdrug_first_{med} | earliest script for non-diabetes medication after (not at) dstartdate |
