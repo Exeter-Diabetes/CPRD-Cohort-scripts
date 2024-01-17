@@ -4,6 +4,13 @@ The treatment response cohort consists of all those in the diabetes cohort (n=1,
 
 MASTERMIND (MRC APBI Stratification and Extreme Response Mechanism IN Diabetes) is a UK Medical Research Council funded (MR/N00633X/1 and MR/W003988/1) study consortium exploring stratified (precision) treatment in Type 2 diabetes. Part of this work uses the Type 2 subset of the treatment response cohort. Originally CPRD GOLD was used and processed as per [Rodgers et al. 2017](https://bmjopen.bmj.com/content/7/10/e017989). Recently we have recreated this processing pipeline in CPRD Aurum, and this directory contains the scripts used to do this. MASTERMIND papers based on the previous GOLD dataset can be found at the bottom of this page.
 
+From 2024 our papers use a standard colour palette for the different Type 2 diabetes treatments:
+- ![#e69f00](https://placehold.co/15x15/e69f00/e69f00.png) `#E69F00` for SGLT2i
+- ![#56B4E9](https://placehold.co/15x15/56B4E9/56B4E9.png) `#56B4E9` for GLP1-RA
+- ![#CC79A7](https://placehold.co/15x15/CC79A7/CC79A7.png) `#CC79A7` for SU
+- ![#0072B2](https://placehold.co/15x15/0072B2/0072B2.png) `#0072B2` for DPP4i
+- ![#D55E00](https://placehold.co/15x15/D55E00/D55E00.png) `#1589F0` for TZD
+
 &nbsp;
 
 ## Script overview
