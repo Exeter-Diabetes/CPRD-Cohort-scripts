@@ -75,7 +75,8 @@ comorbids <- c("af", #atrial fibrillation
                "hosp_cause_minoramputation",
                "osteoporosis",
                "unstableangina",
-               "frailty_simple"
+               "frailty_simple",
+               "fh_diabetes" #note includes sibling, child, parents
 )
 
 
@@ -153,20 +154,27 @@ comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", 
 
 
 # Separate frailty by severity into three different categories
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
 raw_frailty_mild_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Mild")
 raw_frailty_moderate_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Moderate")
 raw_frailty_severe_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Severe")
-
-## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
 comorbids <- setdiff(comorbids, "frailty_simple")
 comorbids <- c("frailty_mild", "frailty_moderate", "frailty_severe", comorbids)
+
+
+# Separate family history by whether positive or negative
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
+raw_fh_diabetes_positive_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diabetes_cat!="negative")
+raw_fh_diabetes_negative_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diabetes_cat=="negative")
+comorbids <- setdiff(comorbids, "fh_diabetes")
+comorbids <- c("fh_diabetes_positive", "fh_diabetes_negative", comorbids)
 
 
 ############################################################################################
 
 # Clean and combine medcodes, ICD10 codes and OPCS4 codes, then merge with drug start dates
 ## Remove medcodes before DOB or after lcd/deregistration/death
-## Remove HES codes before DOB or after 31/10/2021 or death
+## Remove HES codes before DOB or after 31/10/2020 or death
 ## NB: for biomarkers, cleaning and combining with drug start dates is 2 separate steps with caching between, but as there are fewer cleaning steps for comorbidities I have made this one step here
 
 
@@ -275,9 +283,9 @@ for (i in comorbids) {
 ############################################################################################
 
 # Find earliest predrug, latest predrug and first postdrug dates
-## Leave genital_infection_nonspec, fluvacc_stopflu_med and amputation for now as need to be processed differently
+## Leave genital_infection_nonspec, fluvacc_stopflu_med, amputation and family history of diabetes for now as need to be processed differently
 
-comorbids <- setdiff(comorbids, c("genital_infection_nonspec", "fluvacc_stopflu_med", "hosp_cause_majoramputation", "hosp_cause_minoramputation"))
+comorbids <- setdiff(comorbids, c("genital_infection_nonspec", "fluvacc_stopflu_med", "hosp_cause_majoramputation", "hosp_cause_minoramputation", "fh_diabetes_positive", "fh_diabetes_negative"))
 
 comorbidities <- drug_start_stop %>%
   select(patid, dstartdate, drugclass, druginstance)
@@ -343,10 +351,11 @@ for (i in comorbids) {
 
 ############################################################################################
 
-# Make separate tables for genital_infection_nonspec, fluvacc_stopflu_med and amputation as need to be combined with definite_genital_infection_meds / fluvacc_stopflu_prod (prodcodes) / combine 2 x amputation medcodes first (need to produce definite_genital_infection_meds / fluvacc_stopflu_prod full drug merge table in script 6_mm_non_diabetes_meds first)
+# Make separate tables for genital_infection_nonspec, fluvacc_stopflu_med, amputation and fh_diabetes as need to be combined with definite_genital_infection_meds / fluvacc_stopflu_prod (prodcodes) / combine 2 x amputation medcodes / combine positive and negative fh_diabetes codes first (need to produce definite_genital_infection_meds / fluvacc_stopflu_prod full drug merge table in script 6_mm_non_diabetes_meds first)
 
 drug_start_stop <- drug_start_stop %>%
   select(patid, dstartdate, drugclass)
+
 
 ## Unspecific GI variable - have to have medcode and prodcode on same day
 ### Also rename genital_infection to medspecific_gi
@@ -428,6 +437,32 @@ amputation_outcome <- drug_start_stop %>%
   analysis$cached("comorbidities_interim_amputation_outcome", indexes=c("patid", "dstartdate", "drugclass"))
 
 
+## Family history of diabetes - binary variable or missing
+
+fh_diabetes_positive_latest <- full_fh_diabetes_positive_drug_merge %>%
+  filter(date<=dstartdate) %>%
+  group_by(patid, dstartdate, drugclass) %>%
+  summarise(fh_diabetes_positive_latest=max(date, na.rm=TRUE)) %>%
+  ungroup()
+
+fh_diabetes_negative_latest <- full_fh_diabetes_negative_drug_merge %>%
+  filter(date<=dstartdate) %>%
+  group_by(patid, dstartdate, drugclass) %>%
+  summarise(fh_diabetes_negative_latest=max(date, na.rm=TRUE)) %>%
+  ungroup()
+
+fh_diabetes <- drug_start_stop %>%
+  left_join(fh_diabetes_positive_latest, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(fh_diabetes_negative_latest, by=c("patid", "dstartdate", "drugclass")) %>%
+  mutate(fh_diabetes=ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest==fh_diabetes_negative_latest, NA,
+                            ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest>fh_diabetes_negative_latest, 1L,
+                                   ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest<fh_diabetes_negative_latest, 0L,
+                                          ifelse(!is.na(fh_diabetes_positive_latest) & is.na(fh_diabetes_negative_latest), 1L,
+                                                 ifelse(is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest), 0L, NA)))))) %>%
+  select(patid, dstartdate, drugclass, fh_diabetes) %>%
+  analysis$cached("comorbidities_interim_fh_diabetes", indexes=c("patid", "dstartdate", "drugclass"))
+
+
 ############################################################################################
 
 # Make separate table for whether hospital admission in previous year to drug start, and with first postdrug emergency hospitalisation for any cause, and what this cause is
@@ -483,5 +518,6 @@ comorbidities <- comorbidities %>%
          predrug_medspecific_gi=predrug_genital_infection) %>%
   left_join(flu_vaccination, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(amputation_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(fh_diabetes, by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(hosp_admi, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached("comorbidities", indexes=c("patid", "dstartdate", "drugclass"))
