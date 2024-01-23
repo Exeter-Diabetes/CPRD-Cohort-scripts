@@ -122,7 +122,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 ## Merge in biomarkers, comorbidities, non-diabetes meds, smoking status, alcohol
 ### Could merge on druginstance too, but quicker not to
 ### Remove some variables to avoid duplicates
-### Make new variables: age at drug start, diabetes duration at drug start, CV risk scores
+### Make new variables: age at drug start, diabetes duration at drug start
 ### Now in two stages to speed it up
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
@@ -399,13 +399,23 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   left_join(ckdpc_scores, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached(paste0(today, "_all_diabetes_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
+
 ## Filter just type 2s
 t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") %>%
   analysis$cached(paste0(today, "_t2d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
 
+### Check unique patid count
+t2d_1stinstance %>% distinct(patid) %>% count()
+#769,394
+
+
 ## Filter just type 1s
-#t1d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 1") %>%
-#  analysis$cached(paste0(today, "_t1d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
+t1d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 1") %>%
+  analysis$cached(paste0(today, "_t1d_1stinstance"), indexes=c("patid", "dstartdate", "drugclass"))
+
+### Check unique patid count
+t1d_1stinstance %>% distinct(patid) %>% count()
+#43,897
 
 
 ############################################################################################
@@ -463,14 +473,14 @@ rm(t2d_1stinstance_b)
 
 ### Just T1s (small enough to do in one go)
 
-#t1d_1stinstance <- collect(t1d_1stinstance %>% mutate(patid=as.character(patid)))
+t1d_1stinstance <- collect(t1d_1stinstance %>% mutate(patid=as.character(patid)))
 
-#t1d_1stinstance <- t1d_1stinstance %>%
-#  mutate_if(is.integer64, as.integer)
+t1d_1stinstance <- t1d_1stinstance %>%
+  mutate_if(is.integer64, as.integer)
 
-#save(t1d_1stinstance, file=paste0(today, "_t1d_1stinstance.Rda"))
+save(t1d_1stinstance, file=paste0(today, "_t1d_1stinstance.Rda"))
 
-#rm(t1d_1stinstance)
+rm(t1d_1stinstance)
 
 
 ############################################################################################
@@ -489,10 +499,10 @@ t2d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 2") %>%
   analysis$cached(paste0(today, "_t2d_all_drug_periods"))
 
 ## Just T1s
-#t1d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 1") %>%
-#  inner_join(drug_start_stop, by="patid") %>%
-#  select(patid, drugclass, dstartdate, dstopdate) %>%
-#  analysis$cached(paste0(today, "_t1d_all_drug_periods"))
+t1d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 1") %>%
+ inner_join(drug_start_stop, by="patid") %>%
+ select(patid, drugclass, dstartdate, dstopdate) %>%
+ analysis$cached(paste0(today, "_t1d_all_drug_periods"))
 
 
 ## Export to R data object
@@ -509,7 +519,7 @@ t2d_all_drug_periods <- collect(t2d_all_drug_periods %>% mutate(patid=as.charact
 save(t2d_all_drug_periods, file=paste0(today, "_t2d_all_drug_periods.Rda"))
 
 ### Just T1s
-#t1d_all_drug_periods <- collect(t1d_all_drug_periods %>% mutate(patid=as.character(patid)))
+t1d_all_drug_periods <- collect(t1d_all_drug_periods %>% mutate(patid=as.character(patid)))
 
-#save(t1d_all_drug_periods, file=paste0(today, "_t1d_all_drug_periods.Rda"))
+save(t1d_all_drug_periods, file=paste0(today, "_t1d_all_drug_periods.Rda"))
 

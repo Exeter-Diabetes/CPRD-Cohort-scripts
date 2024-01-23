@@ -9,7 +9,7 @@
 
 # Separate primary and secondary care diagnoses for postdrug occurrences for sensitivity analysis, as well as combined
 
-# Also find binary yes/no whether they had hospital admission in previous year to drug start, and when first postdrug hospital admission was for any cause
+# Also find binary yes/no whether they had hospital admission in previous year to drug start, and when first postdrug hospital admission was for any cause, and what this cause is (ICD-10 code)
 
 ############################################################################################
 
@@ -430,7 +430,7 @@ amputation_outcome <- drug_start_stop %>%
 
 ############################################################################################
 
-# Make separate table for whether hospital admission in previous year to drug start, and with first postdrug emergency hospitalisation for any cause
+# Make separate table for whether hospital admission in previous year to drug start, and with first postdrug emergency hospitalisation for any cause, and what this cause is
 ## Admimeth never missing in hesHospital
 
 hosp_admi_prev_year <- drug_start_stop %>%
@@ -446,12 +446,20 @@ hosp_admi_prev_year_count <- drug_start_stop %>%
   summarise(hosp_admission_prev_year_count=n()) %>%
   ungroup()
 
+# Can have multiple episodes and multiple spells starting on same date - need first episode of first spell
 next_hosp_admi <- drug_start_stop %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
   filter(!is.na(admidate) & admidate>dstartdate & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
   group_by(patid, dstartdate, drugclass) %>%
-  summarise(postdrug_first_all_cause_hosp=min(admidate, na.rm=TRUE)) %>%
-  ungroup()
+  mutate(earliest_spell=min(spno, na.rm=TRUE)) %>% #have confirmed that lower spell number = earlier spell
+  filter(spno==earliest_spell) %>%
+  ungroup() %>%
+  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
+  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
+  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
+  filter(d_order==1) %>%
+  select(patid, dstartdate, drugclass, postdrug_first_emergency_hosp=epistart.x, postdrug_first_emergency_hosp_cause=ICD)
+
 
 hosp_admi <- drug_start_stop %>%
   left_join(hosp_admi_prev_year, by=c("patid", "dstartdate", "drugclass")) %>%
