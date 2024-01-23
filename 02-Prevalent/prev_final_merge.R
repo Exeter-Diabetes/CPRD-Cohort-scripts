@@ -317,3 +317,19 @@ final_merge <- final_merge %>%
   left_join(ckdpc_scores, by="patid") %>%
   analysis$cached("final_merge", unique_indexes="patid")
 
+
+############################################################################################
+
+# Export to R data object
+## Convert integer64 datatypes to double
+
+prev_cohort <- collect(final_merge %>% mutate(patid=as.character(patid)))
+
+is.integer64 <- function(x){
+  class(x)=="integer64"
+}
+
+prev_cohort <- prev_cohort %>%
+  mutate_if(is.integer64, as.integer)
+
+save(prev_cohort, file="20231218_prev_2020_cohort.Rda")

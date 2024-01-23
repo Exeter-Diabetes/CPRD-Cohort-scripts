@@ -210,7 +210,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
 ### Reshape wide first
 
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
-  pivot_wider(patid,
+  pivot_wider(id_cols=patid,
               names_from=ckd_stage,
               values_from=ckd_stage_start) %>%
   mutate(stage_1=ifelse(!is.na(stage_1) & !is.na(stage_2) & stage_1>stage_2, NA, stage_1),
