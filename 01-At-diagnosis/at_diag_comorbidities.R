@@ -127,7 +127,7 @@ comorbids <- c("primary_hhf", comorbids)
 
 # Clean and combine medcodes, ICD10 codes and OPCS4 codes, then merge with index date
 ## Remove medcodes before DOB or after lcd/deregistration/death
-## Remove HES codes before DOB or after 31/10/2021 (latest date in HES records) or death
+## Remove HES codes before DOB or after 31/10/2020 (latest date in HES records) or death
 ## NB: for baseline_biomarkers, cleaning and combining with index date is 2 separate steps, but as there are fewer cleaning steps for comorbidities I have made this one step here
 
 
