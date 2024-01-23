@@ -215,6 +215,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | postdrug_first_{comorbidity}\_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |  not present for unspecific_gi, fluvacc or amputation comorbidities  |
 | postdrug_first_{comorbidity} | earliest occurrence of comorbidity after (not at) dstartdate | |
 | predrug_{comorbidity} | binary 0/1 if any instance of comorbidity before/at dstartdate | |
+| fh_diabetes | binary 0/1 for whether family history of diabetes reported before/at dstartdate (if patient has codes for both positive and negative family history: most recent before/at dstartdate used; if both on same day classed as missing) | |
 | hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
 | hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
 | postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) |
