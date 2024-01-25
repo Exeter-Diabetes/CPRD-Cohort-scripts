@@ -215,13 +215,14 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | postdrug_first_{comorbidity}\_gp_only | earliest occurrence of comorbidity after (not at) dstartdate, from GP (primary care) codes only |  not present for unspecific_gi, fluvacc or amputation comorbidities  |
 | postdrug_first_{comorbidity} | earliest occurrence of comorbidity after (not at) dstartdate | |
 | predrug_{comorbidity} | binary 0/1 if any instance of comorbidity before/at dstartdate | |
-| hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
-| hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script |
-| postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) |
-| postdrug_first_emergency_hosp_cause | primary cause of admission (ICD10 code) for earliest emergency inpatient hospital admission (date of admission in postdrug_first_emergency_hosp variable) |
-| predrug_earliest_{med} | earliest script for non-diabetes medication before/at dstartdate |
-| predrug_latest_{med} | latest script for non-diabetes medication before/at dstartdate |
-| postdrug_first_{med} | earliest script for non-diabetes medication after (not at) dstartdate |
+| fh_diabetes | binary 0/1 for whether family history of diabetes reported before/at dstartdate | If patient has codes for both positive and negative family history: most recent before/at dstartdate used; if both on same day classed as missing) |
+| hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
+| hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
+| postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) | |
+| postdrug_first_emergency_hosp_cause | primary cause of admission (ICD10 code) for earliest emergency inpatient hospital admission (date of admission in postdrug_first_emergency_hosp variable) | |
+| predrug_earliest_{med} | earliest script for non-diabetes medication before/at dstartdate | |
+| predrug_latest_{med} | latest script for non-diabetes medication before/at dstartdate | |
+| postdrug_first_{med} | earliest script for non-diabetes medication after (not at) dstartdate | |
 | smoking_cat | Smoking category at drug start: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
