@@ -54,7 +54,8 @@ comorbids <- c("af", #atrial fibrillation
                "solidorgantransplant",
                "stroke",
                "tia",  #transient ischaemic attack
-               "fh_premature_cvd"
+               "fh_premature_cvd",
+               "frailty_simple"
 )
 
 
@@ -121,6 +122,15 @@ raw_primary_hhf_icd10 <- raw_heartfailure_icd10 %>%
 
 ## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
 comorbids <- c("primary_hhf", comorbids)
+
+# Separate frailty by severity into three different categories
+raw_frailty_mild_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Mild")
+raw_frailty_moderate_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Moderate")
+raw_frailty_severe_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Severe")
+
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
+comorbids <- setdiff(comorbids, "frailty_simple")
+comorbids <- c("frailty_mild", "frailty_moderate", "frailty_severe", comorbids)
 
 
 ############################################################################################
