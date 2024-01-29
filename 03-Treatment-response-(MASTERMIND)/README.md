@@ -199,8 +199,8 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | post{biomarker}12m | biomarker value at 12m post drug initiation | posthba1c12m: closest biomarker to dstartdate+365 days (12 months), at least 9 months (274 days) after dstartdate, before 15 months, before timetoremadd (another drug class add or removed), and before timetochange+91 days (for most drug periods, timetoremadd=timetochange, they are only different if before a break, in which case timetochange<timetoremadd as timetochange doesn't include period of break and timetoremadd does - so biomarker can be within break period, up to 91 days after stopping drug of interest).<br /><br />No posthba1c12m value where changed diabetes meds <= 61 days before drug start (timeprevcombo<=61) |
 | post{biomarker}12mdate | date of biomarker at 12m post drug initiation | |
 | post{biomarker}12mdrugdiff | days between dstartdate and post{biomarker}6mdate | |
-| {biomarker}resp6m | post{biomarker}6m - pre{biomarker} | |
-| {biomarker}resp12m | post{biomarker}12m - pre{biomarker} | |
+| {biomarker}resp6m | post{biomarker}6m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
+| {biomarker}resp12m | post{biomarker}12m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | next_egfr_date | date of first eGFR post-baseline | |
 | egfr_40_decline_date | date at which eGFR<=40% of baseline value | |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
