@@ -358,7 +358,7 @@ baseline_hba1c <- full_hba1c_drug_merge %>%
          prehba1cdate=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdate, NA),
          prehba1cdrugdiff=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdrugdiff, NA)) %>%
   
-  select(patid, dstartdate, drugclass, prehba1c, prehba1cdate, prehba1cdrugdiff, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, nextdcdate)
+  select(patid, dstartdate, drugclass, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, prehba1c, prehba1cdate, prehba1cdrugdiff, nextdcdate)
          
 
 ### timeprevcombo in combo_start_stop table
