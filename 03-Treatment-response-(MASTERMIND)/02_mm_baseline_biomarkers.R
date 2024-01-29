@@ -331,35 +331,35 @@ baseline_biomarkers <- baseline_biomarkers %>%
   left_join(baseline_height, by=c("patid", "dstartdate", "drugclass"))
 
   
-## HbA1c: only between 6 months prior and 7 days after drug start date
+## HbA1c: only between 6 months prior and 7 days after drug start date (for prehba1c) or between 12 months prior and 7 days after (for prehba1c12m)
 ## Exclude if before timeprevcombo
 
 baseline_hba1c <- full_hba1c_drug_merge %>%
   
-  filter(hba1cdrugdiff<=7 & hba1cdrugdiff>=-183) %>%
+  filter(hba1cdrugdiff<=7 & hba1cdrugdiff>=-366) %>%
   
   group_by(patid, dstartdate, drugclass) %>%
     
   mutate(min_timediff=min(abs(hba1cdrugdiff), na.rm=TRUE)) %>%
   filter(abs(hba1cdrugdiff)==min_timediff) %>%
     
-  mutate(prehba1c=min(hba1c, na.rm=TRUE)) %>%
-  filter(prehba1c==hba1c) %>%
+  mutate(prehba1c12m=min(hba1c, na.rm=TRUE)) %>%
+  filter(prehba1c12m==hba1c) %>%
     
   dbplyr::window_order(hba1cdrugdiff) %>%
   filter(row_number()==1) %>%
   
   ungroup() %>%
   
-  relocate(prehba1c, .after=patid) %>%
-  relocate(hba1cdate, .after=prehba1c) %>%
-  relocate(hba1cdrugdiff, .after=hba1cdate) %>%
-    
-  rename(prehba1cdate=hba1cdate,
-         prehba1cdrugdiff=hba1cdrugdiff) %>%
-    
-  select(-c(hba1c, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange))
-
+  rename(prehba1c12mdate=hba1cdate,
+         prehba1c12mdrugdiff=hba1cdrugdiff) %>%
+  
+  mutate(prehba1c=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12m, NA),
+         prehba1cdate=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdate, NA),
+         prehba1cdrugdiff=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdrugdiff, NA)) %>%
+  
+  select(patid, dstartdate, drugclass, prehba1c, prehba1cdate, prehba1cdrugdiff, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, nextdcdate)
+         
 
 ### timeprevcombo in combo_start_stop table
 
@@ -367,7 +367,7 @@ combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 baseline_hba1c <- baseline_hba1c %>%
   left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
-  filter(prehba1cdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(prehba1cdrugdiff)<=timeprevcombo)) %>%
+  filter(prehba1c12mdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(prehba1c12mdrugdiff)<=timeprevcombo)) %>%
   select(-timeprevcombo)
 
 baseline_biomarkers <- baseline_biomarkers %>%
