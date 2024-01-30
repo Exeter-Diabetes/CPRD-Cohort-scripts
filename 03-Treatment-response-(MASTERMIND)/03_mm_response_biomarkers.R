@@ -257,5 +257,8 @@ response_biomarkers <- response_biomarkers %>%
   left_join(next_egfr, by=c("patid", "drugclass", "dstartdate")) %>%
   left_join(egfr40, by=c("patid", "drugclass", "dstartdate")) %>%
   relocate(height, .after=timeprevcombo) %>%
+  relocate(prehba1c12m, .after=hba1cresp12m) %>%
+  relocate(prehba1c12mdate, .after=prehba1c12m) %>%
+  relocate(prehba1c12mdrugdiff, .after=prehba1c12mdate) %>%
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
 
