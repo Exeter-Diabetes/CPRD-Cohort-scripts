@@ -126,7 +126,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 ### Now in two stages to speed it up
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
-  inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo, nextdcdate))), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((ckd_stages %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((comorbidities %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached(paste0(today, "_all_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
