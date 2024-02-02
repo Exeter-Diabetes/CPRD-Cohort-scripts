@@ -9,7 +9,7 @@ From 2024 our papers use a standard colour palette for the different Type 2 diab
 - ![#56B4E9](https://placehold.co/15x15/56B4E9/56B4E9.png) `#56B4E9` for GLP1-RA
 - ![#CC79A7](https://placehold.co/15x15/CC79A7/CC79A7.png) `#CC79A7` for SU
 - ![#0072B2](https://placehold.co/15x15/0072B2/0072B2.png) `#0072B2` for DPP4i
-- ![#D55E00](https://placehold.co/15x15/D55E00/D55E00.png) `#1589F0` for TZD
+- ![#D55E00](https://placehold.co/15x15/D55E00/D55E00.png) `#D55E00` for TZD
 
 &nbsp;
 
