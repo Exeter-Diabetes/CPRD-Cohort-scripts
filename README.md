@@ -8,11 +8,9 @@ This repository contains the R scripts used by the Exeter Diabetes team to produ
 * A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
 
 The below diagram outlines the data processing steps involved in creating these cohorts.
-
----
-title: "Untitled"
-format: gfm
----
+```mermaid
+info
+```
 ```mermaid
 graph TD;
     A["<b>CPRD Aurum October 2020 release</b> with linked Set 21 <br> (April 2021) HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
