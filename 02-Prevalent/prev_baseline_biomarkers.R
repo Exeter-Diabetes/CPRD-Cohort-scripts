@@ -4,7 +4,7 @@
 # Merges with index date
 
 # Finds biomarker values at baseline (index date): -2 years to +7 days relative to index date for all except:
-## HbA1c: -6 months to +7 days
+## HbA1c: -6 months to +7 days (HbA1c2yrs has same window as other biomarkers)
 ## Height: mean of all values >= index date
 
 # NB: creatinine_blood and eGFR tables may already have been cached as part of all_patid_ckd_stages script
@@ -217,6 +217,8 @@ baseline_biomarkers <- cprd$tables$patient %>%
 
 biomarkers_no_height <- setdiff(biomarkers, "height")
 
+biomarkers_no_height <- c(biomarkers_no_height, "hba1c")
+
 for (i in biomarkers_no_height) {
   
   print(i)
@@ -307,6 +309,10 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
 ## Join HbA1c to main table
 
 baseline_biomarkers <- baseline_biomarkers %>%
-  left_join(baseline_hba1c, by="patid") %>% 
-  analysis$cached("baseline_biomarkers", unique_indexes="patid")
+  rename(prehba1c2yrs=prehba1c,
+         prehba1cdate2yrs=prehba1cdate,
+         prehba1cdatediff2yrs=prehba1cdatediff) %>%
+  left_join(baseline_hba1c, by="patid") %>%
+  relocate(height, .after=prehba1cdatediff) %>%
+  analysis$cached("baseline_biomarkers_2", unique_indexes="patid")
 
