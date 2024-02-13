@@ -193,6 +193,8 @@ ethnicity <- cprd$tables$patient %>%
          ethnicity_16cat=ifelse(!is.na(hes_5cat_ethnicity) & hes_5cat_ethnicity==ethnicity_5cat, coalesce(gp_16cat_ethnicity, hes_16cat_ethnicity), gp_16cat_ethnicity),
          ethnicity_qrisk2=ifelse(!is.na(hes_5cat_ethnicity) & hes_5cat_ethnicity==ethnicity_5cat, coalesce(gp_qrisk2_ethnicity, hes_qrisk2_ethnicity), gp_qrisk2_ethnicity)) %>%
   
+  mutate(ethnicity_qrisk2=ifelse(is.na(ethnicity_qrisk2), 0, ethnicity_qrisk2)) %>%
+  
   select(patid, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2) %>%
   
   analysis$cached("ethnicity", unique_indexes="patid")
