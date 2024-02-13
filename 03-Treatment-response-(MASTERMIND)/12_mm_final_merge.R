@@ -249,28 +249,28 @@ qscores <- qscores %>%
                                         prehba1c>=40 & prehba1c<=150 &
                                         (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                         dstartdate_age>=25 & dstartdate_age<=84 &
-                                        prebmi>=20, qdiabeteshf_score, NA),
+                                        (is.na(prebmi) | prebmi>=20), qdiabeteshf_score, NA),
          
          qdiabeteshf_lin_predictor=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=11)) &
                                                 prehba1c>=40 & prehba1c<=150 &
                                                 (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                                 dstartdate_age>=25 & dstartdate_age<=84 &
-                                                prebmi>=20, qdiabeteshf_lin_predictor, NA),
+                                            (is.na(prebmi) | prebmi>=20), qdiabeteshf_lin_predictor, NA),
          
          qrisk2_5yr_score=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=12)) &
                                     (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                     dstartdate_age>=25 & dstartdate_age<=84 &
-                                    prebmi>=20, qrisk2_score_5yr, NA),
+                                   (is.na(prebmi) | prebmi>=20), qrisk2_score_5yr, NA),
          
          qrisk2_10yr_score=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=12)) &
                                    (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                    dstartdate_age>=25 & dstartdate_age<=84 &
-                                   prebmi>=20, qrisk2_score, NA),
+                                    (is.na(prebmi) | prebmi>=20), qrisk2_score, NA),
          
          qrisk2_lin_predictor=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=12)) &
                                             (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                             dstartdate_age>=25 & dstartdate_age<=84 &
-                                            prebmi>=20, qrisk2_lin_predictor, NA)) %>%
+                                       (is.na(prebmi) | prebmi>=20), qrisk2_lin_predictor, NA)) %>%
   
   select(patid, dstartdate, drugclass, qdiabeteshf_5yr_score, qdiabeteshf_lin_predictor, qrisk2_5yr_score, qrisk2_10yr_score, qrisk2_lin_predictor) %>%
   
