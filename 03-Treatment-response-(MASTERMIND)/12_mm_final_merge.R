@@ -163,7 +163,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 
 qscore_vars <- all_diabetes_1stinstance %>%
   mutate(precholhdl=pretotalcholesterol/prehdl,
-         ckd45=preckdstage=="stage_4" | preckdstage=="stage_5",
+         ckd45=!is.na(preckdstage) & (preckdstage=="stage_4" | preckdstage=="stage_5"),
          cvd=predrug_myocardialinfarction==1 | predrug_angina==1 | predrug_stroke==1,
          sex=ifelse(gender==1, "male", ifelse(gender==2, "female", "NA")),
          dm_duration_cat=ifelse(dstartdate_dm_dur_all<=1, 0L,
