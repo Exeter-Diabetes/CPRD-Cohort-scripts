@@ -19,8 +19,8 @@ library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+#codesets = cprd$codesets()
+#codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 analysis = cprd$analysis("mm")
 
@@ -246,10 +246,7 @@ for (i in biomarkers) {
 full_hba1c_drug_merge <- clean_hba1c_medcodes %>%
   
   inner_join(drug_start_dates, by="patid") %>%
-  mutate(hba1cdrugdiff=datediff(date, dstartdate)) %>%
-  
-  rename(hba1c=testvalue,
-         hba1cdate=date) %>%
+  mutate(drugdatediff=datediff(date, dstartdate)) %>%
 
 analysis$cached("full_hba1c_drug_merge", indexes=c("patid", "dstartdate","drugclass"))
 
@@ -266,9 +263,11 @@ baseline_biomarkers <- drug_start_stop %>%
   select(patid, dstartdate, drugclass, druginstance)
 
 
-## For all except HbA1c and height: between 2 years prior and 7 days after drug start date
+## For all except height: between 2 years prior and 7 days after drug start date
 
 biomarkers_no_height <- setdiff(biomarkers, "height")
+
+biomarkers_no_height <- c(biomarkers_no_height, "hba1c")
 
 for (i in biomarkers_no_height) {
   
@@ -331,34 +330,34 @@ baseline_biomarkers <- baseline_biomarkers %>%
   left_join(baseline_height, by=c("patid", "dstartdate", "drugclass"))
 
   
-## HbA1c: only between 6 months prior and 7 days after drug start date (for prehba1c) or between 12 months prior and 7 days after (for prehba1c12m)
-## Exclude if before timeprevcombo
+## HbA1c: have 2 year value from above; now add in between 6 months prior and 7 days after drug start date (for prehba1c) or between 12 months prior and 7 days after (for prehba1c12m)
+## Exclude if before timeprevcombo for 6 month and 12 month value (not 2 year value)
 
 baseline_hba1c <- full_hba1c_drug_merge %>%
   
-  filter(hba1cdrugdiff<=7 & hba1cdrugdiff>=-366) %>%
+  filter(drugdatediff<=7 & drugdatediff>=-366) %>%
   
   group_by(patid, dstartdate, drugclass) %>%
     
-  mutate(min_timediff=min(abs(hba1cdrugdiff), na.rm=TRUE)) %>%
-  filter(abs(hba1cdrugdiff)==min_timediff) %>%
+  mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
+  filter(abs(drugdatediff)==min_timediff) %>%
     
-  mutate(prehba1c12m=min(hba1c, na.rm=TRUE)) %>%
-  filter(prehba1c12m==hba1c) %>%
+  mutate(prehba1c12m=min(testvalue, na.rm=TRUE)) %>%
+  filter(prehba1c12m==testvalue) %>%
     
-  dbplyr::window_order(hba1cdrugdiff) %>%
+  dbplyr::window_order(drugdatediff) %>%
   filter(row_number()==1) %>%
   
   ungroup() %>%
   
-  rename(prehba1c12mdate=hba1cdate,
-         prehba1c12mdrugdiff=hba1cdrugdiff) %>%
+  rename(prehba1c12mdate=date,
+         prehba1c12mdrugdiff=drugdatediff) %>%
   
   mutate(prehba1c=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12m, NA),
          prehba1cdate=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdate, NA),
          prehba1cdrugdiff=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdrugdiff, NA)) %>%
   
-  select(patid, dstartdate, drugclass, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, prehba1c, prehba1cdate, prehba1cdrugdiff, nextdcdate)
+  select(patid, dstartdate, drugclass, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, prehba1c, prehba1cdate, prehba1cdrugdiff)
          
 
 ### timeprevcombo in combo_start_stop table
@@ -371,6 +370,10 @@ baseline_hba1c <- baseline_hba1c %>%
   select(-timeprevcombo)
 
 baseline_biomarkers <- baseline_biomarkers %>%
-  left_join(baseline_hba1c, by=c("patid", "dstartdate", "drugclass")) %>% 
+  rename(prehba1c2yrs=prehba1c,
+         prehba1c2yrsdate=prehba1cdate,
+         prehba1c2yrsdrugdiff=prehba1cdrugdiff) %>%
+  left_join(baseline_hba1c, by=c("patid", "dstartdate", "drugclass")) %>%
+  relocate(height, .after=prehba1cdrugdiff) %>%
   analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
 

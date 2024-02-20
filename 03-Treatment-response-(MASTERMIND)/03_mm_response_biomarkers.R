@@ -260,5 +260,8 @@ response_biomarkers <- response_biomarkers %>%
   relocate(prehba1c12m, .after=hba1cresp12m) %>%
   relocate(prehba1c12mdate, .after=prehba1c12m) %>%
   relocate(prehba1c12mdrugdiff, .after=prehba1c12mdate) %>%
+  relocate(prehba1c2yrs, .after=hba1cresp12m) %>%
+  relocate(prehba1c2yrsdate, .after=prehba1c2yrs) %>%
+  relocate(prehba1c2yrsdrugdiff, .after=prehba1c2yrsdate) %>%
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
 

@@ -126,7 +126,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 ### Now in two stages to speed it up
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
-  inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo, nextdcdate))), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((ckd_stages %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((comorbidities %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached(paste0(today, "_all_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
@@ -192,7 +192,7 @@ qscore_vars <- all_diabetes_1stinstance %>%
          surv_5yr=5L,
          surv_10yr=10L) %>%
   
-  select(patid, dstartdate, drugclass, sex, dstartdate_age, ethnicity_qrisk2, qrisk2_smoking_cat, dm_duration_cat, bp_meds, type1, type2, cvd, ckd45, predrug_fh_premature_cvd, predrug_af, predrug_rheumatoidarthritis, prehba1c, precholhdl, presbp, prebmi, tds_2011, surv_5yr, surv_10yr) %>%
+  select(patid, dstartdate, drugclass, sex, dstartdate_age, ethnicity_qrisk2, qrisk2_smoking_cat, dm_duration_cat, bp_meds, type1, type2, cvd, ckd45, predrug_fh_premature_cvd, predrug_af, predrug_rheumatoidarthritis, prehba1c2yrs, precholhdl, presbp, prebmi, tds_2011, surv_5yr, surv_10yr) %>%
   
   analysis$cached(paste0(today, "_all_1stinstance_interim_q1"), indexes=c("patid", "dstartdate", "drugclass"))
 
@@ -218,7 +218,7 @@ qscores <- qscore_vars %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_qdiabeteshf(sex=sex2, age=dstartdate_age, ethrisk=ethnicity_qrisk2, smoking=qrisk2_smoking_cat, duration=dm_duration_cat, type1=type1, cvd=cvd, renal=ckd45, af=predrug_af, hba1c=prehba1c, cholhdl=precholhdl, sbp=presbp, bmi=prebmi, town=tds_2011, surv=surv_5yr) %>%
+  calculate_qdiabeteshf(sex=sex2, age=dstartdate_age, ethrisk=ethnicity_qrisk2, smoking=qrisk2_smoking_cat, duration=dm_duration_cat, type1=type1, cvd=cvd, renal=ckd45, af=predrug_af, hba1c=prehba1c2yrs, cholhdl=precholhdl, sbp=presbp, bmi=prebmi, town=tds_2011, surv=surv_5yr) %>%
 
   analysis$cached(paste0(today, "_all_1stinstance_interim_q2"), indexes=c("patid", "dstartdate", "drugclass"))
   
@@ -246,13 +246,13 @@ qscores <- qscores %>%
 
   
   mutate(qdiabeteshf_5yr_score=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=11)) &
-                                        prehba1c>=40 & prehba1c<=150 &
+                                        prehba1c2yrs>=40 & prehba1c2yrs<=150 &
                                         (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                         dstartdate_age>=25 & dstartdate_age<=84 &
                                         (is.na(prebmi) | prebmi>=20), qdiabeteshf_score, NA),
          
          qdiabeteshf_lin_predictor=ifelse((is.na(precholhdl) | (precholhdl>=1 & precholhdl<=11)) &
-                                                prehba1c>=40 & prehba1c<=150 &
+                                            prehba1c2yrs>=40 & prehba1c2yrs<=150 &
                                                 (is.na(presbp) | (presbp>=70 & presbp<=210)) &
                                                 dstartdate_age>=25 & dstartdate_age<=84 &
                                             (is.na(prebmi) | prebmi>=20), qdiabeteshf_lin_predictor, NA),
@@ -323,7 +323,7 @@ ckdpc_score_vars <- all_diabetes_1stinstance %>%
          
          ex_smoker=ifelse(!is.na(smoking_cat) & smoking_cat=="Ex-smoker", 1L, ifelse(is.na(smoking_cat), NA, 0L))) %>%
   
-  select(patid, dstartdate, drugclass, dstartdate_age, sex, black_ethnicity, preegfr, cvd, prehba1c, INS, oha, ever_smoker, hypertension, prebmi, uacr, presbp, bp_meds, predrug_heartfailure, chd, predrug_af, current_smoker, ex_smoker, preckdstage) %>%
+  select(patid, dstartdate, drugclass, dstartdate_age, sex, black_ethnicity, preegfr, cvd, prehba1c2yrs, INS, oha, ever_smoker, hypertension, prebmi, uacr, presbp, bp_meds, predrug_heartfailure, chd, predrug_af, current_smoker, ex_smoker, preckdstage) %>%
   
   analysis$cached(paste0(today, "_all_1stinstance_interim_ckd1"), indexes=c("patid", "dstartdate", "drugclass"))
 
@@ -351,7 +351,7 @@ ckdpc_scores <- ckdpc_score_vars %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, complete_acr=TRUE, remote=TRUE) %>%
+  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c2yrs, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, complete_acr=TRUE, remote=TRUE) %>%
   
   rename(ckdpc_egfr60_total_score_complete_acr=ckdpc_egfr60_total_score, ckdpc_egfr60_total_lin_predictor_complete_acr=ckdpc_egfr60_total_lin_predictor, ckdpc_egfr60_confirmed_score_complete_acr=ckdpc_egfr60_confirmed_score, ckdpc_egfr60_confirmed_lin_predictor_complete_acr=ckdpc_egfr60_confirmed_lin_predictor) %>%
   
@@ -363,7 +363,7 @@ ckdpc_scores <- ckdpc_scores %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, remote=TRUE) %>%
+  calculate_ckdpc_egfr60_risk(age=dstartdate_age, sex=sex2, black_eth=black_ethnicity, egfr=preegfr, cvd=cvd, hba1c=prehba1c2yrs, insulin=INS, oha=oha, ever_smoker=ever_smoker, hypertension=hypertension, bmi=prebmi, acr=uacr, remote=TRUE) %>%
   
   analysis$cached(paste0(today, "_all_1stinstance_interim_ckd3"), indexes=c("patid", "dstartdate", "drugclass"))
 
@@ -373,7 +373,7 @@ ckdpc_scores <- ckdpc_scores %>%
   
   mutate(sex2=ifelse(sex=="male", "male", ifelse(sex=="female", "female", NA))) %>%
   
-  calculate_ckdpc_40egfr_risk(age=dstartdate_age, sex=sex2, egfr=preegfr, acr=uacr, sbp=presbp, bp_meds=bp_meds, hf=predrug_heartfailure, chd=chd, af=predrug_af, current_smoker=current_smoker, ex_smoker=ex_smoker, bmi=prebmi, hba1c=prehba1c, oha=oha, insulin=INS, remote=TRUE) %>%
+  calculate_ckdpc_40egfr_risk(age=dstartdate_age, sex=sex2, egfr=preegfr, acr=uacr, sbp=presbp, bp_meds=bp_meds, hf=predrug_heartfailure, chd=chd, af=predrug_af, current_smoker=current_smoker, ex_smoker=ex_smoker, bmi=prebmi, hba1c=prehba1c2yrs, oha=oha, insulin=INS, remote=TRUE) %>%
   
   mutate(across(starts_with("ckdpc_egfr60"),
                 ~ifelse((is.na(preckdstage) | preckdstage=="stage_1" | preckdstage=="stage_2") &
