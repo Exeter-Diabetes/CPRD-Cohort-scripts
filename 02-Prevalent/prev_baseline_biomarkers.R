@@ -213,7 +213,7 @@ baseline_biomarkers <- cprd$tables$patient %>%
   select(patid)
 
 
-## For all except HbA1c and height: between 2 years prior and 7 days after index date
+## For all except height: between 2 years prior and 7 days after index date
 
 biomarkers_no_height <- setdiff(biomarkers, "height")
 
@@ -276,7 +276,7 @@ baseline_biomarkers <- baseline_biomarkers %>%
   left_join(baseline_height, by="patid")
 
   
-## HbA1c: only between 6 months prior and 7 days after index date
+## HbA1c: have 2 year value from above; now add in between 6 months prior and 7 days after index date
 ### NB: in treatment response cohort, baseline HbA1c set to missing if occurs before previous treatment change
 
 baseline_hba1c <- full_hba1c_index_date_merge %>%
