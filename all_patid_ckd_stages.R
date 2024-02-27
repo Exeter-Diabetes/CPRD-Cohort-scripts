@@ -34,7 +34,7 @@ raw_creatinine_blood_medcodes <- cprd$tables$observation %>%
   analysis$cached("raw_creatinine_blood_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
 
 ## Clean creatinine readings
-clean_creatinine_blood_medcodes <- raw_creatinine_medcodes %>%
+clean_creatinine_blood_medcodes <- raw_creatinine_blood_medcodes %>%
   group_by(patid, obsdate) %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
@@ -49,7 +49,7 @@ clean_creatinine_blood_medcodes %>% count()
 ## Convert to eGFR
 
 ### Need DOB from DOB table
-analysis = cprd$analysis("diagnosis_date")
+analysis = cprd$analysis("diabetes_cohort")
 dob <- dob %>% analysis$cached("dob")
 
 analysis = cprd$analysis("all_patid")
