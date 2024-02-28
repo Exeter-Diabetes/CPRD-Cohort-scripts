@@ -486,22 +486,26 @@ rm(t1d_1stinstance)
 ############################################################################################
 
 # Make dataset of all drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
+## Add in discontinuation variables
 
 all_diabetes_all_drug_periods <- all_diabetes %>%
-  inner_join(drug_start_stop, by="patid") %>%
-  select(patid, drugclass, dstartdate, dstopdate) %>%
+  select(patid) %>%
+  inner_join((drug_start_stop %>% select(patid, drugclass, dstartdate, dstopdate)), by="patid") %>%
+  inner_join((discontinuation %>% select(patid, drugclass, dstartdate, stopdrug_3m_3mFU, stopdrug_3m_6mFU, stopdrug_6m_3mFU, stopdrug_6m_6mFU, stopdrug_12m_3mFU, stopdrug_12m_6mFU)), by=c("patid", "drugclass", "dstartdate")) %>%
   analysis$cached(paste0(today, "_all_diabetes_all_drug_periods"))
 
 ## Just T2s
 t2d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 2") %>%
-  inner_join(drug_start_stop, by="patid") %>%
-  select(patid, drugclass, dstartdate, dstopdate) %>%
+  select(patid) %>%
+  inner_join((drug_start_stop %>% select(patid, drugclass, dstartdate, dstopdate)), by="patid") %>%
+  inner_join((discontinuation %>% select(patid, drugclass, dstartdate, stopdrug_3m_3mFU, stopdrug_3m_6mFU, stopdrug_6m_3mFU, stopdrug_6m_6mFU, stopdrug_12m_3mFU, stopdrug_12m_6mFU)), by=c("patid", "drugclass", "dstartdate")) %>%
   analysis$cached(paste0(today, "_t2d_all_drug_periods"))
 
 ## Just T1s
 t1d_all_drug_periods <- all_diabetes %>% filter(diabetes_type=="type 1") %>%
- inner_join(drug_start_stop, by="patid") %>%
- select(patid, drugclass, dstartdate, dstopdate) %>%
+  select(patid) %>%
+  inner_join((drug_start_stop %>% select(patid, drugclass, dstartdate, dstopdate)), by="patid") %>%
+  inner_join((discontinuation %>% select(patid, drugclass, dstartdate, stopdrug_3m_3mFU, stopdrug_3m_6mFU, stopdrug_6m_3mFU, stopdrug_6m_6mFU, stopdrug_12m_3mFU, stopdrug_12m_6mFU)), by=c("patid", "drugclass", "dstartdate")) %>%
  analysis$cached(paste0(today, "_t1d_all_drug_periods"))
 
 
