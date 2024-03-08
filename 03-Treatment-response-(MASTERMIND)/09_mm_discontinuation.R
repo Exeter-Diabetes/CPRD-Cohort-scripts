@@ -25,7 +25,7 @@ all_scripts <- all_scripts %>% analysis$cached("all_scripts")
 
 
 discontinuation <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass, druginstance, timeondrug) %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance, timeondrug) %>%
   inner_join((combo_start_stop %>% select(patid, dcstartdate, nextremdrug)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
   inner_join((all_scripts %>% select(patid, date, timetolastpx)), by="patid") %>%
   analysis$cached("discontinuation_interim_1", indexes=c("dstartdate", "date"))
@@ -69,4 +69,45 @@ discontinuation <- discontinuation %>%
          stopdrug_12m_6mFU=ifelse(ttc12m==0, 0L,
                                  ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA))) %>%
   
+  analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
+
+
+############################################################################################
+
+# Add in discontinuation history for each variable:
+# For other drugs besides MFN: 1 if ever discontinued MFN, 0 if never discontinued MFN, NA if all discontinuation on MFN missing / never took MFN
+# For MFN: NA for all
+# Only include MFN periods with dstopdate prior to current dstartdate
+
+
+
+discontinuation <- discontinuation %>%
+  mutate(mfn_date=ifelse(drugclass=="MFN", dstopdate, dstartdate),
+         stopdrug_3m_3mFU_MFN=ifelse(is.na(stopdrug_3m_3mFU) | drugclass!="MFN", NA,
+                                     ifelse(drugclass=="MFN" & stopdrug_3m_3mFU==0, 0L, 1L)),
+         stopdrug_3m_6mFU_MFN=ifelse(is.na(stopdrug_3m_6mFU) | drugclass!="MFN", NA,
+                                     ifelse(drugclass=="MFN" & stopdrug_3m_6mFU==0, 0L, 1L)),
+         stopdrug_6m_3mFU_MFN=ifelse(is.na(stopdrug_6m_3mFU) | drugclass!="MFN", NA,
+                                     ifelse(drugclass=="MFN" & stopdrug_6m_3mFU==0, 0L, 1L)),
+         stopdrug_6m_6mFU_MFN=ifelse(is.na(stopdrug_6m_6mFU) | drugclass!="MFN", NA,
+                                     ifelse(drugclass=="MFN" & stopdrug_6m_6mFU==0, 0L, 1L)),
+         stopdrug_12m_3mFU_MFN=ifelse(is.na(stopdrug_12m_3mFU) | drugclass!="MFN", NA,
+                                      ifelse(drugclass=="MFN" & stopdrug_12m_3mFU==0, 0L, 1L)),
+         stopdrug_12m_6mFU_MFN=ifelse(is.na(stopdrug_12m_6mFU) | drugclass!="MFN", NA,
+                                      ifelse(drugclass=="MFN" & stopdrug_12m_6mFU==0, 0L, 1L))) %>%
+  group_by(patid) %>%
+  dbplyr::window_order(mfn_date) %>%
+  mutate(stopdrug_3m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_3m_3mFU_MFN)),
+         stopdrug_3m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_3m_6mFU_MFN)),
+         stopdrug_6m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_6m_3mFU_MFN)),
+         stopdrug_6m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_6m_6mFU_MFN)),
+         stopdrug_12m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_12m_3mFU_MFN)),
+         stopdrug_12m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_12m_6mFU_MFN))) %>%
+  
+  ungroup() %>%
+  
+  select(-c(stopdrug_3m_3mFU_MFN, stopdrug_3m_6mFU_MFN, stopdrug_6m_3mFU_MFN, stopdrug_6m_6mFU_MFN, stopdrug_12m_3mFU_MFN, stopdrug_12m_6mFU_MFN, mfn_date)) %>%
+  
   analysis$cached("discontinuation", indexes=c("patid", "dstartdate", "drugclass"))
+
+

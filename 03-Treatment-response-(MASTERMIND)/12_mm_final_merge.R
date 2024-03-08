@@ -135,7 +135,7 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((non_diabetes_meds %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((smoking %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((alcohol %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
-  inner_join((discontinuation %>% select(-c(druginstance, timeondrug, nextremdrug, timetolastpx))), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join((discontinuation %>% select(-c(druginstance, dstopdate, timeondrug, nextremdrug, timetolastpx))), by=c("patid", "dstartdate", "drugclass")) %>%
   left_join(death_causes, by="patid") %>%
   mutate(dstartdate_age=datediff(dstartdate, dob)/365.25,
          dstartdate_dm_dur_all=datediff(dstartdate, dm_diag_date_all)/365.25,
