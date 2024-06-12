@@ -249,6 +249,7 @@ dob <- cprd$tables$observation %>%
   filter(obsdate>=min_dob) %>%
   group_by(patid) %>%
   summarise(earliest_medcode=min(obsdate, na.rm=TRUE)) %>%
+  ungroup() %>%
   analysis$cached("earliest_medcode", unique_indexes="patid")
 
 #### Check count
