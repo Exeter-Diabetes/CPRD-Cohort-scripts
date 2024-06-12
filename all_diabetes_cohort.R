@@ -102,8 +102,8 @@ raw_hba1c <- cprd$tables$observation %>%
 clean_hba1c <- raw_hba1c %>%
   filter(year(obsdate)>=1990) %>%
   mutate(testvalue=ifelse(testvalue<=20, ((testvalue-2.152)/0.09148), testvalue)) %>%
-  clean_biomarker_units(testvalue, "hba1c") %>%
-  clean_biomarker_values(numunitid, "hba1c") %>%
+  clean_biomarker_values(testvalue, "hba1c") %>%
+  clean_biomarker_units(numunitid, "hba1c") %>%
   group_by(patid, obsdate) %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
