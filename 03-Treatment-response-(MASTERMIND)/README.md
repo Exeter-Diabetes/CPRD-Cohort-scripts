@@ -149,8 +149,8 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
 | drugclass | class of drug being started | |
-| dstartdate | drug class start date | uses dstart=1 - see above |
-| dstopdate | drug class stop date | uses dstop=1 - see above |
+| dstartdate | drug class start date | uses dstart=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
+| dstopdate | drug class stop date | uses dstop=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
 | dstopdatepluscov | drug class stop date + coverage from last prescription | |
 | drugsubstances | see above - based on what they got for their first prescription only; some people have >1 type if they got prescriptions for more than one type on that day | NB: each drug period has drug substance defined by whatever they were prescribed on the first day of starting that drug class. Validation analysis has shown that the percentage of scripts within each drug period with the same drug substance as the first script is >80% for all drug substances except the older SUs (glibenclamide, tolbutamid, chlorpropamid, gliquidone, tolazamide), rosiglitazone, and the older GLP1s (exenatide, lixisenatide, albiglutide), as people tend to be switched to newer agents (gliclazide for the SUs, pioglitazone for rosigliltazone, liraglutide for the GLP1s) during the drug period |
 | timeondrug | dstopdate-dstartdate (in days) | |
@@ -161,9 +161,9 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | Acarbose / DPP4 / Glinide / GLP1 / MFN / SGLT2 / SU / TZD / INS | binary variable of whether patient taking that drugclass on that date (regardless of whether or not prescribed on that date) | calculated using dstart and dstop vars for that particular drug class: 1 if cumsum(dstart)>cumsum(dstop) | dstart==1 | dstop==1 |
 | drugcombo | combination of drug classes patient is on at that date | made by concatenating names of drug classes which patient is on at that date (from binary variables; separated by '\_') |
 | numdrugs | number of drug classes patient is on at that date including ones stopped on that date | calculated as: cu_numstart - cu_numstop + numstop (add numstop so includes drug stopped on that day<br />NB: numdrugs2 is identical - calculated as sum of binary drug class columns (see next row) to check |
-| dcstopdate | drug combo stop date | uses dcstop - see below |
-| INS_startdate | start date for insulin which is being taken on this date | uses dstart=1 - see above |
-| INS_stopdate | stop date for insulin which is being taken on this date | uses dstop=1 - see above |
+| dcstopdate | drug combo stop date | uses dcstop - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
+| INS_startdate | start date for insulin which is being taken on this date | uses dstart=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
+| INS_stopdate | stop date for insulin which is being taken on this date | uses dstop=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
 | basal_ins_within_6_months | whether there is a prescription for a basal insulin within the last 6 months (1 or NA) | |
 | bolus_ins_within_6_months | whether there is a prescription for a bolus/rapid-acting insulin within the last 6 months (1 or NA) | |
 | mix_ins_within_6_months | whether there is a prescription for a mixed insulin within the last 6 months (1 or NA) | |
