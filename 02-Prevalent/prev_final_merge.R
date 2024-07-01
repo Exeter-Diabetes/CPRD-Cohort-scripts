@@ -10,7 +10,7 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
 
 analysis = cprd$analysis("prev")
 
@@ -332,4 +332,4 @@ is.integer64 <- function(x){
 prev_cohort <- prev_cohort %>%
   mutate_if(is.integer64, as.integer)
 
-save(prev_cohort, file="20231218_prev_2020_cohort.Rda")
+save(prev_cohort, file="20240614_prev_2020_cohort.Rda")
