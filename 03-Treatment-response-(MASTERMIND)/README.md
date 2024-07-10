@@ -202,7 +202,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | {biomarker}resp6m | post{biomarker}6m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | next_egfr_date | date of first eGFR post-baseline | |
-| egfr_40_decline_date | date at which eGFR<=40% of baseline value | |
+| egfr_40_decline_date | date at which eGFR<=60% of baseline value (i.e. a decline of >=40%) | |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
 | preckdstagedrugdiff | days between dstartdate and preckdstagedate | |
 | preckdstage | CKD stage at baseline | CKD stages calculated as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage)<br />eGFR calculated from creatinine using CKD-EPI creatinine 2021 equation<br />Start date = earliest test for CKD stage, only including those confirmed by another test at least 91 days later, without a test for a different stage in the intervening period<br />Baseline stage = maximum stage with start date < dru start date or up to 7 days afterwards<br />CKD5 supplemented by medcodes/ICD10/OPCS4 codes for CKD5 / ESRD |
