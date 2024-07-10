@@ -19,7 +19,7 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
 #codesets = cprd$codesets()
 #codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
@@ -246,7 +246,7 @@ next_egfr <- baseline_biomarkers %>%
 egfr40 <- baseline_biomarkers %>%
   select(patid, drugclass, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
-  filter(datediff(date, preegfrdate)>0 & testvalue<=0.4*preegfr) %>%
+  filter(datediff(date, preegfrdate)>0 & testvalue<=0.6*preegfr) %>%
   group_by(patid, drugclass, dstartdate) %>%
   summarise(egfr_40_decline_date=min(date, na.rm=TRUE)) %>%
   analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drugclass"))
