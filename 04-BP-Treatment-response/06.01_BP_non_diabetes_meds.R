@@ -120,12 +120,25 @@ for (i in meds) {
   predrug_latest_date_variable <- paste0("predrug_latest_", i, "")
   postdrug_date_variable <- paste0("postdrug_first_", i, "")
   
-  predrug <- get(drug_merge_tablename) %>%
-    filter(date<=dstartdate) %>%
-    group_by(patid, dstartdate, drugclass) %>%
-    summarise({{predrug_earliest_date_variable}}:=min(date, na.rm=TRUE),
-              {{predrug_latest_date_variable}}:=max(date, na.rm=TRUE)) %>%
-    ungroup()
+  if (i %in% c("ace_inhibitors", "calcium_channel_blockers", "thiazide_diuretics", "arb")) {
+    
+    predrug <- get(drug_merge_tablename) %>%
+      filter(date<dstartdate) %>% # remove equal since it shouldn't could for the BP drug start
+      group_by(patid, dstartdate, drugclass) %>%
+      summarise({{predrug_earliest_date_variable}}:=min(date, na.rm=TRUE),
+                {{predrug_latest_date_variable}}:=max(date, na.rm=TRUE)) %>%
+      ungroup()
+    
+  } else {
+    
+    predrug <- get(drug_merge_tablename) %>%
+      filter(date<=dstartdate) %>%
+      group_by(patid, dstartdate, drugclass) %>%
+      summarise({{predrug_earliest_date_variable}}:=min(date, na.rm=TRUE),
+                {{predrug_latest_date_variable}}:=max(date, na.rm=TRUE)) %>%
+      ungroup()
+  
+  }
   
   postdrug <- get(drug_merge_tablename) %>%
     filter(date>dstartdate) %>%
