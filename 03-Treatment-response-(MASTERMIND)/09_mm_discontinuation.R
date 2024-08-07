@@ -50,7 +50,7 @@ discontinuation <- discontinuation %>%
 ## e.g. stopdrug3m_6mFU:
 ### 1 if they stop drug within 3 month (ttc3m==1) and no other diabetes meds are stopped or started before the current drug is discontinued (nextremdrug==current drug; this also removes instances where discontinuation represents a break in the current drug before restarting as here nextremdrug==NA) and there is at least 6 months follow-up (FU) post-discontinuation to confirm discontinuation (timetolastpx-timeondrug>183)
 ### 0 if they don't stop drug within 3 month (ttc3m==0)
-### Missing (NA) if they stop drug within 3 month (ttc3m==1) BUT a) another diabetes med is stopped or started before the current drug is discontinued, OR b) discontinuation represents a break in the current drug before restarting, OR c) there is <= 6 months follow-up (FU) post-discontinuation to confirm discontinuation
+### Missing (NA) if they stop drug within 3 month (ttc3m==1) BUT a) another diabetes med is stopped or started before the current drug is discontinued, OR b) discontinuation represents a complete break in all medications before restarting, OR c) there is <= 6 months follow-up (FU) post-discontinuation to confirm discontinuation
 
 discontinuation <- discontinuation %>%
   
