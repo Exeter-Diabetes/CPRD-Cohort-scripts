@@ -63,9 +63,13 @@ smoking <- smoking %>% analysis$cached("smoking")
 alcohol <- alcohol %>% analysis$cached("alcohol")
 
 ## Discontinuation
+analysis = cprd$analysis("mm_test")
+
 discontinuation <- discontinuation %>% analysis$cached("discontinuation")
 
 ## Glycaemic failure
+analysis = cprd$analysis("mm")
+
 glycaemic_failure <- glycaemic_failure %>% analysis$cached("glycaemic_failure")
 
 ## Death causes
@@ -73,6 +77,9 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 
 
 ############################################################################################
+
+## Discontinuation
+analysis = cprd$analysis("mm_test")
 
 # Make first instance drug period dataset
 

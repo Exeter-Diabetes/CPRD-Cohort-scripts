@@ -46,31 +46,85 @@ discontinuation <- discontinuation %>%
          ttc12m=timeondrug<=365)
 
 
+# # Make variables for whether discontinue or not
+# ## e.g. stopdrug3m_6mFU:
+# ### 1 if they stop drug within 3 month (ttc3m==1) and no other diabetes meds are stopped or started before the current drug is discontinued (nextremdrug==current drug; this also removes instances where discontinuation represents a break in the current drug before restarting as here nextremdrug==NA) and there is at least 6 months follow-up (FU) post-discontinuation to confirm discontinuation (timetolastpx-timeondrug>183)
+# ### 0 if they don't stop drug within 3 month (ttc3m==0)
+# ### Missing (NA) if they stop drug within 3 month (ttc3m==1) BUT a) another diabetes med is stopped or started before the current drug is discontinued, OR b) discontinuation represents a complete break in all medications before restarting, OR c) there is <= 6 months follow-up (FU) post-discontinuation to confirm discontinuation
+# 
+# discontinuation <- discontinuation %>%
+#   
+#   mutate(stopdrug_3m_3mFU=ifelse(ttc3m==0, 0L,
+#                                  ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
+#          stopdrug_3m_6mFU=ifelse(ttc3m==0, 0L,
+#                                  ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA)),
+#          
+#          stopdrug_6m_3mFU=ifelse(ttc6m==0, 0L,
+#                                  ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
+#          stopdrug_6m_6mFU=ifelse(ttc6m==0, 0L,
+#                                  ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA)),
+#          
+#          stopdrug_12m_3mFU=ifelse(ttc12m==0, 0L,
+#                                  ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
+#          stopdrug_12m_6mFU=ifelse(ttc12m==0, 0L,
+#                                  ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA))) %>%
+#   
+#   analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
+
 # Make variables for whether discontinue or not
 ## e.g. stopdrug3m_6mFU:
 ### 1 if they stop drug within 3 month (ttc3m==1) and no other diabetes meds are stopped or started before the current drug is discontinued (nextremdrug==current drug; this also removes instances where discontinuation represents a break in the current drug before restarting as here nextremdrug==NA) and there is at least 6 months follow-up (FU) post-discontinuation to confirm discontinuation (timetolastpx-timeondrug>183)
 ### 0 if they don't stop drug within 3 month (ttc3m==0)
 ### Missing (NA) if they stop drug within 3 month (ttc3m==1) BUT a) another diabetes med is stopped or started before the current drug is discontinued, OR b) discontinuation represents a complete break in all medications before restarting, OR c) there is <= 6 months follow-up (FU) post-discontinuation to confirm discontinuation
 
-discontinuation <- discontinuation %>%
-  
-  mutate(stopdrug_3m_3mFU=ifelse(ttc3m==0, 0L,
-                                 ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
-         stopdrug_3m_6mFU=ifelse(ttc3m==0, 0L,
-                                 ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA)),
-         
-         stopdrug_6m_3mFU=ifelse(ttc6m==0, 0L,
-                                 ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
-         stopdrug_6m_6mFU=ifelse(ttc6m==0, 0L,
-                                 ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA)),
-         
-         stopdrug_12m_3mFU=ifelse(ttc12m==0, 0L,
-                                 ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L, NA)),
-         stopdrug_12m_6mFU=ifelse(ttc12m==0, 0L,
-                                 ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L, NA))) %>%
-  
-  analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
 
+# Make variables for whether discontinue or not
+## e.g. stopdrug3m_6mFU:
+### 0 if they don't stop drug within 3 month (ttc3m==0)
+### 1 if they stop drug within 3 month (ttc3m == 0) + other things
+### 2 if the 'nextremdrug' is NA = represents a break in the current drug before restarting as here nextremdrug==NA
+### 3 if the 'nextremdrug' is a different drug 
+### 4 if 'timetolastpx-timeondrug) < 3/6 month
+
+analysis = cprd$analysis("mm_test")
+
+
+discontinuation <- discontinuation %>%
+
+  mutate(stopdrug_3m_3mFU=ifelse(ttc3m==0, 0L,
+                                 ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L,
+                                        ifelse(ttc3m==1 & is.na(nextremdrug), 2L,
+                                               ifelse(ttc3m==1 & nextremdrug!=drugclass, 3L,
+                                                      ifelse(ttc3m==1 & (timetolastpx-timeondrug)<91, 4L, NA))))),
+         stopdrug_3m_6mFU=ifelse(ttc3m==0, 0L,
+                                 ifelse(ttc3m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L,
+                                        ifelse(ttc3m==1 & is.na(nextremdrug), 2L,
+                                               ifelse(ttc3m==1 & nextremdrug!=drugclass, 3L,
+                                                      ifelse(ttc3m==1 & (timetolastpx-timeondrug)<183, 4L, NA))))),
+
+         stopdrug_6m_3mFU=ifelse(ttc6m==0, 0L,
+                                 ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L,
+                                        ifelse(ttc6m==1 & is.na(nextremdrug), 2L,
+                                               ifelse(ttc6m==1 & nextremdrug!=drugclass, 3L,
+                                                      ifelse(ttc6m==1 & (timetolastpx-timeondrug)<91, 4L, NA))))),
+         stopdrug_6m_6mFU=ifelse(ttc6m==0, 0L,
+                                 ifelse(ttc6m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L,
+                                        ifelse(ttc6m==1 & is.na(nextremdrug), 2L,
+                                               ifelse(ttc6m==1 & nextremdrug!=drugclass, 3L,
+                                                      ifelse(ttc6m==1 & (timetolastpx-timeondrug)<183, 4L, NA))))),
+
+         stopdrug_12m_3mFU=ifelse(ttc12m==0, 0L,
+                                  ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>91, 1L,
+                                         ifelse(ttc12m==1 & is.na(nextremdrug), 2L,
+                                                ifelse(ttc12m==1 & nextremdrug!=drugclass, 3L,
+                                                       ifelse(ttc12m==1 & (timetolastpx-timeondrug)<91, 4L, NA))))),
+         stopdrug_12m_6mFU=ifelse(ttc12m==0, 0L,
+                                  ifelse(ttc12m==1 & !is.na(nextremdrug) & nextremdrug==drugclass & (timetolastpx-timeondrug)>183, 1L,
+                                         ifelse(ttc12m==1 & is.na(nextremdrug), 2L,
+                                                ifelse(ttc12m==1 & nextremdrug!=drugclass, 3L,
+                                                       ifelse(ttc12m==1 & (timetolastpx-timeondrug)<183, 4L, NA)))))) %>%
+
+  analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
 
 ############################################################################################
 
