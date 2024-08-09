@@ -26,6 +26,12 @@ t2d_1stinstance_new <- t2d_1stinstance
 rm(t2d_1stinstance)
 
 
+## this file contains all the drug initiations
+raw_data_all_new = "Pedro_MM/2024-08-08_t2d_all_drug_periods"
+
+load(paste0("/slade/CPRD_data/mastermind_2022/", raw_data_all_new, ".Rda"))   # name: t2d_all_drug_periods
+
+
 #############################################################################
 ##
 ##  This is the code used by Pedro's T2D discontinuation work
@@ -159,4 +165,120 @@ plot
 dev.off()
 
 
+#############################################################################
+##
+## Check whether a patient returns to a drug later on
+##
+#############################################################################
 
+interim_all_periods <- t2d_all_drug_periods %>%
+  left_join(
+    t2d_all_drug_periods %>%
+      select(!contains("stopdrug")) %>%
+      mutate(value = 1) %>%
+      pivot_wider(
+        names_from = drugclass,
+        values_from = value,
+        values_fill = list(value = 0),
+        names_glue = "{drugclass}_raw" #
+      ),
+    by = c("patid", "dstartdate", "dstopdate")
+  ) %>%
+  group_by(patid, drugclass) %>%
+  arrange(patid, drugclass, dstartdate) %>%
+  mutate(across(
+    .cols = ends_with("_raw"), # Apply cumsum to columns with '_raw'
+    .fns = cumsum, 
+    .names = "{sub('_raw$', '', .col)}_cum"  # Rename cumulative columns without '_raw'
+  )) %>%
+  mutate(across(
+    .cols = ends_with("_raw"), # Apply cumsum to columns with '_raw'
+    .fns = sum,
+    .names = "{sub('_raw$', '', .col)}_total"  # Rename total columns without '_raw'
+  )) %>%
+  ungroup() %>%
+  select(-ends_with("_raw"))  # Remove columns ending with '_raw'
+  
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("DPP4")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, DPP4_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
+
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("MFN")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, MFN_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
+
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("SGLT2")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, SGLT2_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
+
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("GLP1")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, GLP1_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
+
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("SU")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, SU_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
+
+
+t2d_1stinstance_new %>%
+  filter(drugclass %in% c("TZD")) %>%  # drug classes being used
+  filter(!is.na(dm_diag_date)) %>%   # full prescribing data needed
+  mutate(dstartdate = as.Date(dstartdate)) %>%
+  filter(dstartdate > "2014-01-01") %>%   # start date after 2014
+  filter(dstartdate_age >= 18) %>%   # adults
+  left_join(
+    interim_all_periods
+  ) %>% 
+  select(stopdrug_3m_3mFU, TZD_total) %>%
+  table(useNA = "ifany") %>%
+  prop.table(1) %>% `*`(100) %>% round(2)
