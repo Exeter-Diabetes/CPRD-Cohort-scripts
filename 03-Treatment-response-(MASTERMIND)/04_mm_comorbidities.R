@@ -18,7 +18,7 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
@@ -76,7 +76,9 @@ comorbids <- c("af", #atrial fibrillation
                "osteoporosis",
                "unstableangina",
                "frailty_simple",
-               "fh_diabetes" #note includes sibling, child, parents
+               "fh_diabetes", #note includes sibling, child, parents
+               "photocoagulation",
+               "vitreoushemorrhage"
 )
 
 
@@ -124,7 +126,7 @@ for (i in comorbids) {
     raw_tablename <- paste0("raw_", i, "_opcs4")
     
     data <- cprd$tables$hesProceduresEpi %>%
-      inner_join(codes[[paste0("opcs4_",i)]],by=c("OPCS"="opcs4")) %>%
+      inner_join(codes[[paste0("opcs4_",i)]], sql_on="LHS.OPCS LIKE CONCAT(opcs4,'%')") %>%
       analysis$cached(raw_tablename, indexes=c("patid", "evdate"))
       
       assign(raw_tablename, data)
