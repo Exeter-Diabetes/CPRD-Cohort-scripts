@@ -54,9 +54,9 @@ graph TD;
     
     H-->|"08_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
 
-    H---L[ ]:::empty
-    A---L
-    L-->|"08_mm_alcohol"|N["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
+    H---R[ ]:::empty
+    A---R
+    R-->|"08_mm_alcohol"|D["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
  
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
@@ -72,7 +72,7 @@ graph TD;
     F-->|"11_mm_<br>final_merge"|J
     M-->|"11_mm_<br>final_merge"|J  
     G-->|"11_mm_<br>final_merge"|J
-    N-->|"11_mm_<br>final_merge"|J
+    D-->|"11_mm_<br>final_merge"|J
     V-->|"11_mm_<br>final_merge"|J
     I-->|"11_mm_<br>final_merge"|J  
 ```
