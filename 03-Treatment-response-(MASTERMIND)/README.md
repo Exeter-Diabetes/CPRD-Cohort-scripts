@@ -54,9 +54,9 @@ graph TD;
     
     H-->|"08_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
 
-    I---Y[ ]:::empty
-    A---Y
-    Y-->|"08_mm_alcohol"|G["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
+    I---L[ ]:::empty
+    A---L
+    L-->|"08_mm_alcohol"|G["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
  
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
