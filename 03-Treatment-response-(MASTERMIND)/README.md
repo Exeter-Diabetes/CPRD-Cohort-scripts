@@ -54,7 +54,7 @@ graph TD;
     
     H-->|"08_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
 
-    I---L[ ]:::empty
+    H---L[ ]:::empty
     A---L
     L-->|"08_mm_alcohol"|N["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
  
