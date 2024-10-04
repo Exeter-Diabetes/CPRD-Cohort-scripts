@@ -11,27 +11,21 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum June 2024 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999*"]
-    B -->|"With a diabetes QOF code with a valid date** (quality check to remove those without diabetes)"|C["n=2,137,263"]
-    C -->|"With a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)|D["n=2,135,463"]
-
-
-
-
- or gestational 
-
-
-Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=14"]
-    C --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=14"]
-    C --> E["<b>Diabetes cohort</b>: n=1,138,179"]
-    E --> F["<b>01 At-diagnosis cohort</b>: <br> n=771,678 <br> Index date=diagnosis date"]
-    E --> G["<b>02 Prevalent cohort</b>: <br> n=643,143 <br> Actively registered on 01/02/2020 <br> Index date=diagnosis date"]
-    E --> H["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n=995,036 with 3,218,100 unique drug periods <br> For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n=769,394 with 1,663,398 unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
+    A["<b>CPRD Aurum June 2024 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999"]
+    B -->|"Patient from one of 44 practices which may have merged (recommended to remove in CPRD Aurum Data Specification v3.4)"|C["n=30,759"]
+    B -->|"Patients with gender==3 (indeterminate)"|D["n=43"]
+    B --> E["n=2,697,197"]
+    E -->|"With a diabetes QOF code with a valid date* (quality check to remove those without diabetes)"|F["n=2,110,415"]
+    F -->|"Patients with a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)"|G["n=1,300"]
+    F -->|"Patients with a code for gestational diabetes (excluded because algorithms for determining diagnosis date will not work in this group)"|H["n=28,053"]
+    B --> I["n=2,081,081"]
+    I --> J|"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=36"]
+    I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
+    E --> F["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
+    E --> G["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/01/2024 <br> Index date=diagnosis date"]
+    E --> H["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= with  unique drug periods <br> For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n= with  unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
-\* Extract actually contained n=1,481,294 unique patients (1,481,884 in total but some duplicates) but included n=309 with registration start dates in 2020 (which did not fulfil the extract criteria of having a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year of data after this; some of these were also not 'acceptable' by [CPRD's definition](https://cprd.com/sites/default/files/2023-02/CPRD%20Aurum%20Glossary%20Terms%20v2.pdf)). NB: removing those with registration start date in 2020 also removed all of those with a 'patienttypeid' not equal to 3 ('regular'). See next section for further details on the extract.
-&nbsp;
-
-\** A valid date is an obsdate (for medcodes) which is no earlier than the patient's date of birth (no earlier than the month of birth if date of birth is not available; no earlier than full date of birth if this is available), no later than the patient's date of death (earliest of cprd_ddeath (Patient table) and dod/dor where dod not available (ONS death data)) where this is present, no later than deregistration where this is present, and no later than the last collection date from the Practice. NB: QOF codes include codes for some non-Type 1/Type 2 diabetes types but not for gestational diabetes, so people with gestational diabetes codes only may be removed at this stage.
+\* A valid date is an obsdate (for medcodes) which is no earlier than the patient's date of birth (no earlier than the month of birth if date of birth is not available; no earlier than full date of birth if this is available), no later than deregistration where this is present, and no later than the last collection date from the Practice. NB: QOF codes include codes for some non-Type 1/Type 2 diabetes types but not for gestational diabetes, so people with gestational diabetes codes only may be removed at this stage.
 
 &nbsp;
 
