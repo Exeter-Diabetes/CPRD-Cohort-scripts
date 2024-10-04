@@ -1,0 +1,41 @@
+=====================================================================
+Summary
+=====================================================================
+Define version: 3.1.0
+Database source: Aurum
+Database release: June 2024
+---
+Start time: 10/07/2024 13:02:22
+End time:   10/07/2024 14:21:26
+---
+Inc 1
+10/07/2024 13:02:22 --- Initializing
+10/07/2024 13:02:22 --- Requesting data from server
+10/07/2024 13:30:33 --- Retrieving data from server
+10/07/2024 13:31:14 --- Data Received
+10/07/2024 13:31:14 --- Post-processing
+10/07/2024 14:21:26 --- Observation events extracted: 167953243
+10/07/2024 14:21:26 --- Succeeded
+167953243 records retrieved
+Completed in 1:19:04
+---
+Acceptable
+10/07/2024 13:02:22 --- Initializing
+10/07/2024 13:09:06 --- Data Received
+10/07/2024 13:09:06 --- Post-processing
+---
+Analysis
+Inc 1
+Patients with at least one event which matches code(s): 3,404,670
+Patients which match all previous criteria and acceptable patient criteria: 3,233,998
+Patients which match all previous criteria and gender criteria: 3,233,998
+Patients with at least one event which matches all previous criteria and event date criteria: 2,727,999
+Patients with at least one event which matches all criteria: 2,727,999
+
+---
+Results
+Total patients meeting all criteria: 2,727,999
+---
+Define succeeded
+Total running time: 1:19:04
+=====================================================================
