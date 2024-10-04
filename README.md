@@ -19,11 +19,11 @@ graph TD;
     F -->|"Patients with a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)"|G["n=1,300"]
     F -->|"Patients with a code for gestational diabetes (excluded because algorithms for determining diagnosis date will not work in this group)"|H["n=28,053"]
     B --> I["n=2,081,081"]
-    I --> J|"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=36"]
+    I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|K["n=36"]
     I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
-    E --> F["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
-    E --> G["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/01/2024 <br> Index date=diagnosis date"]
-    E --> H["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= with  unique drug periods <br> For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n= with  unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
+    K --> L["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
+    K --> M["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/01/2024 <br> Index date=diagnosis date"]
+    K --> N["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= with  unique drug periods <br> For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n= with  unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
 \* A valid date is an obsdate (for medcodes) which is no earlier than the patient's date of birth (no earlier than the month of birth if date of birth is not available; no earlier than full date of birth if this is available), no later than deregistration where this is present, and no later than the last collection date from the Practice. NB: QOF codes include codes for some non-Type 1/Type 2 diabetes types but not for gestational diabetes, so people with gestational diabetes codes only may be removed at this stage.
 
