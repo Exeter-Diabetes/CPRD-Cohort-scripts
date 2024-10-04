@@ -19,7 +19,7 @@ graph TD;
     F -->|"Patients with a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)"|G["n=1,300"]
     F -->|"Patients with a code for gestational diabetes (excluded because algorithms for determining diagnosis date will not work in this group)"|H["n=28,053"]
     F --> I["n=2,081,081"]
-    I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|K["n=36"]
+    I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|J["n=36"]
     I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
     K --> L["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
     K --> M["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/01/2024 <br> Index date=diagnosis date"]
