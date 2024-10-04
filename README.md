@@ -18,7 +18,7 @@ graph TD;
     E -->|"With a diabetes QOF code with a valid date* (quality check to remove those without diabetes)"|F["n=2,110,415"]
     F -->|"Patients with a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)"|G["n=1,300"]
     F -->|"Patients with a code for gestational diabetes (excluded because algorithms for determining diagnosis date will not work in this group)"|H["n=28,053"]
-    E --> I["n=2,081,081"]
+    F --> I["n=2,081,081"]
     I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|K["n=36"]
     I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
     K --> L["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
