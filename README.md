@@ -30,20 +30,7 @@ graph TD;
 &nbsp;
 
 ## Extract details
-Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Extract-details/diab_med_codes_2020.txt)) in the Observation table were extracted from the October 2020 CPRD Aurum release. See below for full inclusion criteria:
-
-<img src="https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/download_details1.PNG" width="370">
-
-&nbsp;
-
-<img src="https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/download_details2.PNG" width="700">
-
-&nbsp;
-
-Note that as patients were required to have 1 year of data following their earliest (within study/UTS) diabetes code, there are few patients with diabetes diagnosed within the registration period who die within 1 year of diagnosis.
-
-&nbsp;
-
+Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_settings_summary.html)) in the Observation table were extracted from the June 2024 CPRD Aurum release. See the full extract log [here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_log.txt).
 
 ## Script overview
 
