@@ -29,7 +29,7 @@ graph TD;
 
 &nbsp;
 
-Note that as we are waiting for new HES data to be available before applying for linkage data (including ONS death data), the current scripts do not exclude codes (including diabetes diagnosis dates) which are after the patient's date of death.
+Note that as we are waiting for new HES data to be available before applying for linkage data (including ONS death data), the current scripts do not exclude codes (including diabetes diagnosis dates) which are after the patient's date of death. In addition, the current all_patid_ethnicity script uses GP-coded ethnicity only.
 
 &nbsp;
 
