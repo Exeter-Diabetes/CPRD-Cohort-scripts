@@ -32,6 +32,8 @@ graph TD;
 ## Extract details
 Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/all_diabetes_jul24_collapsed.txt)) in the Observation table were extracted from the June 2024 CPRD Aurum release. See the log file for defining the patient list [here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_log.txt).
 
+&nbsp;
+
 ## Script overview
 
 The below diagram shows the R scripts (in grey boxes) used to create the final cohorts (at-diagnosis, prevalent, and treatment response).
