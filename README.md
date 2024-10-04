@@ -4,15 +4,24 @@
 
 This repository contains the R scripts used by the Exeter Diabetes team to produce three cohorts and their associated biomarker/comorbidity/sociodemographic data from a CPRD Aurum dataset: 
 * An **'at-diagnosis'** cohort
-* A **prevalent** cohort (registered at 01/02/2020)
+* A **prevalent** cohort (registered at 01/01/2024)
 * A **treatment response** (MASTERMIND) cohort (those initiating diabetes medications)
 
 The below diagram outlines the data processing steps involved in creating these cohorts.
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum October 2020 release</b> with linked Set 21 <br> (April 2021) HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-06/11/2020 and >=1 year data prior and after"| B["<b>Our extract</b>: n=1,480,985*"]
-    B -->|"With a diabetes QOF code with a valid date** (quality check to remove those without diabetes)"|C["n=1,138,193"]
+    A["<b>CPRD Aurum June 2024 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999*"]
+    B -->|"With a diabetes QOF code with a valid date** (quality check to remove those without diabetes)"|C["n=2,137,263"]
+    C -->|"With a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)|D["n=2,135,463"]
+
+
+
+
+ or gestational 
+
+
+Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=14"]
     C --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|D["n=14"]
     C --> E["<b>Diabetes cohort</b>: n=1,138,179"]
     E --> F["<b>01 At-diagnosis cohort</b>: <br> n=771,678 <br> Index date=diagnosis date"]
