@@ -29,8 +29,14 @@ graph TD;
 
 &nbsp;
 
+Note that as we are waiting for new HES data to be available before applying for linkage data (including ONS death data), the current scripts do not exclude codes (including diabetes diagnosis dates) which are after the patient's date of death. In addition, the current all_patid_ethnicity script uses GP-coded ethnicity only.
+
+&nbsp;
+
 ## Extract details
-Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_settings_summary.html)) in the Observation table were extracted from the June 2024 CPRD Aurum release. See the full extract log [here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_log.txt).
+Patients with a diabetes-related medcode ([full list here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/all_diabetes_jul24_collapsed.txt)) in the Observation table were extracted from the June 2024 CPRD Aurum release. See the log file for defining the patient list [here](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/Extract-details/jun24dm_Define_log.txt).
+
+&nbsp;
 
 ## Script overview
 
