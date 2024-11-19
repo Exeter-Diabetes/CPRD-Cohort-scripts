@@ -18,9 +18,9 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
-#codesets = cprd$codesets()
-#codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
+codesets = cprd$codesets()
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("mm")
 
@@ -129,7 +129,7 @@ for (i in biomarkers) {
     ungroup() %>%
     
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
+    filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
     
     select(patid, date=obsdate, testvalue) %>%
     
@@ -217,8 +217,7 @@ drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 drug_start_dates <- drug_start_stop %>%
-  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate)), by=c("patid","dstartdate"="dcstartdate")) %>%
-  select(patid, dstartdate, drugclass, druginstance, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate)
+  left_join(combo_start_stop, by=c("patid","dstartdate"="dcstartdate"))
 
 
 ## Merge with biomarkers and calculate date difference between biomarker and drug start date
@@ -234,33 +233,33 @@ for (i in biomarkers) {
     inner_join(drug_start_dates, by="patid") %>%
     mutate(drugdatediff=datediff(date, dstartdate)) %>%
     
-    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drug_class", "drug_substance"))
   
   assign(drug_merge_tablename, data)
   
 }
 
 
-# HbA1c
+# HbA1c (same as above)
 
 full_hba1c_drug_merge <- clean_hba1c_medcodes %>%
   
   inner_join(drug_start_dates, by="patid") %>%
   mutate(drugdatediff=datediff(date, dstartdate)) %>%
 
-analysis$cached("full_hba1c_drug_merge", indexes=c("patid", "dstartdate","drugclass"))
+analysis$cached("full_hba1c_drug_merge", indexes=c("patid", "dstartdate", "drug_class", "drug_substance"))
 
 
 ############################################################################################
 
 # Find baseline values
-## Within period defined above (-2 years to +7 days for all except HbA1c and height)
+## Within period defined above (-2 years to +7 days for all except height - also for main HbA1c variable)
 ## Then use closest date to drug start date
 ## May be multiple values; use minimum test result, except for eGFR - use maximum
 ## Can get duplicates where person has identical results on the same day/days equidistant from the drug start date - choose first row when ordered by drugdatediff
 
 baseline_biomarkers <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass, druginstance)
+  select(patid, dstartdate, drug_class, drug_substance, drug_instance)
 
 
 ## For all except height: between 2 years prior and 7 days after drug start date
@@ -268,6 +267,7 @@ baseline_biomarkers <- drug_start_stop %>%
 biomarkers_no_height <- setdiff(biomarkers, "height")
 
 biomarkers_no_height <- c(biomarkers_no_height, "hba1c")
+
 
 for (i in biomarkers_no_height) {
   
@@ -283,7 +283,7 @@ for (i in biomarkers_no_height) {
   data <- get(drug_merge_tablename) %>%
     filter(drugdatediff<=7 & drugdatediff>=-730) %>%
     
-    group_by(patid, dstartdate, drugclass) %>%
+    group_by(patid, dstartdate, drug_substance) %>%
     
     mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
     filter(abs(drugdatediff)==min_timediff) %>%
@@ -304,12 +304,12 @@ for (i in biomarkers_no_height) {
            {{pre_biomarker_date_variable}}:=date,
            {{pre_biomarker_drugdiff_variable}}:=drugdatediff) %>%
     
-    select(-c(testvalue, druginstance, min_timediff, timetochange, timetoaddrem, multi_drug_start, nextdrugchange, nextdcdate))
+    select(patid, dstartdate, drug_substance, {{pre_biomarker_variable}}, {{pre_biomarker_date_variable}}, {{pre_biomarker_drugdiff_variable}})
   
   
   baseline_biomarkers <- baseline_biomarkers %>%
-    left_join(data, by=c("patid", "dstartdate", "drugclass")) %>%
-    analysis$cached(interim_baseline_biomarker_table, indexes=c("patid", "dstartdate", "drugclass"))
+    left_join(data, by=c("patid", "dstartdate", "drug_substance")) %>%
+    analysis$cached(interim_baseline_biomarker_table, indexes=c("patid", "dstartdate", "drug_substance"))
     
 }
 
@@ -320,24 +320,24 @@ baseline_height <- full_height_drug_merge %>%
   
   filter(drugdatediff>=0) %>%
   
-  group_by(patid, dstartdate, drugclass) %>%
+  group_by(patid, dstartdate, drug_substance) %>%
   
   summarise(height=mean(testvalue, na.rm=TRUE)) %>%
   
   ungroup()
 
 baseline_biomarkers <- baseline_biomarkers %>%
-  left_join(baseline_height, by=c("patid", "dstartdate", "drugclass"))
+  left_join(baseline_height, by=c("patid", "dstartdate", "drug_substance"))
 
   
 ## HbA1c: have 2 year value from above; now add in between 6 months prior and 7 days after drug start date (for prehba1c) or between 12 months prior and 7 days after (for prehba1c12m)
-## Exclude if before timeprevcombo for 6 month and 12 month value (not 2 year value)
+## Exclude if before timeprevcombo_class for 6 month and 12 month value (not 2 year value)
 
 baseline_hba1c <- full_hba1c_drug_merge %>%
   
   filter(drugdatediff<=7 & drugdatediff>=-366) %>%
   
-  group_by(patid, dstartdate, drugclass) %>%
+  group_by(patid, dstartdate, drug_substance) %>%
     
   mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
   filter(abs(drugdatediff)==min_timediff) %>%
@@ -357,23 +357,23 @@ baseline_hba1c <- full_hba1c_drug_merge %>%
          prehba1cdate=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdate, NA),
          prehba1cdrugdiff=ifelse(prehba1c12mdrugdiff>=-183, prehba1c12mdrugdiff, NA)) %>%
   
-  select(patid, dstartdate, drugclass, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, prehba1c, prehba1cdate, prehba1cdrugdiff)
+  select(patid, dstartdate, drug_substance, prehba1c12m, prehba1c12mdate, prehba1c12mdrugdiff, prehba1c, prehba1cdate, prehba1cdrugdiff)
          
 
-### timeprevcombo in combo_start_stop table
+### timeprevcombo_class in combo_start_stop table
 
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 baseline_hba1c <- baseline_hba1c %>%
-  left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
-  filter(prehba1c12mdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(prehba1c12mdrugdiff)<=timeprevcombo)) %>%
-  select(-timeprevcombo)
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo_class)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
+  filter(prehba1c12mdrugdiff>=0 | is.na(timeprevcombo_class) | (!is.na(timeprevcombo_class) & abs(prehba1c12mdrugdiff)<=timeprevcombo_class)) %>%
+  select(-timeprevcombo_class)
 
 baseline_biomarkers <- baseline_biomarkers %>%
   rename(prehba1c2yrs=prehba1c,
          prehba1c2yrsdate=prehba1cdate,
          prehba1c2yrsdrugdiff=prehba1cdrugdiff) %>%
-  left_join(baseline_hba1c, by=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(baseline_hba1c, by=c("patid", "dstartdate", "drug_substance")) %>%
   relocate(height, .after=prehba1cdrugdiff) %>%
-  analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drug_substance"))
 

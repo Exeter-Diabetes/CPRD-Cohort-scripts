@@ -180,8 +180,8 @@ raw_oha <- cprd$tables$drugIssue %>%
 clean_oha <- raw_oha %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_end_date) %>%
-  select(patid, date=issuedate, dosageid, quantity, quantunitid, duration, Acarbose, DPP4, GIPGLP1, Glinide, GLP1, ldSema, hdSema, oSema, sema_query, MFN, SGLT2, SU, TZD, INS, drug_substance1, drug_substance2) %>%
-  analysis$cached("clean_oha_prodcodes", indexes=c("patid", "date", "Acarbose", "DPP4", "GIPGLP1", "Glinide", "GLP1", "ldSema", "hdSema", "oSema", "sema_query", "MFN", "SGLT2", "SU", "TZD", "INS", "drug_substance1", "drug_substance2"))
+  select(patid, date=issuedate, dosageid, quantity, quantunitid, duration, drug_class_1, drug_class_2, drug_substance_1, drug_substance_2) %>%
+  analysis$cached("clean_oha_prodcodes", indexes=c("patid", "date", "drug_class_1", "drug_class_2", "drug_substance_1", "drug_substance_2"))
 
 
 ## All insulin scripts (need for diagnosis date (cleaned) and definition (cleaned))

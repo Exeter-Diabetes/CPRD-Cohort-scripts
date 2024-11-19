@@ -10,7 +10,7 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024", cprdConf = "~/.aurum.yaml")
 
 analysis = cprd$analysis("mm")
 
@@ -38,7 +38,7 @@ drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
 # Merge with CKD stages (1 row per patid)
 
 ckd_stage_drug_merge <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass, druginstance) %>%
+  select(patid, dstartdate, drug_class, drug_substance, drug_instance) %>%
   left_join(ckd_stages_from_algorithm, by="patid") %>%
   mutate(preckdstage=ifelse(!is.na(stage_5) & datediff(stage_5, dstartdate)<=7, "stage_5",
                             ifelse(!is.na(stage_4) & datediff(stage_4, dstartdate)<=7, "stage_4",
@@ -68,8 +68,8 @@ ckd_stage_drug_merge <- drug_start_stop %>%
   
   mutate(postckdstage345date=ifelse(postckdstage345date==as.Date("2050-01-01"), as.Date(NA), postckdstage345date)) %>%
   
-  select(patid, dstartdate, drugclass, druginstance, preckdstagedate, preckdstagedrugdiff, preckdstage, postckdstage5date, postckdstage345date) %>%
+  select(patid, dstartdate, drug_class, drug_substance, drug_instance, preckdstagedate, preckdstagedrugdiff, preckdstage, postckdstage5date, postckdstage345date) %>%
   
-  analysis$cached("ckd_stages", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("ckd_stages", indexes=c("patid", "dstartdate", "drug_substance"))
                                 
  

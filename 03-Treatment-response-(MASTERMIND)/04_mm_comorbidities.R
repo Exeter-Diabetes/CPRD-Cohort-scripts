@@ -18,9 +18,12 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+new_codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
+old_codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+
+codes <- c(new_codes, old_codes)
 
 analysis = cprd$analysis("mm")
 
@@ -138,21 +141,21 @@ for (i in comorbids) {
 
 # Make new primary cause hospitalisation for heart failure, incident MI, and incident stroke comorbidities
 
-raw_primary_hhf_icd10 <- raw_heartfailure_icd10 %>%
-  filter(d_order==1) %>%
-  analysis$cached("raw_primary_hhf_icd10", indexes=c("patid", "epistart"))
-
-raw_primary_incident_mi_icd10 <- raw_incident_mi_icd10 %>%
-  filter(d_order==1) %>%
-  analysis$cached("raw_primary_incident_mi_icd10", indexes=c("patid", "epistart"))
-
-raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
-  filter(d_order==1) %>%
-  analysis$cached("raw_primary_incident_stroke_icd10", indexes=c("patid", "epistart"))
-  
-
-## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
-comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", comorbids)
+# raw_primary_hhf_icd10 <- raw_heartfailure_icd10 %>%
+#   filter(d_order==1) %>%
+#   analysis$cached("raw_primary_hhf_icd10", indexes=c("patid", "epistart"))
+# 
+# raw_primary_incident_mi_icd10 <- raw_incident_mi_icd10 %>%
+#   filter(d_order==1) %>%
+#   analysis$cached("raw_primary_incident_mi_icd10", indexes=c("patid", "epistart"))
+# 
+# raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
+#   filter(d_order==1) %>%
+#   analysis$cached("raw_primary_incident_stroke_icd10", indexes=c("patid", "epistart"))
+#   
+# 
+# ## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
+# comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", comorbids)
 
 
 # Separate frailty by severity into three different categories
@@ -263,15 +266,15 @@ for (i in comorbids) {
 
   all_codes_clean <- all_codes %>%
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(date>=min_dob & ((source=="gp" & date<=gp_ons_end_date) | ((source=="hes_icd10" | source=="hes_opcs4") & (is.na(gp_ons_death_date) | date<=gp_ons_death_date)))) %>%
+    filter(date>=min_dob & date<=gp_end_date) %>%
     select(patid, date, source, code)
   
   rm(all_codes)
   
   data <- all_codes_clean %>%
-    inner_join((drug_start_stop %>% select(patid, dstartdate, drugclass, druginstance)), by="patid") %>%
+    inner_join((drug_start_stop %>% select(patid, dstartdate, drug_class, drug_substance, drug_instance)), by="patid") %>%
     mutate(drugdatediff=datediff(date, dstartdate)) %>%
-    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drug_class", "drug_substance"))
   
   rm(all_codes_clean)
   

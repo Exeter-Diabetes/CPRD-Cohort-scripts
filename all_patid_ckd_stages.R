@@ -17,9 +17,9 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024", cprdConf = "~/.aurum.yaml")
+#codesets = cprd$codesets()
+#codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("all_patid")
 
@@ -43,8 +43,8 @@ clean_creatinine_blood_medcodes <- raw_creatinine_blood_medcodes %>%
   select(patid, date=obsdate, testvalue) %>%
   analysis$cached("clean_creatinine_blood_medcodes", indexes=c("patid", "date", "testvalue"))
 
-clean_creatinine_blood_medcodes %>% count()
-#24,925,457
+#clean_creatinine_blood_medcodes %>% count()
+#44,775,705
 
 ## Convert to eGFR
 
@@ -66,8 +66,8 @@ clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
   filter(!is.na(testvalue)) %>%
   analysis$cached("clean_egfr_medcodes", indexes=c("patid", "date", "testvalue"))
 
-clean_egfr_medcodes %>% count()
-#24,925,444 - lose a few readings from one person with unspecified sex
+#clean_egfr_medcodes %>% count()
+#44,775,286 - lose 419 rows for people with gender==3
 
 
 ################################################################################################################################
@@ -80,7 +80,8 @@ ckd_stages_from_all_egfr <- clean_egfr_medcodes %>%
                                  ifelse(testvalue<45, "stage_3b",
                                         ifelse(testvalue<60, "stage_3a",
                                                ifelse(testvalue<90, "stage_2",
-                                                      ifelse(testvalue>=90, "stage_1", NA)))))))
+                                                      ifelse(testvalue>=90, "stage_1", NA))))))) %>%
+  analysis$cached("ckd_stages_from_all_egfr", indexes=c("patid", "date"))
 
 
 ################################################################################################################################
@@ -102,18 +103,20 @@ ckd_stages_from_algorithm <- ckd_stages_from_all_egfr %>%
   dbplyr::window_order(date) %>%
   mutate(patid_row_id=row_number()) %>%
   mutate(patid_total_rows=max(patid_row_id, na.rm=TRUE)) %>%
-  ungroup()
+  ungroup() %>%
+  analysis$cached("ckd_stages_from_algorithm_interim_1", indexes=c("patid", "date", "patid_row_id"))
 
 
 #### For rows where there is a next test, use this as end date; for last row, use start date as end date
 
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   mutate(next_row=patid_row_id+1) %>%
-  left_join(ckd_stages_from_algorithm, by=c("patid","next_row"="patid_row_id")) %>%
+  left_join(ckd_stages_from_algorithm, by=c("patid", "next_row"="patid_row_id")) %>%
   mutate(ckd_start=date.x,
-         ckd_end=if_else(is.na(date.y),date.x,date.y),
+         ckd_end=if_else(is.na(date.y), date.x, date.y),
          ckd_stage=ckd_stage.x) %>%
-  select(patid, patid_row_id, ckd_stage, ckd_start, ckd_end)
+  select(patid, patid_row_id, ckd_stage, ckd_start, ckd_end) %>%
+  analysis$cached("ckd_stages_from_algorithm_interim_2", indexes=c("patid", "ckd_stage", "patid_row_id"))
 
 
 ### B) Join together consecutive periods with the same ckd_stage
@@ -126,34 +129,35 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   mutate(compare=cumsum(lead_var>cummax_var)) %>%
   mutate(indx=ifelse(row_number()==1, 0L, lag(compare))) %>%
   ungroup() %>%
-  group_by(patid, ckd_stage ,indx) %>%
+  group_by(patid, ckd_stage, indx) %>%
   summarise(first_test_date=min(ckd_start,na.rm=TRUE),
             last_test_date=max(ckd_start,na.rm=TRUE),
             end_date=max(ckd_end,na.rm=TRUE),
             test_count=max(patid_row_id, na.rm=TRUE)-min(patid_row_id, na.rm=TRUE)+1) %>%
   ungroup() %>%
-  analysis$cached("ckd_stages_from_algorithm_interim_1",indexes=c("patid", "ckd_stage", "test_count", "first_test_date", "last_test_date"))
+  analysis$cached("ckd_stages_from_algorithm_interim_3", indexes=c("patid", "ckd_stage", "test_count", "first_test_date", "last_test_date"))
   
 ckd_stages_from_algorithm %>% count()
-#7,024,230
+#12,554,389
 
 ckd_stages_from_algorithm %>% summarise(total=sum(test_count, na.rm=TRUE))
-#total number of tests: 24,925,444 as above
+#total number of tests: 44,775,286 as above
 
 
 ### C) Remove periods with 1 reading, or with multiple readings but <90 days between first and last test, and cache
 
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   filter(test_count>1 & datediff(last_test_date, first_test_date)>=90) %>%
-  analysis$cached("ckd_stages_from_algorithm_interim_2",indexes=c("patid","ckd_stage","first_test_date"))
+  analysis$cached("ckd_stages_from_algorithm_interim_4",indexes=c("patid", "ckd_stage", "first_test_date"))
 
 ckd_stages_from_algorithm %>% count()
-#3,423,432
+#6,080,681
 
 
 ################################################################################################################################
 
 # Combine with CKD5 medcodes/ICD10/OPCS4 codes
+## Don't have linkage data yet
 
 ## Get raw CKD5 codes and clean
 ### All are already in all_patid tables on MySQL from 4_mm_comorbidities script
@@ -162,10 +166,10 @@ ckd_stages_from_algorithm %>% count()
 raw_ckd5_code_medcodes <- raw_ckd5_medcodes %>% analysis$cached("raw_ckd5_code_medcodes")
 
 ### ICD10 codes
-raw_ckd5_code_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_code_icd10")
+#raw_ckd5_code_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_code_icd10")
 
 ### OPCS4 codes
-raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
+#raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
 
 
 ## Clean, find earliest date per person, and re-cache
@@ -173,10 +177,10 @@ raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
 earliest_clean_ckd5 <- raw_ckd5_code_medcodes %>%
   select(patid, date=obsdate) %>%
   mutate(source="gp") %>%
-  union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
-  union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
+  #union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
+  #union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(date>=min_dob & ((source=="gp" & date<=gp_ons_end_date) | (source=="hes" & (is.na(gp_ons_death_date) | date<=gp_ons_death_date)))) %>%
+  filter(date>=min_dob & date<=gp_end_date) %>%
   group_by(patid) %>%
   summarise(first_test_date=min(date, na.rm=TRUE))%>%
   ungroup() %>%
@@ -188,10 +192,10 @@ earliest_clean_ckd5 <- raw_ckd5_code_medcodes %>%
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   select(patid, ckd_stage, first_test_date) %>%
   union_all(earliest_clean_ckd5 %>% mutate(ckd_stage="stage_5")) %>%
-  analysis$cached("ckd_stages_from_algorithm_interim_3",indexes=c("patid","ckd_stage","first_test_date"))
+  analysis$cached("ckd_stages_from_algorithm_interim_5",indexes=c("patid","ckd_stage","first_test_date"))
 
 ckd_stages_from_algorithm %>% count()        
-#3,478,030
+#6,109,147
 
 
 ################################################################################################################################
@@ -203,8 +207,9 @@ ckd_stages_from_algorithm %>% count()
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   group_by(patid, ckd_stage) %>%
   summarise(ckd_stage_start=min(first_test_date, na.rm=TRUE)) %>%
-  ungroup()
-
+  ungroup() %>%
+  analysis$cached("ckd_stages_from_algorithm_interim_6",indexes=c("patid","ckd_stage","ckd_stage_start"))
+  
 
 ## Remove where start date of less severe stage is later than start date of more severe stage
 ### Reshape wide first
