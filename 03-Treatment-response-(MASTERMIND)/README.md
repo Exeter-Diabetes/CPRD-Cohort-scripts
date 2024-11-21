@@ -150,8 +150,8 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | current_oha | whether prescription for OHA (non-insulin diabetes medication) within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
-| gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
-| death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
+| gp_end_date | earliest of last collection date from practice and deregistration | |
+| death_date | ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
 | drug_class | class of drug being started | |
 | dstartdate | drug class/substance start date | uses dstart_class/dstart_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
