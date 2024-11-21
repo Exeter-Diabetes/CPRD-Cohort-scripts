@@ -6,7 +6,7 @@
 # (Unlike for baseline biomarkers): only want for first instances of drug class (i.e. not where patient has taken drug, stopped, and then restarted)
 # HbA1c only: response missing where timeprevcombo<=61 days before drug initiation
 
-# All biomarker tests merged with all drug start and stop dates (plus timetochange, timeaddrem and multi_drug_start from mm_combo_start_stop = combination start stop table) in script 2_mm_baseline_biomarkers - tables created have names of the form 'mm_full_{biomarker}_drug_merge'
+# All biomarker tests merged with all drug start and stop dates (plus timetochange, timeaddrem and multi_drug_start from mm_combo_start_stop = combination start stop table) in script 02_mm_baseline_biomarkers - tables created have names of the form 'mm_full_{biomarker}_drug_merge'
 
 # Also finds date of next eGFR measurement post-baseline and date of 40% decline in eGFR outcome (if present)
 
@@ -19,9 +19,9 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 #codesets = cprd$codesets()
-#codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+#codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("mm")
 
@@ -67,19 +67,19 @@ for (i in biomarkers) {
   
   data <- drug_merge_tablename %>%
     
-    filter(druginstance==1)  %>%
+    filter(drug_instance==1)  %>%
     
     mutate(minvaliddate6m = sql("date_add(dstartdate, interval 91 day)"),
            
            # pmin gets translated to SQL LEAST which doesn't like missing values
-           maxtime6m = pmin(ifelse(is.na(timetoaddrem), 274, timetoaddrem),
-                            ifelse(is.na(timetochange), 274, timetochange+91), 274, na.rm=TRUE),
+           maxtime6m = pmin(ifelse(is.na(timetoaddrem_class), 274, timetoaddrem_class),
+                            ifelse(is.na(timetochange_class), 274, timetochange_class+91), 274, na.rm=TRUE),
            
            lastvaliddate6m=if_else(maxtime6m<91, NA, sql("date_add(dstartdate, interval maxtime6m day)"))) %>%
     
     filter(date>=minvaliddate6m & date<=lastvaliddate6m) %>%
     
-    group_by(patid, dstartdate, drugclass) %>%
+    group_by(patid, dstartdate, drug_substance) %>%
     
     mutate(min_timediff=min(abs(183-drugdatediff), na.rm=TRUE)) %>%
     filter(abs(183-drugdatediff)==min_timediff) %>%
@@ -95,9 +95,9 @@ for (i in biomarkers) {
     
     ungroup() %>%
     
-    select(patid, dstartdate, drugclass, post_biomarker_6m, post_biomarker_6mdate, post_biomarker_6mdrugdiff) %>%
+    select(patid, dstartdate, drug_class, drug_substance, post_biomarker_6m, post_biomarker_6mdate, post_biomarker_6mdrugdiff) %>%
     
-    analysis$cached(post6m_table_name, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(post6m_table_name, indexes=c("patid", "dstartdate", "drug_substance"))
   
   assign(post6m_table_name, data)
   
@@ -117,19 +117,19 @@ for (i in biomarkers) {
   
   data <- drug_merge_tablename %>%
     
-    filter(druginstance==1)  %>%
+    filter(drug_instance==1)  %>%
     
     mutate(minvaliddate12m = sql("date_add(dstartdate, interval 274 day)"),
            
            # pmin gets translated to SQL LEAST which doesn't like missing values
-           maxtime12m = pmin(ifelse(is.na(timetoaddrem), 457, timetoaddrem),
-                             ifelse(is.na(timetochange), 457, timetochange+91), 457, na.rm=TRUE),
+           maxtime12m = pmin(ifelse(is.na(timetoaddrem_class), 457, timetoaddrem_class),
+                             ifelse(is.na(timetochange_class), 457, timetochange_class+91), 457, na.rm=TRUE),
            
            lastvaliddate12m=if_else(maxtime12m<274, NA, sql("date_add(dstartdate, interval maxtime12m day)"))) %>%
     
     filter(date>=minvaliddate12m & date<=lastvaliddate12m) %>%
     
-    group_by(patid, dstartdate, drugclass) %>%
+    group_by(patid, dstartdate, drug_substance) %>%
     
     mutate(min_timediff=min(abs(365-drugdatediff), na.rm=TRUE)) %>%
     filter(abs(365-drugdatediff)==min_timediff) %>%
@@ -145,9 +145,9 @@ for (i in biomarkers) {
     
     ungroup() %>%
     
-    select(patid, dstartdate, drugclass, post_biomarker_12m, post_biomarker_12mdate, post_biomarker_12mdrugdiff) %>%
+    select(patid, dstartdate, drug_class, drug_substance, post_biomarker_12m, post_biomarker_12mdate, post_biomarker_12mdrugdiff) %>%
     
-    analysis$cached(post12m_table_name, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(post12m_table_name, indexes=c("patid", "dstartdate", "drug_substance"))
   
   assign(post12m_table_name, data)
   
@@ -160,8 +160,8 @@ baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomark
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 response_biomarkers <- baseline_biomarkers %>%
-  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem, multi_drug_start, timeprevcombo)), by=c("patid","dstartdate"="dcstartdate")) %>%
-  filter(druginstance==1)
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo_class)), by=c("patid", "dstartdate"="dcstartdate")) %>%
+  filter(drug_instance==1)
 
 
 for (i in biomarkers) {
@@ -187,18 +187,18 @@ for (i in biomarkers) {
   interim_response_biomarker_table <- paste0("response_biomarkers_interim_", i)
   
   response_biomarkers <- response_biomarkers %>%
-    left_join(post6m_table, by=c("patid", "dstartdate", "drugclass")) %>%
-    left_join(post12m_table, by=c("patid", "dstartdate", "drugclass"))
+    left_join((post6m_table %>% select(-drug_class)), by=c("patid", "dstartdate", "drug_substance")) %>%
+    left_join((post12m_table %>% select(-drug_class)), by=c("patid", "dstartdate", "drug_substance"))
   
   
   if (i=="hba1c") {
     response_biomarkers <- response_biomarkers %>%
-      mutate(post_biomarker_6m=ifelse(!is.na(timeprevcombo) & timeprevcombo<=61, NA, post_biomarker_6m),
-             post_biomarker_6mdate=if_else(!is.na(timeprevcombo) & timeprevcombo<=61, as.Date(NA), post_biomarker_6mdate),
-             post_biomarker_6mdrugdiff=ifelse(!is.na(timeprevcombo) & timeprevcombo<=61, NA, post_biomarker_6mdrugdiff),
-             post_biomarker_12m=ifelse(!is.na(timeprevcombo) & timeprevcombo<=61, NA, post_biomarker_12m),
-             post_biomarker_12mdate=if_else(!is.na(timeprevcombo) & timeprevcombo<=61, as.Date(NA), post_biomarker_12mdate),
-             post_biomarker_12mdrugdiff=ifelse(!is.na(timeprevcombo) & timeprevcombo<=61, NA, post_biomarker_12mdrugdiff))
+      mutate(post_biomarker_6m=ifelse(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, NA, post_biomarker_6m),
+             post_biomarker_6mdate=if_else(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, as.Date(NA), post_biomarker_6mdate),
+             post_biomarker_6mdrugdiff=ifelse(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, NA, post_biomarker_6mdrugdiff),
+             post_biomarker_12m=ifelse(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, NA, post_biomarker_12m),
+             post_biomarker_12mdate=if_else(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, as.Date(NA), post_biomarker_12mdate),
+             post_biomarker_12mdrugdiff=ifelse(!is.na(timeprevcombo_class) & timeprevcombo_class<=61, NA, post_biomarker_12mdrugdiff))
   }
    
    
@@ -217,7 +217,7 @@ for (i in biomarkers) {
            {{post_12m_biomarker_date_variable}}:=post_biomarker_12mdate,
            {{post_12m_biomarker_drugdiff_variable}}:=post_biomarker_12mdrugdiff) %>%
     
-    analysis$cached(interim_response_biomarker_table, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(interim_response_biomarker_table, indexes=c("patid", "dstartdate", "drug_substance"))
   
 }
 
@@ -231,12 +231,12 @@ egfr_long <- egfr_long %>% analysis$cached("patid_clean_egfr_medcodes")
 analysis = cprd$analysis("mm")
 
 next_egfr <- baseline_biomarkers %>%
-  select(patid, drugclass, dstartdate, preegfrdate) %>%
+  select(patid, drug_substance, dstartdate, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0) %>%
-  group_by(patid, drugclass, dstartdate) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
   summarise(next_egfr_date=min(date, na.rm=TRUE)) %>%
-  analysis$cached("response_biomarkers_next_egfr", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("response_biomarkers_next_egfr", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
 # Add in 40% decline in eGFR outcome
@@ -244,24 +244,24 @@ next_egfr <- baseline_biomarkers %>%
 ## Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=40% of the baseline value
 ## Checked and those with null eGFR do get dropped
 egfr40 <- baseline_biomarkers %>%
-  select(patid, drugclass, dstartdate, preegfr, preegfrdate) %>%
+  select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0 & testvalue<=0.6*preegfr) %>%
-  group_by(patid, drugclass, dstartdate) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
   summarise(egfr_40_decline_date=min(date, na.rm=TRUE)) %>%
-  analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
 # Join to rest of response dataset and move where height variable is
 response_biomarkers <- response_biomarkers %>%
-  left_join(next_egfr, by=c("patid", "drugclass", "dstartdate")) %>%
-  left_join(egfr40, by=c("patid", "drugclass", "dstartdate")) %>%
-  relocate(height, .after=timeprevcombo) %>%
+  left_join(next_egfr, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr40, by=c("patid", "drug_substance", "dstartdate")) %>%
+  relocate(height, .after=timeprevcombo_class) %>%
   relocate(prehba1c12m, .after=hba1cresp12m) %>%
   relocate(prehba1c12mdate, .after=prehba1c12m) %>%
   relocate(prehba1c12mdrugdiff, .after=prehba1c12mdate) %>%
   relocate(prehba1c2yrs, .after=hba1cresp12m) %>%
   relocate(prehba1c2yrsdate, .after=prehba1c2yrs) %>%
   relocate(prehba1c2yrsdrugdiff, .after=prehba1c2yrsdate) %>%
-  analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drug_substance"))
 
