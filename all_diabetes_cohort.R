@@ -4,7 +4,7 @@
 # Add useful baseline features including diabetes diagnosis variables (date of diagnosis, type of diabetes for Type 1/Type 2) and ethnicity
 
 # Uses other pre-made tables:
-## validDateLookup has min_dob (earliest possible DOB), and gp_end_date (earliest of last collection date from practice, deregistration, cprd_ddate, and 2023-10-20)
+## validDateLookup has min_dob (earliest possible DOB), and gp_end_date (earliest of last collection date from practice and deregistration)
 ## all_patid_ethnicity, from all_patid_ethnicity.R script as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
 
 
@@ -459,7 +459,7 @@ diabetes_type_final <- diabetes_type_prelim %>%
 ## Add dm_diag_date and dm_diag_age - missing if diagnosis date is before registration
 ## Add variable for what type of code diagnosis is based on
 ## Also add in gender, registration end, practice ID, and cprd_ddate from patient table
-## Also add in last collection date for practice, and derive/keep: regstartdate, gp_record_end (earliest of last collection date from practice and deregistration - will have one or other; NB: this is identical to gp_end_date in validDateLookup), death_date (earliest of 'cprddeathdate' (derived by CPRD))
+## Also add in last collection date for practice, and derive/keep: regstartdate, gp_end_date (earliest of last collection date from practice and deregistration - will have one or other - from r_valid_date_lookup), death_date (earliest of 'cprddeathdate' (derived by CPRD))
 
 ## Also add in ethnicity from all_patid_ethnicity table from all_patid_ethnicity.R script as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
 
@@ -485,15 +485,10 @@ diabetes_cohort <- diabetes_type_final %>%
   
   left_join((cprd$tables$patient %>% select(patid, gender, regenddate, pracid, cprd_ddate)), by="patid") %>%
   left_join((cprd$tables$practice %>% select(pracid, lcd, region)), by="pracid") %>%
-  
-  mutate(gp_record_end=pmin(if_else(is.na(lcd), as.Date("2050-01-01"), lcd),
-                            if_else(is.na(regenddate), as.Date("2050-01-01"), regenddate), na.rm=TRUE),
-         
-         death_date= cprd_ddate) %>% #don't have ONS data so death date is from cprd only
-  
+  left_join((cprd$tables$validDateLookup %>% select(patid, gp_end_date)), by="patid") %>%
   left_join(ethnicity, by="patid") %>%
   
-  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date_all, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_date, dm_diag_codetype, dm_diag_age_all, dm_diag_age, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_record_end, death_date) %>%
+  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date_all, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_date, dm_diag_codetype, dm_diag_age_all, dm_diag_age, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_end_date) %>%
   
   analysis$cached("diabetes_cohort", unique_indexes="patid", indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_date", "dm_diag_age_all", "dm_diag_age", "diabetes_type"))
 
