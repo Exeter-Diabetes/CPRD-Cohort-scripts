@@ -12,9 +12,9 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("mm")
 
@@ -26,16 +26,16 @@ analysis = cprd$analysis("mm")
 meds <- c("ace_inhibitors",
           "beta_blockers",
           "calcium_channel_blockers",
-          "thiazide_diuretics",
-          "loop_diuretics",
-          "ksparing_diuretics",
-          "definite_genital_infection_meds",
-          "topical_candidal_meds",
-          "immunosuppressants",
-          "oralsteroids",
-          "oestrogens",
+          #"thiazide_diuretics",
+          #"loop_diuretics",
+          #"ksparing_diuretics",
+          #"definite_genital_infection_meds",
+          #"topical_candidal_meds",
+          #"immunosuppressants",
+          #"oralsteroids",
+          #"oestrogens",
           "statins",
-          "fluvacc_stopflu_prod",
+          #"fluvacc_stopflu_prod",
           "arb")
 
 
@@ -86,13 +86,13 @@ for (i in meds) {
   data <- get(raw_tablename) %>%
     
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(date>=min_dob & date<=gp_ons_end_date) %>%
+    filter(date>=min_dob & date<=gp_end_date) %>%
     select(patid, date) %>%
     
-    inner_join((drug_start_stop %>% select(patid, dstartdate, drugclass, druginstance)), by="patid") %>%
+    inner_join((drug_start_stop %>% select(patid, dstartdate, drug_class, drug_substance, drug_instance)), by="patid") %>%
     mutate(drugdatediff=datediff(date, dstartdate)) %>%
     
-    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drug_class", "drug_substance"))
   
   assign(drug_merge_tablename, data)
   
@@ -104,10 +104,10 @@ for (i in meds) {
 # Find earliest predrug, latest predrug and first postdrug dates
 ## Remove definite_genital_infection_meds / fluvacc_stopflu_prod as need to be used in combination with genital_infection_nonspec / fluvacc_stopflu_med medcodes (see script 4_mm_comorbidities)
 
-meds <- setdiff(meds, c("definite_genital_infection_meds", "fluvacc_stopflu_prod"))
+#meds <- setdiff(meds, c("definite_genital_infection_meds", "fluvacc_stopflu_prod"))
 
 non_diabetes_meds <- drug_start_stop %>%
-  select(patid, dstartdate, drugclass, druginstance)
+  select(patid, dstartdate, drug_class, drug_substance, drug_instance)
 
 
 for (i in meds) {
@@ -122,21 +122,21 @@ for (i in meds) {
   
   predrug <- get(drug_merge_tablename) %>%
     filter(date<=dstartdate) %>%
-    group_by(patid, dstartdate, drugclass) %>%
+    group_by(patid, dstartdate, drug_substance) %>%
     summarise({{predrug_earliest_date_variable}}:=min(date, na.rm=TRUE),
               {{predrug_latest_date_variable}}:=max(date, na.rm=TRUE)) %>%
     ungroup()
   
   postdrug <- get(drug_merge_tablename) %>%
     filter(date>dstartdate) %>%
-    group_by(patid, dstartdate, drugclass) %>%
+    group_by(patid, dstartdate, drug_substance) %>%
     summarise({{postdrug_date_variable}}:=min(date, na.rm=TRUE)) %>%
     ungroup()
   
   non_diabetes_meds <- non_diabetes_meds %>%
-    left_join(predrug, by=c("patid", "dstartdate", "drugclass")) %>%
-    left_join(postdrug, by=c("patid", "dstartdate", "drugclass")) %>%
-    analysis$cached(interim_non_diab_meds_table, indexes=c("patid", "dstartdate", "drugclass"))
+    left_join(predrug, by=c("patid", "dstartdate", "drug_substance")) %>%
+    left_join(postdrug, by=c("patid", "dstartdate", "drug_substance")) %>%
+    analysis$cached(interim_non_diab_meds_table, indexes=c("patid", "dstartdate", "drug_substance"))
 
 }
 
@@ -144,7 +144,7 @@ for (i in meds) {
 # Cache final version and rename topical_candidal_meds to prodspecific_gi for Laura
 
 non_diabetes_meds <- non_diabetes_meds %>%
-  rename(predrug_earliest_prodspecific_gi=predrug_earliest_topical_candidal_meds,
-         predrug_latest_prodspecific_gi=predrug_latest_topical_candidal_meds,
-         postdrug_first_prodspecific_gi=postdrug_first_topical_candidal_meds) %>%
+  # rename(predrug_earliest_prodspecific_gi=predrug_earliest_topical_candidal_meds,
+  #        predrug_latest_prodspecific_gi=predrug_latest_topical_candidal_meds,
+  #        postdrug_first_prodspecific_gi=postdrug_first_topical_candidal_meds) %>%
   analysis$cached("non_diabetes_meds", indexes=c("patid", "dstartdate", "drugclass"))
