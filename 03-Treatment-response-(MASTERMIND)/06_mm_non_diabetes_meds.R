@@ -36,7 +36,8 @@ meds <- c("ace_inhibitors",
           #"oestrogens",
           "statins",
           #"fluvacc_stopflu_prod",
-          "arb")
+          "arb",
+          "finerenone")
 
 
 ############################################################################################
