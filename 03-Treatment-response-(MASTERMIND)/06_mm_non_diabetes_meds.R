@@ -25,7 +25,7 @@ analysis = cprd$analysis("mm")
 
 meds <- c("ace_inhibitors",
           "beta_blockers",
-          "calcium_channel_blockers",
+          "ca_channel_blockers",
           #"thiazide_diuretics",
           #"loop_diuretics",
           #"ksparing_diuretics",
