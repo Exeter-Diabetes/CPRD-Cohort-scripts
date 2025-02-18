@@ -19,9 +19,9 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("at_diag")
 
@@ -32,7 +32,7 @@ analysis = cprd$analysis("at_diag")
 ## Keep HbA1c separate as processed differently
 ## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'baseline_biomarkers' table
 
-biomarkers <- c("weight", "height", "bmi", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr")
+biomarkers <- c("weight", "height", "bmi", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "fastingglucose")
 
 
 ############################################################################################
