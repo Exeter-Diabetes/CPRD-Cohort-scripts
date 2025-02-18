@@ -134,7 +134,7 @@ diabetes_cohort_ids %>% count() #2081081
 
 # Diagnosis dates
 
-# Earliest of: any diabetes medcode (excluding obstype==4 [family history]), HbA1c >=47.5mmol/mol, OHA script, insulin script (all - valid dates only)
+# Earliest of: any diabetes medcode (excluding obstype==4 [family history] and diabetes in pregnancy), HbA1c >=47.5mmol/mol, OHA script, insulin script (all - valid dates only)
 
 ## If Type 2 (determined later in this script), ignore any diabetes medcodes in year of birth - use next code/HbA1c/script
 ## If Type 2 and have high HbA1c or OHA/insulin script in year of birth, will exclude later
