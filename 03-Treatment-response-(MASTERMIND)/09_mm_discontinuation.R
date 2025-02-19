@@ -9,7 +9,7 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 
 analysis = cprd$analysis("mm")
 
@@ -19,21 +19,26 @@ analysis = cprd$analysis("mm")
 # Bring together drug start/stop dates (from drug_start_stop), nextremdrug (from combo_start_stop) and time to last prescription (timetolastpx) from all_scripts table
 ## Too slow if join all_scripts on both date and patid - join with patid only and then remove rows where dstartdate!=date
 
-drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
-combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
+drug_class_start_stop <- drug_class_start_stop %>% analysis$cached("drug_class_start_stop")
+combo_class_start_stop <- combo_class_start_stop %>% analysis$cached("combo_class_start_stop")
 all_scripts <- all_scripts %>% analysis$cached("all_scripts")
 
 
-discontinuation <- drug_start_stop %>%
-  select(patid, dstartdate, dstopdate, drugclass, druginstance, timeondrug) %>%
-  inner_join((combo_start_stop %>% select(patid, dcstartdate, nextremdrug)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
+# Create time on drug variable
+drug_class_start_stop <- drug_class_start_stop %>%
+  mutate(timeondrug = datediff(dstopdate_class, dstartdate_class))
+
+
+discontinuation <- drug_class_start_stop %>%
+  select(patid, dstartdate_class, drugline_all, dstopdate_class, drug_class, drug_instance, timeondrug) %>%
+  inner_join((combo_class_start_stop %>% select(patid, dcstartdate, nextremdrug)), by=c("patid", c("dstartdate_class"="dcstartdate"))) %>%
   inner_join((all_scripts %>% select(patid, date, timetolastpx)), by="patid") %>%
-  analysis$cached("discontinuation_interim_1", indexes=c("dstartdate", "date"))
+  analysis$cached("discontinuation_interim_1", indexes=c("dstartdate_class", "date"))
 
 discontinuation <- discontinuation %>%
-  filter(dstartdate==date) %>%
+  filter(dstartdate_class==date) %>%
   select(-date) %>%
-  analysis$cached("discontinuation_interim_2", indexes=c("patid", "dstartdate", "drugclass", "timeondrug", "nextremdrug", "timetolastpx"))
+  analysis$cached("discontinuation_interim_2", indexes=c("patid", "dstartdate_class", "drug_class", "timeondrug", "nextremdrug", "timetolastpx"))
 
 
 ############################################################################################
@@ -68,11 +73,12 @@ discontinuation <- discontinuation %>%
                                  ifelse(ttc6m==1 & (timetolastpx-timeondrug)>183, 1L, NA)),
          
          stopdrug_12m_3mFU=ifelse(ttc12m==0, 0L,
-                                 ifelse(ttc12m==1 & (timetolastpx-timeondrug)>91, 1L, NA)),
+                                  ifelse(ttc12m==1 & (timetolastpx-timeondrug)>91, 1L, NA)),
          stopdrug_12m_6mFU=ifelse(ttc12m==0, 0L,
-                                 ifelse(ttc12m==1 & (timetolastpx-timeondrug)>183, 1L, NA))) %>%
+                                  ifelse(ttc12m==1 & (timetolastpx-timeondrug)>183, 1L, NA))) %>%
   
-  analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("discontinuation_interim_3", indexes=c("patid", "dstartdate_class", "drug_class"))
+
 
 
 ############################################################################################
@@ -85,32 +91,34 @@ discontinuation <- discontinuation %>%
 
 
 discontinuation <- discontinuation %>%
-  mutate(mfn_date=ifelse(drugclass=="MFN", dstopdate, dstartdate),
-         stopdrug_3m_3mFU_MFN=ifelse(is.na(stopdrug_3m_3mFU) | drugclass!="MFN", NA,
-                                     ifelse(drugclass=="MFN" & stopdrug_3m_3mFU==0, 0L, 1L)),
-         stopdrug_3m_6mFU_MFN=ifelse(is.na(stopdrug_3m_6mFU) | drugclass!="MFN", NA,
-                                     ifelse(drugclass=="MFN" & stopdrug_3m_6mFU==0, 0L, 1L)),
-         stopdrug_6m_3mFU_MFN=ifelse(is.na(stopdrug_6m_3mFU) | drugclass!="MFN", NA,
-                                     ifelse(drugclass=="MFN" & stopdrug_6m_3mFU==0, 0L, 1L)),
-         stopdrug_6m_6mFU_MFN=ifelse(is.na(stopdrug_6m_6mFU) | drugclass!="MFN", NA,
-                                     ifelse(drugclass=="MFN" & stopdrug_6m_6mFU==0, 0L, 1L)),
-         stopdrug_12m_3mFU_MFN=ifelse(is.na(stopdrug_12m_3mFU) | drugclass!="MFN", NA,
-                                      ifelse(drugclass=="MFN" & stopdrug_12m_3mFU==0, 0L, 1L)),
-         stopdrug_12m_6mFU_MFN=ifelse(is.na(stopdrug_12m_6mFU) | drugclass!="MFN", NA,
-                                      ifelse(drugclass=="MFN" & stopdrug_12m_6mFU==0, 0L, 1L))) %>%
+  mutate(mfn_date=ifelse(drug_class=="MFN", dstopdate_class, dstartdate_class),
+         stopdrug_3m_3mFU_MFN=ifelse(is.na(stopdrug_3m_3mFU) | drug_class!="MFN", NA,
+                                     ifelse(drug_class=="MFN" & stopdrug_3m_3mFU==0, 0L, 1L)),
+         stopdrug_3m_6mFU_MFN=ifelse(is.na(stopdrug_3m_6mFU) | drug_class!="MFN", NA,
+                                     ifelse(drug_class=="MFN" & stopdrug_3m_6mFU==0, 0L, 1L)),
+         stopdrug_6m_3mFU_MFN=ifelse(is.na(stopdrug_6m_3mFU) | drug_class!="MFN", NA,
+                                     ifelse(drug_class=="MFN" & stopdrug_6m_3mFU==0, 0L, 1L)),
+         stopdrug_6m_6mFU_MFN=ifelse(is.na(stopdrug_6m_6mFU) | drug_class!="MFN", NA,
+                                     ifelse(drug_class=="MFN" & stopdrug_6m_6mFU==0, 0L, 1L)),
+         stopdrug_12m_3mFU_MFN=ifelse(is.na(stopdrug_12m_3mFU) | drug_class!="MFN", NA,
+                                      ifelse(drug_class=="MFN" & stopdrug_12m_3mFU==0, 0L, 1L)),
+         stopdrug_12m_6mFU_MFN=ifelse(is.na(stopdrug_12m_6mFU) | drug_class!="MFN", NA,
+                                      ifelse(drug_class=="MFN" & stopdrug_12m_6mFU==0, 0L, 1L))) %>%
   group_by(patid) %>%
   dbplyr::window_order(mfn_date) %>%
-  mutate(stopdrug_3m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_3m_3mFU_MFN)),
-         stopdrug_3m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_3m_6mFU_MFN)),
-         stopdrug_6m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_6m_3mFU_MFN)),
-         stopdrug_6m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_6m_6mFU_MFN)),
-         stopdrug_12m_3mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_12m_3mFU_MFN)),
-         stopdrug_12m_6mFU_MFN_hist=ifelse(drugclass=="MFN", NA, cumsum(stopdrug_12m_6mFU_MFN))) %>%
+  mutate(stopdrug_3m_3mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_3m_3mFU_MFN)),
+         stopdrug_3m_6mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_3m_6mFU_MFN)),
+         stopdrug_6m_3mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_6m_3mFU_MFN)),
+         stopdrug_6m_6mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_6m_6mFU_MFN)),
+         stopdrug_12m_3mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_12m_3mFU_MFN)),
+         stopdrug_12m_6mFU_MFN_hist=ifelse(drug_class=="MFN", NA, cumsum(stopdrug_12m_6mFU_MFN))) %>%
   
   ungroup() %>%
   
   select(-c(stopdrug_3m_3mFU_MFN, stopdrug_3m_6mFU_MFN, stopdrug_6m_3mFU_MFN, stopdrug_6m_6mFU_MFN, stopdrug_12m_3mFU_MFN, stopdrug_12m_6mFU_MFN, mfn_date)) %>%
   
-  analysis$cached("discontinuation", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("discontinuation", indexes=c("patid", "dstartdate_class", "drug_class"))
+
+
 
 
