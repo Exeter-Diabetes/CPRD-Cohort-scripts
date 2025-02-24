@@ -256,28 +256,6 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 
 &nbsp;
 
-### Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table
-
-| Variable name | Description | Notes on derivation |
-| --- | --- | --- |
-| quantity | number of tablets/items in prescriptions | provided by CPRD in drug issue table, directly from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
-| daily_dose | number of tablets/items prescribed per day | provided by CPRD (in dosage lookup ('common doses') - need to merge with dosageid in Drug Issue table), 'derived using CPRD algorithm based on free text'<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
-| duration | number of days prescription is for | provided by CPRD in drug issue table, no info on source so presumably from GP records<br />if 0, assume missing<br />if multiple prescriptions for same patid/date/drug, take mean |
-| coverage | days of meds for that script | quantity/daily_dose if neither are missing, or use duration<br />NB: very high missingness in Aurum (~60%) |
-| drugsubstances | drug substances within that class prescribed on that date | from [drug substance class lookup](https://github.com/Exeter-Diabetes/CPRD-Katie-MASTERMIND-Scripts/blob/main/Scripts/drug_substance_class_lookup.txt)<br />if multiple prescriptions for same patid/date/drug with different drug substances, combined using ' & ' as a separator |
-| dstart | whether date is start date for that drug class (binary 0 or 1) | dstart=1 if it is the earliest script of that drug class for that person, or if previous script was >183 days (6 months) prior |
-| dstop | whether date is stop for that drug class (binary 0 or 1) | dstop=1 if it is the last script of that drug class for that person, or if next script is >183 days (6 months) after |
-| numpxdate | number of different drug classes prescribed that day (duplicated within patid/date) | |
-| numstart | number of drug classes started on that day (duplicated within patid/date) | sum of dstart on that day |
-| numstop | number of drug classes stopped on that day (duplicated within patid/date) | sum of dstop on that day |
-| cu_numstart | cumulative sum of numstart up to this date | |
-| cu_numstop | cumulative sum of numstop up to this date | |
-| dcstart | whether date is start date for drug combo | uses drugcombo variable: 1 if it is the earliest instance of that drug combo for that person, or if previous script was >183 days (6 months) prior |
-| dcstop | whether date is stop for drug combo | uses drugcombo variable: 1 if it is the last instance of that drug combo for that person, or if next script is >183 days (6 months) after |
-| timetolastpx | time from date to last prescription date for patient (in days) | |
-
-&nbsp;
-
 ## Selected MASTERMIND papers
 ### From CPRD GOLD dataset
 * [Precision Medicine in Type 2 Diabetes: Clinical Markers of Insulin Resistance Are Associated With Altered Short- and Long-term Glycemic Response to DPP-4 Inhibitor Therapy](https://diabetesjournals.org/care/article/41/4/705/36908/Precision-Medicine-in-Type-2-Diabetes-Clinical) Dennis et al. 2018
