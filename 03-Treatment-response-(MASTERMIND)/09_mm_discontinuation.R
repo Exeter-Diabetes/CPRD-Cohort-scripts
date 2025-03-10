@@ -1,5 +1,5 @@
 
-# Adds 3 month, 6 month and 12 month discontinuation variables for all drug periods
+# Adds 3 month, 6 month and 12 month discontinuation variables for all drug class periods
 
 
 ############################################################################################
