@@ -129,7 +129,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | ethnicity_qrisk2 | QRISK2 ethnicity category: (1=White, 2=Indian, 3=Pakistani, 4=Bangladeshi, 5=Other Asian, 6=Black Caribbean, 7=Black African, 8=Chinese, 9=Other) | |
 | imd_decile | 2019 English Index of Multiple Deprivation (IMD) decile (1=least deprived, 10=most deprived) | |
 | tds_2011 | Townsend Deprivation Score (TDS) - made by converting IMD decile scores (median TDS for LSOAs with the same IMD decile as patient used) | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#townsend-deprivation-scores) |
-| has_insulin | has a prescription for insulin ever (excluding invalid dates - before DOB / after LCD/death/deregistration) | |
+| has_insulin | has a prescription for insulin ever (excluding invalid dates - before DOB / after gp_end_date) | |
 | type1_code_count | number of Type 1-specific codes in records (any date) | |
 | type2_code_count | number of Type 2-specific codes in records (any date) | |
 | raw_dm_diag_dmcodedate | earliest diabetes medcode (including diabetes exclusion codes; excluding those with obstypeid=4 (family history) and invalid dates). 'Raw' indicates that this is before codes in the year of birth are removed for those with Type 2 diabetes | |
@@ -145,12 +145,12 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | dm_diag_age | age at diabetes diagnosis for those with diagnosis at/after registration start | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration start | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
-| current_oha | whether prescription for OHA (non-insulin diabetes medication) within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
+| current_oha | whether prescription for OHA (non-insulin diabetes medication) within last 6 months of data | last 6 months of data = those before gp_end_date |
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
 | gp_end_date | earliest of last collection date from practice and deregistration | |
 | death_date | ONS death date | NA if no death date |
-| with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
+| with_hes | 1 for patients with HES linkage, otherwise 0| |
 | drug_class | class of drug being started | |
 | dstartdate | start date of drug substance in curent row. If drug_class_start==1, then it is the start date of the current drug class period | uses dstart_class/dstart_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
 | drug_class_start | dstartdate in this row represents start date of the current drug class period (i.e. isn't just a new drug substance being started during the drug class period) | |
