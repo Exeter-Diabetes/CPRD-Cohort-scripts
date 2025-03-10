@@ -110,7 +110,7 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | ethnicity_16cat | 16-category ethnicity: (1=White British, 2=White Irish, 3=Other White, 4=White and Black Caribbean, 5=White and Black African, 6=White and Asian, 7=Other Mixed, 8=Indian, 9=Pakistani, 10=Bangladeshi, 11=Other Asian, 12=Caribbean, 13=African, 14=Other Black, 15=Chinese, 16=Other) | |
 | ethnicity_qrisk2 | QRISK2 ethnicity category: (0=missing, 1=White, 2=Indian, 3=Pakistani, 4=Bangladeshi, 5=Other Asian, 6=Black Caribbean, 7=Black African, 8=Chinese, 9=Other) | |
 | imd_decile | 2019 English Index of Multiple Deprivation (IMD) decile (1=least deprived, 10=most deprived) | |
-| has_insulin | has a prescription for insulin ever (excluding invalid dates - before DOB / after LCD/deregistration) | |
+| has_insulin | has a prescription for insulin ever (excluding invalid dates - before DOB / after gp_end_date) | |
 | type1_code_count | number of Type 1-specific codes in records (any date) | |
 | type2_code_count | number of Type 2-specific codes in records (any date) | |
 | raw_dm_diag_dmcodedate | earliest diabetes medcode (including diabetes exclusion codes; excluding those with obstypeid=4 (family history) and invalid dates). 'Raw' indicates that this is before codes in the year of birth are removed for those with Type 2 diabetes | |
@@ -126,7 +126,7 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | dm_diag_age | age at diabetes diagnosis for those with diagnosis at/after registration start | dm_diag_date - dob<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | dm_diag_before_reg | whether diagnosed before registration start | |
 | ins_in_1_year | whether started insulin within 1 year of diagnosis (**0 may mean no or missing**) | |
-| current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before LCD/deregistration |
+| current_oha | whether prescription for insulin within last 6 months of data | last 6 months of data = those before gp_end_date |
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
 | gp_end_date | earliest of last collection date from practice and deregistration | |
