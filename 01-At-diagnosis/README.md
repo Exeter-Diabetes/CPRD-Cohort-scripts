@@ -100,9 +100,9 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | current_oha | whether prescription for OHA (non-insulin diabetes medication) within last 6 months of data | last 6 months of data = those before LCD/death/deregistration |
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
-| gp_record_end | earliest of last collection date from practice, deregistration and 31/10/2020 (latest date in records) | |
-| death_date | earliest of 'cprddeathdate' (derived by CPRD) and ONS death date | NA if no death date |
-| with_hes | 1 for patients with HES linkage and n_patid_hes<=20, otherwise 0| |
+| gp_end_date | earliest of last collection date from practice and deregistration | |
+| death_date | ONS death date | NA if no death date |
+| with_hes | 1 for patients with HES linkage, otherwise 0| |
 | pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to index date within window of -730 days (2 years before index date) and +7 days (a week after index date)<br /><br />For HbA1c: prehba1c is closest HbA1c to index date within window of -183 days (6 months before index date) and +7 days (a week after index date) |
 | pre{biomarker}date | date of baseline biomarker | |
 | pre{biomarker}datediff | days between index date and baseline biomarker (negative: biomarker measured before index date) | |
