@@ -23,19 +23,15 @@ analysis = cprd$analysis("mm")
 
 # Define medications
 
+## Haven't included definite_genital_infection_meds, topical_candidal_meds, immunosuppressants, oralsteroids, oestrogens or flu vaccine as not updated
+
 meds <- c("ace_inhibitors",
           "beta_blockers",
           "ca_channel_blockers",
-          #"thiazide_diuretics",
-          #"loop_diuretics",
-          #"ksparing_diuretics",
-          #"definite_genital_infection_meds",
-          #"topical_candidal_meds",
-          #"immunosuppressants",
-          #"oralsteroids",
-          #"oestrogens",
+          "thiazide_diuretics",
+          "loop_diuretics",
+          "ksparing_diuretics",
           "statins",
-          #"fluvacc_stopflu_prod",
           "arb",
           "finerenone")
 
@@ -103,9 +99,6 @@ for (i in meds) {
 ############################################################################################
 
 # Find earliest predrug, latest predrug and first postdrug dates
-## Remove definite_genital_infection_meds / fluvacc_stopflu_prod as need to be used in combination with genital_infection_nonspec / fluvacc_stopflu_med medcodes (see script 4_mm_comorbidities)
-
-#meds <- setdiff(meds, c("definite_genital_infection_meds", "fluvacc_stopflu_prod"))
 
 non_diabetes_meds <- drug_start_stop %>%
   select(patid, dstartdate, drug_class, drug_substance, drug_instance)
@@ -142,10 +135,11 @@ for (i in meds) {
 }
 
 
-# Cache final version and rename topical_candidal_meds to prodspecific_gi for Laura
+# Cache final version
 
 non_diabetes_meds <- non_diabetes_meds %>%
-  # rename(predrug_earliest_prodspecific_gi=predrug_earliest_topical_candidal_meds,
-  #        predrug_latest_prodspecific_gi=predrug_latest_topical_candidal_meds,
-  #        postdrug_first_prodspecific_gi=postdrug_first_topical_candidal_meds) %>%
-  analysis$cached("non_diabetes_meds", indexes=c("patid", "dstartdate", "drugclass"))
+  analysis$cached("non_diabetes_meds", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+
+

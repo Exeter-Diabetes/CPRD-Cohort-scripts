@@ -18,8 +18,8 @@ library(EHRBiomarkr)
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "diabetes-jun2024", cprdConf = "~/.aurum.yaml")
-#codesets = cprd$codesets()
-#codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
+codesets = cprd$codesets()
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("all_patid")
 
@@ -39,7 +39,7 @@ clean_creatinine_blood_medcodes <- raw_creatinine_blood_medcodes %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
+  filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
   select(patid, date=obsdate, testvalue) %>%
   analysis$cached("clean_creatinine_blood_medcodes", indexes=c("patid", "date", "testvalue"))
 
@@ -157,7 +157,6 @@ ckd_stages_from_algorithm %>% count()
 ################################################################################################################################
 
 # Combine with CKD5 medcodes/ICD10/OPCS4 codes
-## Don't have linkage data yet
 
 ## Get raw CKD5 codes and clean
 ### All are already in all_patid tables on MySQL from 4_mm_comorbidities script
@@ -166,10 +165,10 @@ ckd_stages_from_algorithm %>% count()
 raw_ckd5_code_medcodes <- raw_ckd5_medcodes %>% analysis$cached("raw_ckd5_code_medcodes")
 
 ### ICD10 codes
-#raw_ckd5_code_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_code_icd10")
+raw_ckd5_code_icd10 <- raw_ckd5_icd10 %>% analysis$cached("raw_ckd5_code_icd10")
 
 ### OPCS4 codes
-#raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
+raw_ckd5_code_opcs4 <- raw_ckd5_opcs4 %>% analysis$cached("raw_ckd5_code_opcs4")
 
 
 ## Clean, find earliest date per person, and re-cache
@@ -177,8 +176,8 @@ raw_ckd5_code_medcodes <- raw_ckd5_medcodes %>% analysis$cached("raw_ckd5_code_m
 earliest_clean_ckd5 <- raw_ckd5_code_medcodes %>%
   select(patid, date=obsdate) %>%
   mutate(source="gp") %>%
-  #union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
-  #union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
+  union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
+  union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(date>=min_dob & date<=gp_end_date) %>%
   group_by(patid) %>%
@@ -195,7 +194,7 @@ ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>%
   analysis$cached("ckd_stages_from_algorithm_interim_5",indexes=c("patid","ckd_stage","first_test_date"))
 
 ckd_stages_from_algorithm %>% count()        
-#6,109,147
+#6,123,490
 
 
 ################################################################################################################################
