@@ -195,6 +195,13 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | next_egfr_date | date of first eGFR post-baseline | |
 | egfr_40_decline_date | date at which eGFR<=60% of baseline value (i.e. a decline of >=40%) | |
+| egfr_50_decline_date | date at which eGFR<=50% of baseline value (i.e. a decline of >=50%) | |
+| preacr_previous | Closest ACR measurement prior to preacr | |
+| preacr_previous_date | Date of preacr_previous | |
+| preacr_next | Closest ACR measurement after preacr | |
+| preacr_next_date | Date of preacr_next | |
+| preacr_confirmed | TRUE if preacr>=3 mg/mmol and preacr_previous was also >=3 mg/mmol and within the two years prior to preacr, or if preacr_next is >=3 mg/mmol | |
+| macroalb_date | For those with preacr_confirmed=TRUE, date of earliest post drug initiation ACR>=30 mg/mmol | |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
 | preckdstagedrugdiff | days between dstartdate and preckdstagedate | |
 | preckdstage | CKD stage at baseline | CKD stages calculated as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage)<br />eGFR calculated from creatinine using CKD-EPI creatinine 2021 equation<br />Start date = earliest test for CKD stage, only including those confirmed by another test at least 91 days later, without a test for a different stage in the intervening period<br />Baseline stage = maximum stage with start date < drug start date or up to 7 days afterwards<br />CKD5 supplemented by medcodes/ICD10/OPCS4 codes for CKD5 / ESRD |
