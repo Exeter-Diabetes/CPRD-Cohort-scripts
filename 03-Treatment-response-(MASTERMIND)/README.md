@@ -216,6 +216,10 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
 | postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) | |
 | postdrug_first_emergency_hosp_cause | primary cause of admission (ICD10 code) for earliest emergency inpatient hospital admission (date of admission in postdrug_first_emergency_hosp variable) | |
+| predrug_efi_{deficit} | Binary variables for each eFI deficit (if any instance before dstartdate). Polypharmacy coded as 1 for all patients. | |
+| efi_n_deficits | Number of eFI deficits (out of 36) | |
+| predrug_efi_score | eFI score (efi_n_deficits/36) | |
+| predrug_efi_cat | eFI score converted to category (<0.12: fit, >=0.12-<0.24: mild, >=0.34-<0.36: moderate, >=0.36: severe) | |
 | predrug_earliest_{med} | earliest script for non-diabetes medication before/at dstartdate | |
 | predrug_latest_{med} | latest script for non-diabetes medication before/at dstartdate | |
 | postdrug_first_{med} | earliest script for non-diabetes medication after (not at) dstartdate | |
