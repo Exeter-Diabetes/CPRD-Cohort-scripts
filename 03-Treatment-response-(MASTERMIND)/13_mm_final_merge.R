@@ -56,8 +56,9 @@ combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 response_biomarkers <- response_biomarkers %>% analysis$cached("response_biomarkers") #includes baseline biomarker values for first instance drug periods so no need to use baseline_biomakers table
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
-## Comorbidities
+## Comorbidities and eFI
 comorbidities <- comorbidities %>% analysis$cached("comorbidities")
+efi <- efi %>% analysis$cached("efi")
 
 ## Non-diabetes meds
 #non_diabetes_meds <- non_diabetes_meds %>% analysis$cached("non_diabetes_meds")
@@ -136,6 +137,7 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(drug_class, drug_instance, timeprevcombo_class))), by=c("patid", "dstartdate", "drug_substance")) %>%
   inner_join((ckd_stages %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
   inner_join((comorbidities %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
+  inner_join((efi %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
   analysis$cached(paste0(today, "_all_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drug_substance"))
 
 # all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
