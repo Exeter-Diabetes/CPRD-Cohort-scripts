@@ -40,7 +40,7 @@ graph TD;
     
     A---W[ ]:::empty
     H---W
-    W-->|"04_mm_<br>comorbidities/05_mm_efi"|F["<b>Comorbidities/frailty</b> <br> at drug <br> start date"]
+    W-->|"04_mm_comorbidities<br>& 05_mm_efi"|F["<b>Comorbidities<br>and eFI score</b> <br> at drug <br> start date"]
     
     H---U[ ]:::empty
     A---U
