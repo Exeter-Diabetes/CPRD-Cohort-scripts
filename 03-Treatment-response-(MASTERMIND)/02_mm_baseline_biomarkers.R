@@ -1,7 +1,7 @@
 
 # Extracts and cleans all biomarker values (and creates eGFR readings from creatinine)
 
-# Merges with drug start and stop dates plus timetochange, timeaddrem, multi_drug_start, nextdrugchange and nextdcdate variables from mm_combo_start_stop (combination start and stop dates) table - first 3 variables needed for working out response biomarkers in script 03_mm_response_biomarkers; nextdrugchange and nextdcdate needed for HbA1c for glycaemic failure in 09_mm_glycaemic_failure
+# Merges with drug start and stop dates plus variables from mm_combo_start_stop (combination start and stop dates) table - needed for working out response biomarkers in script 03_mm_response_biomarkers
 
 # Finds biomarker values at baseline: -2 years to +7 days relative to drug start for all except:
 ## HbA1c: -6 months to +7 days, and excludes any before timeprevcombo

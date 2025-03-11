@@ -8,7 +8,8 @@
 
 # All biomarker tests merged with all drug start and stop dates (plus timetochange, timeaddrem and multi_drug_start from mm_combo_start_stop = combination start stop table) in script 02_mm_baseline_biomarkers - tables created have names of the form 'mm_full_{biomarker}_drug_merge'
 
-# Also finds date of next eGFR measurement post-baseline and date of 40% decline in eGFR outcome (if present)
+# Also finds date of next eGFR measurement post-baseline and date of 40%/50% decline in eGFR outcome (if present)
+# And whether microalbuminuria at baseline is confirmed, and date of new macroalbuminuria (ACR>30 mg/mmol)
 
 
 ############################################################################################
@@ -222,7 +223,13 @@ for (i in biomarkers) {
 }
 
 
-# Add in next eGFR measurement
+############################################################################################
+
+# Additional kidney outcomes
+
+## eGFR
+
+### Add in next eGFR measurement
 
 analysis = cprd$analysis("all")
 
@@ -239,10 +246,9 @@ next_egfr <- baseline_biomarkers %>%
   analysis$cached("response_biomarkers_next_egfr", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
-# Add in 40% decline in eGFR outcome
-
-## Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=40% of the baseline value
-## Checked and those with null eGFR do get dropped
+### Add in 40% decline in eGFR outcome
+### Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=60% of the baseline value
+### Checked and those with null eGFR do get dropped
 egfr40 <- baseline_biomarkers %>%
   select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
@@ -252,10 +258,88 @@ egfr40 <- baseline_biomarkers %>%
   analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
+### Add in 50% decline in eGFR outcome
+### Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=50% of the baseline value
+### Checked and those with null eGFR do get dropped
+egfr50 <- baseline_biomarkers %>%
+  select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
+  left_join(egfr_long, by="patid") %>%
+  filter(datediff(date, preegfrdate)>0 & testvalue<=0.5*preegfr) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(egfr_50_decline_date=min(date, na.rm=TRUE)) %>%
+  analysis$cached("response_biomarkers_egfr50", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+## ACR
+
+### Add in whether baseline microalbuminuria is confirmed by previous or next measurement
+
+analysis = cprd$analysis("all")
+
+acr_separate <- acr_separate %>% analysis$cached("patid_clean_acr_from_separate_medcodes")
+acr_together <- acr_together %>% analysis$cached("patid_clean_acr_medcodes")
+acr_long <- acr_separate %>% union_all(acr_together) %>% analysis$cached("patid_acr_long")
+
+analysis = cprd$analysis("mm")
+
+prev_acr <- baseline_biomarkers %>%
+  select(patid, dstartdate, drug_substance, preacr, preacrdate) %>%
+  left_join(acr_long, by="patid") %>%
+  group_by(patid, dstartdate, drug_substance, preacr, preacrdate) %>%
+  dbplyr::window_order(date) %>%
+  mutate(preacr_previous=ifelse(row_number()==1, NA, lag(testvalue)),
+         preacr_previous_date=ifelse(row_number()==1, NA, lag(date)),
+         preacr_next = ifelse(row_number()==n(), NA, lead(testvalue)),
+         preacr_next_date=ifelse(row_number()==n(), NA, lead(date))) %>%
+  ungroup() %>%
+  filter(date==preacrdate) %>%
+  mutate(preacr_confirmed = ifelse(testvalue >= 3 & (preacr_previous >= 3 & datediff(preacr_previous_date, preacrdate) <=7 & datediff(preacr_previous_date, preacrdate) >= -730 | preacr_next >= 3), TRUE, FALSE)) %>%
+  select(patid, dstartdate, drug_substance, preacr_confirmed, preacr_previous, preacr_previous_date, preacr_next, preacr_next_date) %>%
+  analysis$cached("response_biomarkers_acr_confirmed", indexes=c("patid", "dstartdate", "drug_substance"))
+
+prev_acr %>% count()
+prev_acr %>% distinct(patid, dstartdate, drug_substance) %>% count()
+
+
+
+
+
+
+
+
+
+### Add in new macroalbuminuria for those with confirmed microalbuminuria at baseline
+
+new_macroalb <- baseline_biomarkers %>%
+  select(patid, dstartdate, drug_substance, preacrdate) %>%
+  left_join(acr_long, by="patid") %>%
+  left_join(prev_acr, by=c("patid", "dstartdate", "drug_substance")) %>%
+  mutate(drugdatediff=datediff(date, preacrdate)) %>%
+  filter(drugdatediff>0) %>%
+  analysis$cached("response_biomarkers_macroalb_interim", indexes=c("patid", "dstartdate", "drug_substance"))
+
+new_macroalb <- new_macroalb %>%
+  group_by(patid, dstartdate, drug_substance) %>%
+  dbplyr::window_order(drugdatediff) %>%
+  mutate(nextvalue = lead(testvalue)) %>%
+  ungroup() %>%
+  filter(preacr_confirmed == T & testvalue >=30 | 
+           preacr_confirmed == F & testvalue >=30 & nextvalue >=30) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(macroalb_date=min(date, na.rm=TRUE)) %>%
+  analysis$cached("response_biomarkers_macroalb", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+
+############################################################################################
+
 # Join to rest of response dataset and move where height variable is
 response_biomarkers <- response_biomarkers %>%
   left_join(next_egfr, by=c("patid", "drug_substance", "dstartdate")) %>%
   left_join(egfr40, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr50, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(prev_acr, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(new_macroalb, by=c("patid", "drug_substance", "dstartdate")) %>%
   relocate(height, .after=timeprevcombo_class) %>%
   relocate(prehba1c12m, .after=hba1cresp12m) %>%
   relocate(prehba1c12mdate, .after=prehba1c12m) %>%

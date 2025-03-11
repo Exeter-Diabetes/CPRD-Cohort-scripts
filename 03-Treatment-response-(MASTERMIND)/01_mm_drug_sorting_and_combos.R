@@ -733,10 +733,13 @@ combo_class_start_stop <- combo_class_start_stop %>%
  ungroup()
 
 
-# Add variable to indicate whether multiple drug classes started on the same day
+# Add variable to indicate whether multiple drug classes started on the same day, plus timetochange, timetoaddrem and timeprevcombo variables
 
 combo_class_start_stop <- combo_class_start_stop %>%
- mutate(multi_drug_start_class=ifelse(add>1 | (drugcomboorder==1 & numdrugs_class>1), 1L, 0L)) %>% 
+ mutate(multi_drug_start_class=ifelse(add>1 | (drugcomboorder==1 & numdrugs_class>1), 1L, 0L),
+        timetochange_class=datediff(datechange_class, dcstartdate),
+        timetoaddrem_class=datediff(dateaddrem_class, dcstartdate),
+        timeprevcombo_class=datediff(dcstartdate, dateprevcombo_class)) %>% 
  analysis$cached("combo_class_start_stop", indexes=c("patid", "dcstartdate"))
 
 #combo_class_start_stop %>% count()
@@ -859,10 +862,13 @@ combo_substance_start_stop <- combo_substance_start_stop %>%
  ungroup()
 
 
-# Add variable to indicate whether multiple drug substances started on the same day
+# Add variable to indicate whether multiple drug substances started on the same day, plus timetochange, timetoaddrem and timeprevcombo variables
 
 combo_substance_start_stop <- combo_substance_start_stop %>%
- mutate(multi_drug_start_substance=ifelse(add>1 | (drugcomboorder==1 & numdrugs_substance>1), 1L, 0L)) %>% 
+ mutate(multi_drug_start_substance=ifelse(add>1 | (drugcomboorder==1 & numdrugs_substance>1), 1L, 0L),
+        timetochange_substance=datediff(datechange_substance, dcstartdate),
+        timetoaddrem_substance=datediff(dateaddrem_substance, dcstartdate),
+        timeprevcombo_substance=datediff(dcstartdate, dateprevcombo_substance)) %>% 
  analysis$cached("combo_substance_start_stop", indexes=c("patid", "dcstartdate"))
 
 #combo_substance_start_stop %>% count()
@@ -876,11 +882,11 @@ combo_substance_start_stop <- combo_substance_start_stop %>%
 ## Add ncurrtx variable: number of distinct major drug CLASSES (DPP4, GIPGLP1, GLP1, INS, MFN, SGLT2, SU, TZD - i.e. not Acarbose or Glinides), not including one being initiated (i.e. DPP4+GIPGLP1+GLP1+INS+MFN+SGLT2+SU+TZD)
 ## If rows are only present when considering drug substance changes, ncurrtx is missing (NA)
 
-## Copy down and calculate timetochange_class, timetoaddrem_class and timeprevcombo_class for all rows
+## Copy down and recalculate timetochange_class, timetoaddrem_class and timeprevcombo_class for all rows
 
 combo_start_stop <- combo_substance_start_stop %>%
-  select(patid, dcstartdate, dcstopdate_substance=dcstopdate, drug_substance_combo, datechange_substance, dateaddrem_substance, dateprevcombo_substance, multi_drug_start_substance, all_of(drugsubstances)) %>%
-  left_join((combo_class_start_stop %>% select(patid, dcstartdate, dcstopdate_class=dcstopdate, drug_class_combo, datechange_class, dateaddrem_class, dateprevcombo_class, multi_drug_start_class, all_of(drugclasses), -Acarbose)), by=c("patid", "dcstartdate")) %>%
+  select(patid, dcstartdate, dcstopdate_substance=dcstopdate, drug_substance_combo, datechange_substance, dateaddrem_substance, dateprevcombo_substance, multi_drug_start_substance, all_of(drugsubstances), timetochange_substance, timetoaddrem_substance, timeprevcombo_substance) %>%
+  left_join((combo_class_start_stop %>% select(patid, dcstartdate, dcstopdate_class=dcstopdate, drug_class_combo, datechange_class, dateaddrem_class, dateprevcombo_class, multi_drug_start_class, all_of(drugclasses), -Acarbose, timetochange_class, timetoaddrem_class, timeprevcombo_class)), by=c("patid", "dcstartdate")) %>%
   mutate(drug_class_combo_change=ifelse(!is.na(dcstopdate_class), 1L, 0L)) %>%
   
   group_by(patid) %>%
@@ -892,31 +898,27 @@ combo_start_stop <- combo_substance_start_stop %>%
  
  
 combo_start_stop <- combo_start_stop %>%
- group_by(patid, drug_class_changes) %>%
- mutate(datechange_class=max(datechange_class, na.rm=TRUE),
-     dateaddrem_class=max(dateaddrem_class, na.rm=TRUE),
-     dateprevcombo_class=max(dateprevcombo_class, na.rm=TRUE),
-     
-     Acarbose=max(Acarbose, na.rm=TRUE),
-     DPP4=max(DPP4, na.rm=TRUE),
-     GIPGLP1=max(GIPGLP1, na.rm=TRUE),
-     Glinide=max(Glinide, na.rm=TRUE),
-     GLP1=max(GLP1, na.rm=TRUE),
-     INS=max(INS, na.rm=TRUE),
-     MFN=max(MFN, na.rm=TRUE),
-     SGLT2=max(SGLT2, na.rm=TRUE),
-     SU=max(SU, na.rm=TRUE),
-     TZD=max(TZD, na.rm=TRUE)) %>%
+  group_by(patid, drug_class_changes) %>%
+  mutate(datechange_class=max(datechange_class, na.rm=TRUE),
+         dateaddrem_class=max(dateaddrem_class, na.rm=TRUE),
+         dateprevcombo_class=max(dateprevcombo_class, na.rm=TRUE),
+         
+         Acarbose=max(Acarbose, na.rm=TRUE),
+         DPP4=max(DPP4, na.rm=TRUE),
+         GIPGLP1=max(GIPGLP1, na.rm=TRUE),
+         Glinide=max(Glinide, na.rm=TRUE),
+         GLP1=max(GLP1, na.rm=TRUE),
+         INS=max(INS, na.rm=TRUE),
+         MFN=max(MFN, na.rm=TRUE),
+         SGLT2=max(SGLT2, na.rm=TRUE),
+         SU=max(SU, na.rm=TRUE),
+         TZD=max(TZD, na.rm=TRUE)) %>%
   
- ungroup() %>%
- 
- mutate(timetochange_class=datediff(datechange_class, dcstartdate),
-     timetoaddrem_class=datediff(dateaddrem_class, dcstartdate),
-     timeprevcombo_class=datediff(dcstartdate, dateprevcombo_class),
-     
-     timetochange_substance=datediff(datechange_substance, dcstartdate),
-     timetoaddrem_substance=datediff(dateaddrem_substance, dcstartdate),
-     timeprevcombo_substance=datediff(dcstartdate, dateprevcombo_substance)) %>%
+  ungroup() %>%
+
+  mutate(timetochange_class=datediff(datechange_class, dcstartdate),
+         timetoaddrem_class=datediff(dateaddrem_class, dcstartdate),
+         timeprevcombo_class=datediff(dcstartdate, dateprevcombo_class)) %>%
  
  select(patid, dcstartdate, dcstopdate_class, drug_class_combo, timetochange_class, timetoaddrem_class, timeprevcombo_class, multi_drug_start_class, all_of(drugclasses), dcstopdate_substance, drug_substance_combo, timetochange_substance, timetoaddrem_substance, timeprevcombo_substance, multi_drug_start_substance, all_of(drugsubstances)) %>%
  mutate(ncurrtx=DPP4+GIPGLP1+GLP1+INS+MFN+SGLT2+SU+TZD-1) %>%
@@ -924,5 +926,3 @@ combo_start_stop <- combo_start_stop %>%
 
 #combo_start_stop %>% count()
 #7,523,780
-
-
