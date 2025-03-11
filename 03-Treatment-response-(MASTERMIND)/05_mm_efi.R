@@ -185,11 +185,10 @@ efi <- efi %>%
 #   These patients have records of diabetes medication in drug_start_stop and have record of diabetes using QOF codes
 #   Fill all predrug_diabetes occurrences with 1
 # - Fill all predrug_polypharmacy with 1 (assume every patient is on 5 or more medications for now).
-# - Convert patid to character
+
 efi <- efi %>%
   mutate(predrug_efi_diabetes = 1,
          predrug_efi_polypharmacy = 1) %>%
-  mutate(patid = as.character(patid)) %>%
   analysis$cached(
     "efi_deficits",
     indexes = c("patid", "dstartdate", "drug_substance")
