@@ -21,13 +21,13 @@ The below diagram shows the R scripts (in grey boxes) used to create the treatme
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
     A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
-    A-->|"11_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
+    A-->|"12_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
     A---P[ ]:::empty
     H---P
     E---P
-    P-->|"10_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
+    P-->|"11_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
 
     A---Y[ ]:::empty
     H---Y
@@ -40,28 +40,27 @@ graph TD;
     
     A---W[ ]:::empty
     H---W
-    W-->|"04_mm_<br>comorbidities"|F["<b>Comorbidities</b> <br> at drug <br> start date"]
+    W-->|"04_mm_<br>comorbidities/05_mm_efi"|F["<b>Comorbidities/frailty</b> <br> at drug <br> start date"]
     
     H---U[ ]:::empty
     A---U
-    U-->|"06_mm_non_<br>diabetes_meds"|M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
+    U-->|"07_mm_non_<br>diabetes_meds"|M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
     
     H---X[ ]:::empty
     A---X
-    X-->|"07_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
+    X-->|"08_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
     
-    H-->|"09_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
+    H-->|"10_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
 
     H---R[ ]:::empty
     A---R
-    R-->|"08_mm_alcohol"|D["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
+    R-->|"09_mm_alcohol"|D["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
  
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
     H---Z[ ]:::empty
     C---Z
-    Z-->|"05_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
-    
-    
+    Z-->|"06_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
+
     B-->|"12_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
     N-->|"12_mm_<br>final_merge"|J
     O-->|"12_mm_<br>final_merge"|J
