@@ -280,7 +280,7 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 * [Dirichlet process mixture models to impute missing predictor data in counterfactual prediction models: an application to predict optimal type 2 diabetes therapy](https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-023-02400-3) Cardoso et al. 2024
 
 ### From October 2020 CPRD Aurum dataset
-* [Recent UK type 2 diabetes treatment guidance represents a near whole population indication for SGLT2-inhibitor therapy](https://cardiab.biomedcentral.com/articles/10.1186/s12933-023-02032-x) Young et al. 2023*
+* [Recent UK type 2 diabetes treatment guidance represents a near whole population indication for SGLT2-inhibitor therapy](https://cardiab.biomedcentral.com/articles/10.1186/s12933-023-02032-x) Young et al. 2023
 * [Phenotype-based targeted treatment of SGLT2 inhibitors and GLP-1 receptor agonists in type 2 diabetes](https://link.springer.com/article/10.1007/s00125-024-06099-3) Cardoso et al. 2024
 * [Safety and effectiveness of SGLT2 inhibitors in a UK population with type 2 diabetes and aged over 70 years: an instrumental variable approach](https://link.springer.com/article/10.1007/s00125-024-06190-9) Guedemann et al. 2024
 * [A five-drug class model using routinely available clinical features to optimise prescribing in type 2 diabetes: a prediction model development and validation study](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(24)02617-5/) Dennis at al. 2025
