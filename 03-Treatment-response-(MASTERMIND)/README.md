@@ -201,7 +201,7 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | preacr_next | Closest ACR measurement after preacr | |
 | preacr_next_date | Date of preacr_next | |
 | preacr_confirmed | TRUE if preacr>=3 mg/mmol and preacr_previous was also >=3 mg/mmol and within the two years prior to preacr, or if preacr_next is >=3 mg/mmol | |
-| macroalb_date | For those with preacr_confirmed=TRUE, date of earliest post drug initiation ACR>=30 mg/mmol | |
+| macroalb_date | For those with preacr_confirmed=TRUE, date of earliest post drug initiation ACR>=30 mg/mmol. For those with preacr_confirmed=FALSE, date of earliest post drug initiation ACR>=30 mg/mmol where next ACR is also >=30 mg/mmol. | |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
 | preckdstagedrugdiff | days between dstartdate and preckdstagedate | |
 | preckdstage | CKD stage at baseline | CKD stages calculated as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage)<br />eGFR calculated from creatinine using CKD-EPI creatinine 2021 equation<br />Start date = earliest test for CKD stage, only including those confirmed by another test at least 91 days later, without a test for a different stage in the intervening period<br />Baseline stage = maximum stage with start date < drug start date or up to 7 days afterwards<br />CKD5 supplemented by medcodes/ICD10/OPCS4 codes for CKD5 / ESRD |
