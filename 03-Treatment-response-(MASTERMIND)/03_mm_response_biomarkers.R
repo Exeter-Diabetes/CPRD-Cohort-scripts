@@ -52,7 +52,7 @@ biomarkers <- c("weight", "bmi", "fastingglucose", "hdl", "triglyceride", "creat
 ### Can get duplicates where person has identical results on the same day/days equidistant from 6/12 months post drug start - choose first row when ordered by drugdatediff
 
 # Then combine with baseline values and find response
-## Remove HbA1c responses where timeprevcombo<=61 days i.e. where change glucose-lowering meds less than 61 days before current drug initation
+## Remove HbA1c responses where timeprevcombo<=61 days i.e. where change glucose-lowering meds less than 61 days before current drug initiation
 
 
 # 6 month response
@@ -276,36 +276,40 @@ egfr50 <- baseline_biomarkers %>%
 
 analysis = cprd$analysis("all")
 
-acr_separate <- acr_separate %>% analysis$cached("patid_clean_acr_from_separate_medcodes")
+#### First combine all ACR readings - if both on same day, use value not from separate (no duplicate patid-date combos in either clean_acr_medcodes or clean_acr_from_separate_medcodes tables)
 acr_together <- acr_together %>% analysis$cached("patid_clean_acr_medcodes")
-acr_long <- acr_separate %>% union_all(acr_together) %>% analysis$cached("patid_acr_long")
+acr_separate <- acr_separate %>% analysis$cached("patid_clean_acr_from_separate_medcodes")
+
+acr_long <- acr_together %>%
+  mutate(source="together") %>%
+  union_all((acr_separate %>% mutate(source="separate"))) %>%
+  group_by(patid, date) %>%
+  mutate(count=n()) %>%
+  ungroup() %>%
+  filter(count==1 | (count==2 & source=="together")) %>%
+  select(patid, date, testvalue) %>%
+  analysis$cached("patid_acr_long", indexes=c("patid", "date", "testvalue"))
+
 
 analysis = cprd$analysis("mm")
 
 prev_acr <- baseline_biomarkers %>%
-  select(patid, dstartdate, drug_substance, preacr, preacrdate) %>%
+  select(patid, dstartdate, drug_substance, preacrdate) %>%
   left_join(acr_long, by="patid") %>%
-  group_by(patid, dstartdate, drug_substance, preacr, preacrdate) %>%
+  group_by(patid, dstartdate, drug_substance, preacrdate) %>%
   dbplyr::window_order(date) %>%
   mutate(preacr_previous=ifelse(row_number()==1, NA, lag(testvalue)),
          preacr_previous_date=ifelse(row_number()==1, NA, lag(date)),
          preacr_next = ifelse(row_number()==n(), NA, lead(testvalue)),
          preacr_next_date=ifelse(row_number()==n(), NA, lead(date))) %>%
   ungroup() %>%
+  analysis$cached("response_biomarkers_acr_confirmed_interim", indexes=c("patid", "dstartdate", "drug_substance"))
+
+prev_acr <- prev_acr %>%
   filter(date==preacrdate) %>%
   mutate(preacr_confirmed = ifelse(testvalue >= 3 & (preacr_previous >= 3 & datediff(preacr_previous_date, preacrdate) <=7 & datediff(preacr_previous_date, preacrdate) >= -730 | preacr_next >= 3), TRUE, FALSE)) %>%
   select(patid, dstartdate, drug_substance, preacr_confirmed, preacr_previous, preacr_previous_date, preacr_next, preacr_next_date) %>%
   analysis$cached("response_biomarkers_acr_confirmed", indexes=c("patid", "dstartdate", "drug_substance"))
-
-prev_acr %>% count()
-prev_acr %>% distinct(patid, dstartdate, drug_substance) %>% count()
-
-
-
-
-
-
-
 
 
 ### Add in new macroalbuminuria for those with confirmed microalbuminuria at baseline
@@ -314,26 +318,29 @@ new_macroalb <- baseline_biomarkers %>%
   select(patid, dstartdate, drug_substance, preacrdate) %>%
   left_join(acr_long, by="patid") %>%
   left_join(prev_acr, by=c("patid", "dstartdate", "drug_substance")) %>%
-  mutate(drugdatediff=datediff(date, preacrdate)) %>%
-  filter(drugdatediff>0) %>%
+  filter(date>preacrdate) %>%
   analysis$cached("response_biomarkers_macroalb_interim", indexes=c("patid", "dstartdate", "drug_substance"))
 
 new_macroalb <- new_macroalb %>%
   group_by(patid, dstartdate, drug_substance) %>%
-  dbplyr::window_order(drugdatediff) %>%
+  dbplyr::window_order(date) %>%
   mutate(nextvalue = lead(testvalue)) %>%
   ungroup() %>%
+  analysis$cached("response_biomarkers_macroalb_interim_2", indexes=c("patid", "dstartdate", "drug_substance"))
+
+new_macroalb <- new_macroalb %>%
   filter(preacr_confirmed == T & testvalue >=30 | 
            preacr_confirmed == F & testvalue >=30 & nextvalue >=30) %>%
   group_by(patid, drug_substance, dstartdate) %>%
   summarise(macroalb_date=min(date, na.rm=TRUE)) %>%
+  ungroup() %>%
   analysis$cached("response_biomarkers_macroalb", indexes=c("patid", "dstartdate", "drug_substance"))
-
 
 
 ############################################################################################
 
 # Join to rest of response dataset and move where height variable is
+
 response_biomarkers <- response_biomarkers %>%
   left_join(next_egfr, by=c("patid", "drug_substance", "dstartdate")) %>%
   left_join(egfr40, by=c("patid", "drug_substance", "dstartdate")) %>%
@@ -348,4 +355,3 @@ response_biomarkers <- response_biomarkers %>%
   relocate(prehba1c2yrsdate, .after=prehba1c2yrs) %>%
   relocate(prehba1c2yrsdrugdiff, .after=prehba1c2yrsdate) %>%
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drug_substance"))
-

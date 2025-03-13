@@ -51,17 +51,21 @@ left_join((combo_class_start_stop %>% select(patid, dcstartdate, nextdrugchange,
 
 glycaemic_failure_thresholds <- drug_periods %>%
   inner_join((baseline_biomarkers %>% select(patid, dstartdate, drug_class, prehba1c, prehba1cdate)), by=c("patid", "dstartdate", "drug_class")) %>%
+  distinct() %>%
   mutate(threshold_7.5=58,
          threshold_8.5=70,
          threshold_baseline=prehba1c,
          threshold_baseline_0.5=prehba1c-5.5) %>%
   analysis$cached("glycaemic_failure_thresholds", indexes=c("patid", "dstartdate", "drug_class"))
 
+# Baseline biomarkers has duplicates for patid-dstartdate-drug_class for multiple substances - but prehba1c and prehba1cdate will be the same
+# Same for full_hba1c_drug_merge below
+
 
 # Join with HbA1cs during 'failure period' - more than 90 days after drugstart and no later than when diabetes drugs changed (doesn't take into account gaps)
 
 glycaemic_failure_hba1cs <- glycaemic_failure_thresholds %>%
-  left_join((full_hba1c_drug_merge %>% filter(drugdatediff>90) %>% select(patid, dstartdate, drug_class, testvalue, date)), by=c("patid", "dstartdate", "drug_class")) %>%
+  left_join((full_hba1c_drug_merge %>% filter(drugdatediff>90) %>% distinct(patid, dstartdate, drug_class, testvalue, date)), by=c("patid", "dstartdate", "drug_class")) %>%
   filter(date<=nextdcdate) %>%
   group_by(patid, dstartdate, drug_class) %>%
   mutate(latest_fail_hba1c=max(date, na.rm=TRUE)) %>%
@@ -122,7 +126,7 @@ glycaemic_failure <- glycaemic_failure %>%
 
 glycaemic_failure_threshold_hba1cs <- glycaemic_failure %>%
   inner_join((full_hba1c_drug_merge %>%
-               select(patid, dstartdate, drug_class, testvalue, date)), by=c("patid", "dstartdate", "drug_class")) %>%
+               distinct(patid, dstartdate, drug_class, testvalue, date)), by=c("patid", "dstartdate", "drug_class")) %>%
   filter(date<=nextdcdate & date>=prehba1cdate) %>%
   select(patid, dstartdate, drug_class, testvalue, date) %>%
   analysis$cached("glycaemic_failure_threshold_hba1cs_interim", indexes=c("patid", "dstartdate", "drug_class"))
