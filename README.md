@@ -11,7 +11,7 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum June 2024 release</b>"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999"]
+    A["<b>CPRD Aurum June 2024 release</b>with linked November 2024 HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999"]
     B -->|"Patient from one of 44 practices which may have merged (recommended to remove in CPRD Aurum Data Specification v3.4)"|C["n=30,759"]
     B -->|"Patients with gender==3 (indeterminate)"|D["n=43"]
     B --> E["n=2,697,197"]
@@ -23,7 +23,7 @@ graph TD;
     I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
     K --> L["<b>01 At-diagnosis cohort</b>: <br> n= <br> Index date=diagnosis date"]
     K --> M["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on 01/01/2024 <br> Index date=diagnosis date"]
-    K --> N["<b>03 Treatment response (MASTERMIND) cohort</b>: <br> n= with  unique drug periods <br> For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n= with  unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
+    K --> N["<b>03 Treatment response (MASTERMIND) cohort</b>: For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n= with  unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
 \* A valid date is an obsdate (for medcodes) which is no earlier than the patient's date of birth (no earlier than the month of birth if date of birth is not available; no earlier than full date of birth if this is available), no later than deregistration where this is present, and no later than the last collection date from the Practice. NB: QOF codes include codes for some non-Type 1/Type 2 diabetes types but not for gestational diabetes, so people with gestational diabetes codes only may be removed at this stage.
 
