@@ -11,7 +11,7 @@ The below diagram outlines the data processing steps involved in creating these 
 
 ```mermaid
 graph TD;
-    A["<b>CPRD Aurum June 2024 release</b>with linked November 2024 HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999"]
+    A["<b>CPRD Aurum June 2024 release</b> with linked November 2024 HES APC, patient IMD, and ONS death data"] --> |"Unique patients with a diabetes-related medcode between 01/01/2004-30/06/2024"| B["<b>Our extract</b>: n=2,727,999"]
     B -->|"Patient from one of 44 practices which may have merged (recommended to remove in CPRD Aurum Data Specification v3.4)"|C["n=30,759"]
     B -->|"Patients with gender==3 (indeterminate)"|D["n=43"]
     B --> E["n=2,697,197"]
