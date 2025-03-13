@@ -178,9 +178,6 @@ timeprevcombo_substance | time since started previous drug_substance_combo in da
 multi_drug_start_substance | whether multiple drug substances started on this dstartdate | |
 Acarbose / Acetohexamide /<br />Albiglutide / Alogliptin /<br />Canagliflozin / Chlorpropamide /<br />Dapagliflozin / Dulaglutide /<br />Empagliflozin / Ertugliflozin /<br />Exenatide / Exenatide prolonged-release / <br />Glibenclamide / Gliclazide /<br />Glimepiride / Glipizide /<br />Gliquidone / Glymidine /<br />High-dose semaglutide / Insulin /<br />Linagliptin / Liraglutide /<br />Lixisenatide / Low-dose semaglutide /<br />Metformin / Nateglinide /<br />Oral semaglutide / Pioglitazone /<br />Repaglinide / Rosiglitazone /<br />Saxagliptin / Semaglutide dose unclear /<br />Sitagliptin / Tirzepatide /<br />Tolazamide / Tolbutamide / <br />Troglitazone / Vildagliptin | binary variable of whether patient taking that drug substance on that date (regardless of whether or not prescribed on that date) | calculated using dstart_substance and dstop_substance vars for that particular drug substance: 1 if cumsum(dstart_substance)> cumsum(dstop_substance) or dstart_substance==1 or dstop_substance==1.<br />NB: only 1 Acarbose column for both drug class and drug substance |
 ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1, GLP1, INS, MFN, SGLT2, SU, TZD) patient is currently taking, not including current treatment | |
-| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate |
-| hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs
-| hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after the baseline HbA1c (so may include HbA1cs before drug start), before or on nextdrugchangedate, and before/on hba1c_fail_{threshold}_date |
 | height | height in cm | Mean of all values on/post- drug start date |
 | pre{biomarker} | biomarker value at baseline | For all biomarkers including prehba1c2yrs but not prehba1c or prehba1c12m: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For prehba1c and prehba1c12m: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate); prehba1c12m is closest HbA1c to dstartdate within window of -366 days (1 year before dstartdate) and +7 days (a week after dstartdate). prehba1c/prehba1c12m before timeprevcombo_class excluded (prehba1c2yrs before timeprevcombo_class not removed) |
 | pre{biomarker}date | date of baseline biomarker | |
@@ -227,10 +224,13 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at drug start: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
-| ttc3m | 1 if timeondrug<=3 months | |
-| ttc6m | 1 if timeondrug<=6 months (may also be <=3 months) | |
-| ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months) | |
-| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup after discontinuation (before last prescription ever) to confirm this.<br />0 if don't discontinue at 3 months | These variables are missing if the person does discontinue in the time stated, but does not have the followup time stated to confirm this |
+| hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate. Done on a **drug class** basis |
+| hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs. Done on a **drug class** basis |
+| hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after the baseline HbA1c (so may include HbA1cs before drug start), before or on nextdrugchangedate, and before/on hba1c_fail_{threshold}_date. Done on a **drug class** basis |
+| ttc3m | 1 if timeondrug<=3 months. Done on a **drug class** basis | |
+| ttc6m | 1 if timeondrug<=6 months (may also be <=3 months). Done on a **drug class** basis | |
+| ttc12m | 1 if timeondrug<=12 months (may also be <=6 months/3 months). Done on a **drug class** basis | |
+| stopdrug_3m_3mFU | 1 if discontinue within 3 months and have at least 3 months followup after discontinuation (before last prescription ever) to confirm this.<br />0 if don't discontinue at 3 months | These variables are missing if the person does discontinue in the time stated, but does not have the followup time stated to confirm this. All discontinuation variables (with stopdrug prefix) done on a **drug class** basis |
 | stopdrug_3m_6mFU | 1 if discontinue within 3 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 3 months | |
 | stopdrug_6m_3mFU | 1 if discontinue within 6 months and have at least 3 months followup to confirm this<br />0 if don't discontinue at 6 months | |
 | stopdrug_6m_6mFU | 1 if discontinue within 6 months and have at least 6 months followup to confirm this<br />0 if don't discontinue at 6 months | |
@@ -247,7 +247,9 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | cv_death_primary_cause | 1 if primary cause of death is CV |
 | cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
 | hf_death_primary_cause | 1 if primary cause of death is heart failure |
-| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heartfailure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
+| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
+| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
 | dstartdate_age | age of patient at dstartdate in years | dstartdate - dob |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years | dstartdate - dm_diag_date_all<br />Missing if dm_diag_date_all is missing i.e. if diagnosis date is within -30 to +90 days (inclusive) of registration start |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years | dstartdate-dm_diag_date<br />Missing if dm_diag_date is missing; dm_diag_date is missing if dm_diag_date_all is missing (as per above: if diagnosis date is within -30 to +90 days (inclusive) of registration start) or additionally if diagnosis date is before registration |
@@ -278,6 +280,7 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 * [Dirichlet process mixture models to impute missing predictor data in counterfactual prediction models: an application to predict optimal type 2 diabetes therapy](https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-023-02400-3) Cardoso et al. 2024
 
 ### From October 2020 CPRD Aurum dataset
-* [Recent UK type 2 diabetes treatment guidance represents a near whole population indication for SGLT2-inhibitor therapy](https://cardiab.biomedcentral.com/articles/10.1186/s12933-023-02032-x) Young et al. 2023*
+* [Recent UK type 2 diabetes treatment guidance represents a near whole population indication for SGLT2-inhibitor therapy](https://cardiab.biomedcentral.com/articles/10.1186/s12933-023-02032-x) Young et al. 2023
 * [Phenotype-based targeted treatment of SGLT2 inhibitors and GLP-1 receptor agonists in type 2 diabetes](https://link.springer.com/article/10.1007/s00125-024-06099-3) Cardoso et al. 2024
 * [Safety and effectiveness of SGLT2 inhibitors in a UK population with type 2 diabetes and aged over 70 years: an instrumental variable approach](https://link.springer.com/article/10.1007/s00125-024-06190-9) Guedemann et al. 2024
+* [A five-drug class model using routinely available clinical features to optimise prescribing in type 2 diabetes: a prediction model development and validation study](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(24)02617-5/) Dennis at al. 2025
