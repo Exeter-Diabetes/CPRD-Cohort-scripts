@@ -253,8 +253,12 @@ egfr40 <- baseline_biomarkers %>%
   select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0 & testvalue<=0.6*preegfr) %>%
-  group_by(patid, drug_substance, dstartdate) %>%
+  group_by(patid, drug_substance, dstartdate, preegfr) %>%
   summarise(egfr_40_decline_date=min(date, na.rm=TRUE)) %>%
+  ungroup() %>%
+  left_join(egfr_long, by="patid") %>%
+  filter(datediff(date, egfr_40_decline_date)>=28 & testvalue<=0.6*preegfr) %>%
+  distinct(patid, drug_substance, dstartdate, egfr_40_decline_date) %>%
   analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
@@ -265,8 +269,12 @@ egfr50 <- baseline_biomarkers %>%
   select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0 & testvalue<=0.5*preegfr) %>%
-  group_by(patid, drug_substance, dstartdate) %>%
+  group_by(patid, drug_substance, dstartdate, preegfr) %>%
   summarise(egfr_50_decline_date=min(date, na.rm=TRUE)) %>%
+  ungroup() %>%
+  left_join(egfr_long, by="patid") %>%
+  filter(datediff(date, egfr_50_decline_date)>=28 & testvalue<=0.5*preegfr) %>%
+  distinct(patid, drug_substance, dstartdate, egfr_50_decline_date) %>%
   analysis$cached("response_biomarkers_egfr50", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
