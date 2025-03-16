@@ -191,8 +191,10 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | {biomarker}resp6m | post{biomarker}6m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | next_egfr_date | date of first eGFR post-baseline | |
-| egfr_40_decline_date | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%), confirmed by another eGFR at least 28 days later | |
+| egfr_40_decline_date | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%) | |
+| egfr_40_decline_date_confirmed | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%), confirmed by another eGFR at least 28 days later | |
 | egfr_50_decline_date | earliest date at which eGFR<=50% of baseline value (i.e. a decline of >=50%), confirmed by another eGFR at least 28 days later | |
+| egfr_50_decline_date_confirmed | earliest date at which eGFR<=50% of baseline value (i.e. a decline of >=50%), confirmed by another eGFR at least 28 days later | |
 | preacr_confirmed | TRUE if preacr>=3 mg/mmol and preacr_previous was also >=3 mg/mmol and within the two years prior to preacr, or if preacr_next is >=3 mg/mmol | |
 | preacr_previous | Closest ACR measurement prior to preacr | |
 | preacr_previous_date | Date of preacr_previous | |
