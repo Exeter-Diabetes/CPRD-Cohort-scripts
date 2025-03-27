@@ -124,6 +124,9 @@ death_causes <- cprd$tables$onsDeath %>%
          secondary_death_cause15=cause_15,
          secondary_death_cause16=cause_16,
          secondary_death_cause17=cause_17) %>%
+  relocate(primary_death_cause1, .before=secondary_death_cause1) %>%
+  relocate(primary_death_cause2, .before=secondary_death_cause1) %>%
+  relocate(primary_death_cause3, .before=secondary_death_cause1) %>%
   left_join(cv_death_primary, by="patid") %>%
   left_join(cv_death_any, by="patid") %>%
   left_join(hf_death_primary, by="patid") %>%

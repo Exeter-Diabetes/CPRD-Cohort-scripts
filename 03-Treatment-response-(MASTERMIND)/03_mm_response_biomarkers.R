@@ -246,36 +246,55 @@ next_egfr <- baseline_biomarkers %>%
   analysis$cached("response_biomarkers_next_egfr", indexes=c("patid", "dstartdate", "drug_substance"))
 
 
-### Add in 40% decline in eGFR outcome
+### Add in 40% decline in eGFR outcome: both based on single measurement and where confirmed by a second measurement at least 28 days later
 ### Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=60% of the baseline value
 ### Checked and those with null eGFR do get dropped
-egfr40 <- baseline_biomarkers %>%
+egfr_40_dates <- baseline_biomarkers %>%
   select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0 & testvalue<=0.6*preegfr) %>%
-  group_by(patid, drug_substance, dstartdate, preegfr) %>%
-  summarise(egfr_40_decline_date=min(date, na.rm=TRUE)) %>%
+  rename(egfr_40_date=date) %>%
+  analysis$cached("response_biomarkers_egfr40_dates", indexes=c("patid", "dstartdate", "drug_substance", "egfr_40_date"))
+
+egfr40_decline <- egfr_40_dates %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(egfr_40_decline_date=min(egfr_40_date, na.rm=TRUE)) %>%
   ungroup() %>%
+  analysis$cached("response_biomarkers_egfr40_decline", indexes=c("patid", "dstartdate", "drug_substance"))
+
+egfr40_decline_confirmed <- egfr_40_dates %>%
+  select(-testvalue) %>%
   left_join(egfr_long, by="patid") %>%
-  filter(datediff(date, egfr_40_decline_date)>=28 & testvalue<=0.6*preegfr) %>%
-  distinct(patid, drug_substance, dstartdate, egfr_40_decline_date) %>%
-  analysis$cached("response_biomarkers_egfr40", indexes=c("patid", "dstartdate", "drug_substance"))
-
-
-### Add in 50% decline in eGFR outcome
-### Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=50% of the baseline value
-### Checked and those with null eGFR do get dropped
-egfr50 <- baseline_biomarkers %>%
+  filter(datediff(date, egfr_40_date)>=28 & testvalue<=0.6*preegfr) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(egfr_40_decline_date_confirmed=min(egfr_40_date, na.rm=TRUE)) %>%
+  ungroup() %>%
+  analysis$cached("response_biomarkers_egfr40_decline_confirmed", indexes=c("patid", "dstartdate", "drug_substance"))
+  
+  
+### Add in 50% decline in eGFR outcome: confirmed and not
+egfr_50_dates <- baseline_biomarkers %>%
   select(patid, drug_substance, dstartdate, preegfr, preegfrdate) %>%
   left_join(egfr_long, by="patid") %>%
   filter(datediff(date, preegfrdate)>0 & testvalue<=0.5*preegfr) %>%
-  group_by(patid, drug_substance, dstartdate, preegfr) %>%
-  summarise(egfr_50_decline_date=min(date, na.rm=TRUE)) %>%
+  rename(egfr_50_date=date) %>%
+  analysis$cached("response_biomarkers_egfr50_dates", indexes=c("patid", "dstartdate", "drug_substance", "egfr_50_date"))
+
+egfr50_decline <- egfr_50_dates %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(egfr_50_decline_date=min(egfr_50_date, na.rm=TRUE)) %>%
   ungroup() %>%
+  analysis$cached("response_biomarkers_egfr50_decline", indexes=c("patid", "dstartdate", "drug_substance"))
+
+egfr50_decline_confirmed <- egfr_50_dates %>%
+  select(-testvalue) %>%
   left_join(egfr_long, by="patid") %>%
-  filter(datediff(date, egfr_50_decline_date)>=28 & testvalue<=0.5*preegfr) %>%
-  distinct(patid, drug_substance, dstartdate, egfr_50_decline_date) %>%
-  analysis$cached("response_biomarkers_egfr50", indexes=c("patid", "dstartdate", "drug_substance"))
+  filter(datediff(date, egfr_50_date)>=28 & testvalue<=0.5*preegfr) %>%
+  group_by(patid, drug_substance, dstartdate) %>%
+  summarise(egfr_50_decline_date_confirmed=min(egfr_50_date, na.rm=TRUE)) %>%
+  ungroup() %>%
+  analysis$cached("response_biomarkers_egfr50_decline_confirmed", indexes=c("patid", "dstartdate", "drug_substance"))
+
 
 
 ## ACR
@@ -351,8 +370,10 @@ new_macroalb <- new_macroalb %>%
 
 response_biomarkers <- response_biomarkers %>%
   left_join(next_egfr, by=c("patid", "drug_substance", "dstartdate")) %>%
-  left_join(egfr40, by=c("patid", "drug_substance", "dstartdate")) %>%
-  left_join(egfr50, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr40_decline, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr40_decline_confirmed, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr50_decline, by=c("patid", "drug_substance", "dstartdate")) %>%
+  left_join(egfr50_decline_confirmed, by=c("patid", "drug_substance", "dstartdate")) %>%
   left_join(prev_acr, by=c("patid", "drug_substance", "dstartdate")) %>%
   left_join(new_macroalb, by=c("patid", "drug_substance", "dstartdate")) %>%
   relocate(height, .after=timeprevcombo_class) %>%
