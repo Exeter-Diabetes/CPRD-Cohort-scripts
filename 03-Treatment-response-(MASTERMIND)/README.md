@@ -150,15 +150,15 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | regstartdate | registration start date | |
 | gp_end_date | earliest of last collection date from practice and deregistration | |
 | death_date | ONS death date | NA if no death date |
-| with_hes | 1 for patients with HES linkage, otherwise 0| |
-| drug_class | class of drug being started | |
-| dstartdate | start date of drug substance in curent row. If drug_class_start==1, then it is the start date of the current drug class period | uses dstart_class/dstart_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
+| with_hes | 1 for patients with HES linkage, otherwise 0 | |
+| hes_end_date | End date of HES record (31/03/2023) | |
+| dstartdate | start date of drug substance in current row. If drug_class_start==1, then it is the start date of the current drug class period | uses dstart_class/dstart_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
 | drug_class_start | dstartdate in this row represents start date of the current drug class period (i.e. isn't just a new drug substance being started during the drug class period) | |
 | dstopdate_class | stop date for drug class period | uses dstop_class=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
+| drug_class | class of drug being started | |
 | drug_order | position of current drug class out of all diabetes drug classes taken in chronological order (drug classes: acarbose, DPP4i, glinides, GIPGLP1, GLP1, metformin, SGLT2i, SU, TZD, insulin). patid - dstartdate - drug_order is a unique identifier for each drug class period (patid - drug_order is not because if patient begins two different drug classes on the same day, they have the same drug_order) | e.g. patient takes MFN, SU, MFN, TZD in that order; drugorders = 1, 2, 3, 4. If multiple drug classes started on same day, use minimum drug order for both |
 | drug_instance | 1st, 2nd, 3rd etc. period of taking this specific drug class | |
 | drugline_all / drugline | drug line i.e. how many classes of diabetes medications (out of acarbose, DPP4i, glinides, GIPGLP1, GLP1, metformin, SGLT2i, SU, TZD, insulin) the patient has previously taken, including the current drug. <br />drugline_all is not missing for any drug periods.<br />In final merge script, 'drugline' is the same as 'drugline_all' except it is set to missing if diabetes diagnosis date < registration or within the 90 days following registration start (this is the only reason why this variable would be missing) | just takes into account first instance of drug e.g. patient takes MFN, SU, MFN, TZD in that order = 1, 2, 1, 4<br />if multiple drug classes started on same day, use minimum drug line for both |
-substance_start_only | 1 where row represents a new drug substance start but not a new drug class start | 1 where drug substance start is less than 6 months after a prescription for a different drug substance in the same class |
 drug_substance | substance of drug being started | |
 substance_status | allows differentiation of different drug substance periods within 1 drug class period:<br />0: only substance in drug class period (NB: if full drug class period is 1 script only, substance_status will still be 0).<br />1: multiple substances within drug class period, this one covers full drug class period (NB: if full drug class period is 1 script only, substance_status will be 4 not 1).<br />2: multiple substance within drug class period, this one has >1 script and is started at start of drug class period but stops before end of drug class period.<br />3: multiple substance within drug class period, this one has >1 script and is started during drug class period.<br />4: multiple substances within drug class period, this one has only 1 script (can be at beginning or during of drug class period).<br />NB: if full drug class period is 1 script only, subtance_status will be 4 not 1.<br />1, 2, 3, 4 can have a-i suffix if multiple substances meet this definition; ordered by drug substance alphabetically.<br />patid - drug_class - drug_order - substance_status is a unique identifier for each drug substance period | |
 dstopdate_substance | stop date for drug substance in current row | uses dstop_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
@@ -191,13 +191,15 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | {biomarker}resp6m | post{biomarker}6m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | {biomarker}resp12m | post{biomarker}12m - pre{biomarker}. (NB: for HbA1c uses prehba1c, not prehba1c12m) | |
 | next_egfr_date | date of first eGFR post-baseline | |
-| egfr_40_decline_date | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%), confirmed by another eGFR at least 28 days later | |
+| egfr_40_decline_date | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%) | |
+| egfr_40_decline_date_confirmed | earliest date at which eGFR<=60% of baseline value (i.e. a decline of >=40%), confirmed by another eGFR at least 28 days later | |
 | egfr_50_decline_date | earliest date at which eGFR<=50% of baseline value (i.e. a decline of >=50%), confirmed by another eGFR at least 28 days later | |
+| egfr_50_decline_date_confirmed | earliest date at which eGFR<=50% of baseline value (i.e. a decline of >=50%), confirmed by another eGFR at least 28 days later | |
+| preacr_confirmed | TRUE if preacr>=3 mg/mmol and preacr_previous was also >=3 mg/mmol and within the two years prior to preacr, or if preacr_next is >=3 mg/mmol | |
 | preacr_previous | Closest ACR measurement prior to preacr | |
 | preacr_previous_date | Date of preacr_previous | |
 | preacr_next | Closest ACR measurement after preacr | |
 | preacr_next_date | Date of preacr_next | |
-| preacr_confirmed | TRUE if preacr>=3 mg/mmol and preacr_previous was also >=3 mg/mmol and within the two years prior to preacr, or if preacr_next is >=3 mg/mmol | |
 | macroalb_date | For those with preacr_confirmed=TRUE, date of earliest post drug initiation ACR>=30 mg/mmol. For those with preacr_confirmed=FALSE, date of earliest post drug initiation ACR>=30 mg/mmol where next ACR is also >=30 mg/mmol. | |
 | preckdstagedate | date of onset of baseline CKD stage (earliest test for this stage) | |
 | preckdstagedrugdiff | days between dstartdate and preckdstagedate | |
@@ -224,6 +226,14 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at drug start: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
+| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
+| secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
+| cv_death_primary_cause | 1 if primary cause of death is CV |
+| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary_cause | 1 if primary cause of death is heart failure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
+| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
+| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
 | hba1c_fail_{threshold}_date | date of glycaemic failure | earliest of: a) two HbA1cs > threshold, b) one HbA1c > threshold and nextdrugchange=="add", and c) nextdcdate, where HbA1cs are at least 91 days after drug start date and before/on nextdcdate. Done on a **drug class** basis |
 | hba1c_fail_{threshold}_reason | reason for glycaemic failure | 4 options: Fail - 2 HbA1cs >threshold; Fail - 1 HbA1cs >threshold then add drug; End of prescriptions; Change in diabetes drugs. Done on a **drug class** basis |
 | hba1c_fail_{threshold}_reached | whether there was a HbA1c measurement at/below the threshold prior to glycaemic failure | binary 0 or 1 depending on whether there was at least 1 HbA1c measurement at/after the baseline HbA1c (so may include HbA1cs before drug start), before or on nextdrugchangedate, and before/on hba1c_fail_{threshold}_date. Done on a **drug class** basis |
@@ -242,14 +252,7 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | stopdrug_6m_6mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_6m_6mFU), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_6m_6mFU. | |
 | stopdrug_12m_3mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_12m_3mFU_MFN), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_12m_3mFU_MFN. | |
 | stopdrug_12m_6mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_12m_6mFU), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_12m_6mFU. | |
-| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
-| secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
-| cv_death_primary_cause | 1 if primary cause of death is CV |
-| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
-| hf_death_primary_cause | 1 if primary cause of death is heart failure |
-| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
-| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
-| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
+
 | dstartdate_age | age of patient at dstartdate in years | dstartdate - dob |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years | dstartdate - dm_diag_date_all<br />Missing if dm_diag_date_all is missing i.e. if diagnosis date is within -30 to +90 days (inclusive) of registration start |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years | dstartdate-dm_diag_date<br />Missing if dm_diag_date is missing; dm_diag_date is missing if dm_diag_date_all is missing (as per above: if diagnosis date is within -30 to +90 days (inclusive) of registration start) or additionally if diagnosis date is before registration |
