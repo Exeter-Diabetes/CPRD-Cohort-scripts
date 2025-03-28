@@ -19,7 +19,7 @@ graph TD;
    
     A---N[ ]:::empty
     B---N
-    N-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes <br> diagnosis date"]
+    N-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities<br>and eFI score</b> <br> at diabetes <br> diagnosis date"]
 
     B---O[ ]:::empty
     A---O
@@ -32,13 +32,18 @@ graph TD;
     B---Q[ ]:::empty
     C---Q
     Q-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
-    
+
+    B---R[ ]:::empty
+    C---R
+    R-->|"non_diabetes_meds <br> (requires index date)"|K["<b>Non-diabetes<br>medications</b> <br> at diabetes <br> diagnosis date"]
+
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
     I-->|"final_merge"|J
+    K-->|"final_merge"|J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
