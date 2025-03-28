@@ -13,6 +13,9 @@ graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
 
+    A---S[ ]:::empty
+    S-->|"death_causes <br> (requires index date)"|L["<b>Death causes</b>"]
+
     A---M[ ]:::empty
     B---M
     M-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes <br> diagnosis date"]
@@ -28,14 +31,14 @@ graph TD;
     B---P[ ]:::empty
     A---P
     P-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes <br> diagnosis date"]
-    
+
+    B---R[ ]:::empty
+    A---R
+    R-->|"non_diabetes_meds <br> (requires index date)"|K["<b>Non-diabetes<br>medications</b> <br> at diabetes <br> diagnosis date"]
+
     B---Q[ ]:::empty
     C---Q
     Q-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
-
-    B---R[ ]:::empty
-    C---R
-    R-->|"non_diabetes_meds <br> (requires index date)"|K["<b>Non-diabetes<br>medications</b> <br> at diabetes <br> diagnosis date"]
 
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
@@ -44,6 +47,7 @@ graph TD;
     H-->|"final_merge"|J
     I-->|"final_merge"|J
     K-->|"final_merge"|J
+    L-->|"final_merge"|J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
