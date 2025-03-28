@@ -21,7 +21,7 @@ graph TD;
    
     A---N[ ]:::empty
     B---N
-    N-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities<br>and eFI score</b> <br> at diabetes <br> diagnosis date"]
+    N-->|"comorbidities & efi<br>(requires index date)"|F["<b>Comorbidities<br>and eFI score</b> <br> at diabetes <br> diagnosis date"]
 
     B---O[ ]:::empty
     A---O
@@ -64,10 +64,13 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
 |**at_diag_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **at_diag_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
+|**at_diag_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **at_diag_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
 |**at_diag_comorbidities**: finds onset of comorbidities relative to cohort index dates | **at_diag_comorbidities**:  1 row per patid (as there are no patids with >1 index date) with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
+| **at_diag_efi**: calculates electronic frailty index (eFI) at cohort index dates | **at_diag_efi**:  1 row per patid (as there are no patids with >1 index date) with binary variables for each eFI deficit and an overall score |
+| **at_diag_non_diabetes_meds**: dates of various non-diabetes medication prescriptions relative to cohort index dates | **at_diag_non_diabetes_meds**: 1 row per patid (as there are no patids with >1 index date) with with earliest pre-index date script, latest pre-index date script, and earliest post-index date script for all non-diabetes medications where available |
 |**at_diag_smoking**: finds smoking status at cohort index dates | **at_diag_smoking**: 1 row per patid (as there are no patids with >1 index date) with smoking status and QRISK2 smoking category at index date where available |
 |**at_diag_alcohol**: finds alcohol status at cohort index dates | **at_diag_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
-|**at_diag_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **at_diag_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
+| **at_diag_death_cause**: adds variables on causes of death | **at_diag_death_causes**: 1 row per patid in ONS death data table, with primary and secondary death causes plus variables for whether CV/heart failure/kidney failure are primary/secondary causes |
 |**at_diag_final_merge**: brings together variables from all of the above tables | **at_diag_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol variables |
 
 &nbsp;
@@ -124,7 +127,22 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | pre_index_date_latest_{comorbidity} | latest occurrence of comorbidity before/at index date | |
 | pre_index_date_{comorbidity} | binary 0/1 if any instance of comorbidity before/at index date | |
 | post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
+| pre_index_date_efi_{deficit} | Binary variables for each eFI deficit (if any instance before dstartdate). Polypharmacy coded as 1 for all patients. | |
+| efi_n_deficits | Number of eFI deficits (out of 36) | |
+| pre_index_date_efi_score | eFI score (efi_n_deficits/36) | |
+| pre_index_date_efi_cat | eFI score converted to category (<0.12: fit, >=0.12-<0.24: mild, >=0.34-<0.36: moderate, >=0.36: severe) | |
+| pre_index_date_earliest_{med} | earliest script for non-diabetes medication before/at index date | |
+| pre_index_date_latest_{med} | latest script for non-diabetes medication before/at index date | |
+| post_index_date_first_{med} | earliest script for non-diabetes medication after (not at) index date | |
 | smoking_cat | Smoking category at index date: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at index date: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
+| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
+| secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
+| cv_death_primary_cause | 1 if primary cause of death is CV |
+| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary_cause | 1 if primary cause of death is heart failure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
+| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
+| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
