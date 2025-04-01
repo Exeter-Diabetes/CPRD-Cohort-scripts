@@ -151,3 +151,11 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at index date: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
+| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
+| secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
+| cv_death_primary_cause | 1 if primary cause of death is CV |
+| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary_cause | 1 if primary cause of death is heart failure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
+| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
+| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
