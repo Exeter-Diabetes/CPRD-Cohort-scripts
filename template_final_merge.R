@@ -28,6 +28,7 @@ index_dates <- index_dates %>% analysis$cached("index_dates")
 ## Cohort and patient characteristics
 analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+death_causes <- death_causes %>% analysis$cached("diabetes_cohort")
 
 ## Baseline biomarkers plus CKD stage
 analysis = cprd$analysis(cohort_prefix)
@@ -55,6 +56,7 @@ final_merge <- index_dates %>%
   left_join(comorbidities, by=c("patid", "index_date")) %>%
   left_join(smoking, by=c("patid", "index_date")) %>%
   left_join(alcohol, by=c("patid", "index_date")) %>%
+  left_join(death_causes, by="patid") %>%
   mutate(index_date_age=datediff(index_date, dob)/365.25,
          index_date_dm_dur_all=datediff(index_date, dm_diag_date_all)/365.25) %>%
   relocate(c(index_date_age, index_date_dm_dur_all), .before=gender) %>%

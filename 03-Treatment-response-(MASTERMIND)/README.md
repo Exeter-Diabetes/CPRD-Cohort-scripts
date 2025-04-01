@@ -21,7 +21,7 @@ The below diagram shows the R scripts (in grey boxes) used to create the treatme
 graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
     A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
-    A-->|"12_mm_<br>death_causes"|O["<b>Death<br>causes</b>"]
+    A-->|"all_patid_<br>death_causes"|O["<b>Death<br>causes</b>"]
     A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
     A---P[ ]:::empty
@@ -61,17 +61,17 @@ graph TD;
     C---Z
     Z-->|"06_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
 
-    B-->|"13_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"13_mm_<br>final_merge"|J
-    O-->|"13_mm_<br>final_merge"|J
-    Q-->|"13_mm_<br>final_merge"|J
-    L-->|"13_mm_<br>final_merge"|J
-    F-->|"13_mm_<br>final_merge"|J
-    M-->|"13_mm_<br>final_merge"|J  
-    G-->|"13_mm_<br>final_merge"|J
-    D-->|"13_mm_<br>final_merge"|J
-    V-->|"13_mm_<br>final_merge"|J
-    I-->|"13_mm_<br>final_merge"|J  
+    B-->|"12_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"12_mm_<br>final_merge"|J
+    O-->|"12_mm_<br>final_merge"|J
+    Q-->|"12_mm_<br>final_merge"|J
+    L-->|"12_mm_<br>final_merge"|J
+    F-->|"12_mm_<br>final_merge"|J
+    M-->|"12_mm_<br>final_merge"|J  
+    G-->|"12_mm_<br>final_merge"|J
+    D-->|"12_mm_<br>final_merge"|J
+    V-->|"12_mm_<br>final_merge"|J
+    I-->|"12_mm_<br>final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
@@ -86,6 +86,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | Script description | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Outputs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
 | ---- | ---- |
 | **all_patid_ckd_stages**: uses eGFR calculated from serum creatinine to define longitudinal CKD stages for all patids as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ckd-chronic-kidney-disease-stage) |  **all_patid_ckd_stages_from_algorithm**:  1 row per patid, with onset of different CKD stages in wide format |
+| **all_patid_death_causes**: uses ONS death data to define whether primary or any cause of death was from CVD/heart failure/kidney failure (all primary and secondary death causes also included) |  **all_patid_death_causes**:  1 row per patid, with all death causes and binary variables for whether CVD/HF/KF was primary or any cause of death  |
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
 | **all_patid_townsend_deprivation_score**: approximate Townsend Deprivation Scores of all patids in download | **all_patid_townsend_score**: 1 row per patid with approximate Townsend Deprivation Scores derived from Index of Multiple Deprivation scores |
@@ -100,8 +101,7 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **09_mm_alcohol**: finds alcohol consumption status at drug start dates | **mm_alcohol**: as per mm_drug_start_stop, with alcohol consumption status at drug start date where available |
 | **10_mm_discontinuation**: defines whether drug was discontinued within 3/6 months - done on a **drug class** basis | **mm_discontinuation**: as per mm_drug_start_stop, with discontinuation variables added |
 | **11_mm_glycaemic_failure**: defines whether patient ended up with high HbA1c(s) (range of thresholds tested) whilst on drug - done on a **drug class** basis | **mm_glycaemic_failure**: as per mm_drug_start_stop, with glycaemic failure variables added.<br>For Exeter Diabetes members only: [notes on considerations for analysing glycaemic/treatment failure](https://github.com/Exeter-Diabetes/CPRD_Aurum/blob/main/Mastermind/Failure%20analysis%20considerations.md). |
-| **12_mm_death_causes**: adds variables on causes of death | **mm_death_causes**: 1 row per patid in ONS death data table, with primary and secondary death causes plus variables for whether CV/heart failure/kidney failure are primary/secondary causes |
-| **13_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort, and an All diabetes cohort (inc Type 1 and other) | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table).<br />**mm_{today's date}\_all_diabetes_1stinstance**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other).<br />**mm_{today's date}\_all_diabetes_all_drug_periods**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other) |
+| **12_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort, and an All diabetes cohort (inc Type 1 and other) | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table).<br />**mm_{today's date}\_all_diabetes_1stinstance**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other).<br />**mm_{today's date}\_all_diabetes_all_drug_periods**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other) |
 
 &nbsp;
 
@@ -226,7 +226,7 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at drug start: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
-| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
+| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) | Raw ONS death data processed as per: https://github.com/Exeter-Diabetes/CPRD-Codelists/tree/main?tab=readme-ov-file#ons-death-data-from-cprd-2024-update | 
 | secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
 | cv_death_primary_cause | 1 if primary cause of death is CV |
 | cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
