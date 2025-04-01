@@ -17,7 +17,7 @@ cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
-analysis = cprd$analysis("mm")
+analysis = cprd$analysis("all")
 
 
 ############################################################################################
