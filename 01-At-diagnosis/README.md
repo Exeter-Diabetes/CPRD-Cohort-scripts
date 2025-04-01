@@ -13,7 +13,7 @@ graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
 
-    A-->|"all_patid_death_causes"|L["<b>Death causes</b>"]
+    A-->|"all_patid_death_causes"|L["<b>Death causes</b><br>for all patients"]
 
     A---M[ ]:::empty
     B---M
