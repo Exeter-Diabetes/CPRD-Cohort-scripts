@@ -2,8 +2,6 @@
 
 The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with a valid diagnosis date (i.e. excluding those with a diagnosis date set to missing as it was with -30 to +90 days of the registration start date, n=60,530). Additionally, those with a diagnosis date before registration start were excluded (additional n=305,971). The cohort dataset includes biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
 
-Note that as our CPRD extract specified that patients were required to have 1 year of data following their earliest (within study/UTS) diabetes code, there are few patients with diabetes diagnosed within the registration period who die within 1 year of diagnosis.
-
 &nbsp;
 
 ## Script overview
@@ -15,13 +13,15 @@ graph TD;
     A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with <br> static patient data <br> including ethnicity <br> and IMD*"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
 
+    A-->|"death_causes"|L["<b>Death causes</b>"]
+
     A---M[ ]:::empty
     B---M
     M-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at diabetes <br> diagnosis date"]
    
     A---N[ ]:::empty
     B---N
-    N-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at diabetes <br> diagnosis date"]
+    N-->|"comorbidities & efi<br>(requires index date)"|F["<b>Comorbidities<br>and eFI score</b> <br> at diabetes <br> diagnosis date"]
 
     B---O[ ]:::empty
     A---O
@@ -30,17 +30,23 @@ graph TD;
     B---P[ ]:::empty
     A---P
     P-->|"alcohol <br> (requires index date)"|H["<b>Alcohol status</b> <br> at diabetes <br> diagnosis date"]
-    
+
+    B---R[ ]:::empty
+    A---R
+    R-->|"non_diabetes_meds <br> (requires index date)"|K["<b>Non-diabetes<br>medications</b> <br> at diabetes <br> diagnosis date"]
+
     B---Q[ ]:::empty
     C---Q
     Q-->|"ckd_stages <br> (requires index date)"|I["<b>CKD stage </b> <br> at diabetes <br> diagnosis date"]
-    
+
     B-->|"final_merge"|J["<b>Final cohort dataset</b>"]
     E-->|"final_merge"|J
     F-->|"final_merge"|J
     G-->|"final_merge"|J
     H-->|"final_merge"|J
     I-->|"final_merge"|J
+    K-->|"final_merge"|J
+    L-->|"final_merge"|J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
@@ -58,19 +64,26 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **all_patid_ethnicity**: uses GP and linked HES data to define ethnicity as per [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity)  | **all_patid_ethnicity**:  1 row per patid, with 5-category, 16-category and QRISK2-category ethnicity (where available) |
 | **all_diabetes_cohort**: table of patids meeting the criteria for our mixed Type 1/Type 2/'other' diabetes cohort plus additional patient variables | **all_diabetes_cohort**: 1 row per patid of those in the diabetes cohort, with diabetes diagnosis dates, DOB, gender, ethnicity etc. |
 |**at_diag_baseline_biomarkers**: pulls biomarkers value at cohort index dates | **at_diag_baseline_biomarkers**: 1 row per patid (as there are no patids with >1 index date) with all biomarker values at index date where available (including HbA1c and height) |
+|**at_diag_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **at_diag_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
 |**at_diag_comorbidities**: finds onset of comorbidities relative to cohort index dates | **at_diag_comorbidities**:  1 row per patid (as there are no patids with >1 index date) with earliest pre-index date code occurrence, latest pre-index date code occurrence, and earliest post-index date code occurrence |
+| **at_diag_efi**: calculates electronic frailty index (eFI) at cohort index dates | **at_diag_efi**:  1 row per patid (as there are no patids with >1 index date) with binary variables for each eFI deficit and an overall score |
+| **at_diag_non_diabetes_meds**: dates of various non-diabetes medication prescriptions relative to cohort index dates | **at_diag_non_diabetes_meds**: 1 row per patid (as there are no patids with >1 index date) with with earliest pre-index date script, latest pre-index date script, and earliest post-index date script for all non-diabetes medications where available |
 |**at_diag_smoking**: finds smoking status at cohort index dates | **at_diag_smoking**: 1 row per patid (as there are no patids with >1 index date) with smoking status and QRISK2 smoking category at index date where available |
 |**at_diag_alcohol**: finds alcohol status at cohort index dates | **at_diag_alcohol**: 1 row per patid (as there are no patids with >1 index date) with alcohol status at index date where available |
-|**at_diag_ckd_stages**: finds onset of CKD stages relative to cohort index dates | **at_diag_ckd_stages**: 1 row per patid (as there are no patids with >1 index date) with baseline CKD stage at index date where available |
+| **at_diag_death_cause**: adds variables on causes of death | **at_diag_death_causes**: 1 row per patid in ONS death data table, with primary and secondary death causes plus variables for whether CV/heart failure/kidney failure are primary/secondary causes |
 |**at_diag_final_merge**: brings together variables from all of the above tables | **at_diag_final_merge**: 1 row per patid -(as there are no patids with >1 index date) with relevant biomarker/comorbidity/smoking/alcohol variables |
 
 &nbsp;
 
 ## Data dictionary of variables in 'at_diag_final_merge' table
 
-Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), HDL (mmol/L), triglycerides (mmol/L), blood creatinine (umol/L), LDL (mmol/L), ALT (U/L), AST (U/L), total cholesterol (mmol/L), DBP (mmHg), SBP (mmHg), ACR (mg/mmol / g/mol). NB: BMI and ACR are from BMI and ACR specific codes only, not calculated from weight+height / albumin+creatinine measurements.
+Biomarkers included: HbA1c (mmol/mol), weight (kg), height (m), BMI (kg/m2), fasting glucose (mmol/L), HDL (mmol/L), triglycerides (mmol/L), blood creatinine (umol/L), LDL (mmol/L), ALT (U/L), AST (U/L), total cholesterol (mmol/L), DBP (mmHg), SBP (mmHg), ACR (mg/mmol / g/mol), blood albumin (g/L), total bilirubin (umol/L), haematocrit (%), haemoglobin (g/L), PCR (mg/mmol / g/mol), urine albumin (mg/L), urine creatinine (mmol/L) (latter two not included separately but combined where on the same day to give 'acr_from_separate' values). NB: BMI is from BMI codes only, not calculated from weight+height.
 
-Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, haematological cancers, heart failure, hypertension (uses primary care data only, see note in script), IHD, myocardial infarction, neuropathy, other neurological conditions, PAD, pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke, TIA, family history of premature cardiovascular disease.
+Comorbidities included: atrial fibrillation, angina (overall and specifically unstable angina recorded in hospital), anxiety, asthma, benign prostate hyperplasia, bronchiectasis, CKD stage 5/ESRD, CLD, COPD, cystic fibrosis, dementia, diabetic nephropathy, DKA (hospital data only), falls, family history of diabetes, family history of premature cardiovascular disease, mild/moderate/severe frailty, haematological cancers, heart failure, major and minor amputations in hospital (doesn't only include primary cause), hypertension (uses primary care data only, see note in script), IHD, lower limb fracture, myocardial infarction (overall and more specifically in hospital with a reduced codelists: 'incident_mi'), neuropathy, osteoporosis, other neurological conditions, PAD, photocoagulation therapy (hospital data only), pulmonary fibrosis, pulmonary hypertension, retinopathy, (coronary artery) revascularisation, rhematoid arthritis, solid cancer, solid organ transplant, stroke (overall and more specifically in hospital with a reduced codelists: 'incident_stroke'), TIA, vitreous haemorrhage (hospital data only), 'primary_hhf' (hospitalisation for HF with HF as primary cause), 'primary_incident_mi' (hospitalisation for MI with MI as primary cause using incident_mi codelist), 'primary_incident_stroke' (hospitalisation for stroke with stroke as primary cause using incident_stroke codelist), osmotic symptoms (micturition control, volume depletion, urinary frequency).
+
+Non-diabetes medications included: blood pressure medications and diuretics (different classes processed separately: ACE-inhibitors, beta-blockers, calcium channel blockers, thiazide-like diuretics, loop diuretics, potassium-sparing diuretics, ARBs), statins and finerenone.
+
+Death causes included: cardiovascular (CV) death as the primary cause or any cause, and heart failure as the primary cause or any cause.
 
 | Variable name | Description | Notes on derivation |
 | --- | --- | --- |
@@ -114,7 +127,22 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | pre_index_date_latest_{comorbidity} | latest occurrence of comorbidity before/at index date | |
 | pre_index_date_{comorbidity} | binary 0/1 if any instance of comorbidity before/at index date | |
 | post_index_date_first_{comorbidity} | earliest occurrence of comorbidity after (not at) index date | |
+| pre_index_date_efi_{deficit} | Binary variables for each eFI deficit (if any instance before dstartdate). Polypharmacy coded as 1 for all patients. | |
+| efi_n_deficits | Number of eFI deficits (out of 36) | |
+| pre_index_date_efi_score | eFI score (efi_n_deficits/36) | |
+| pre_index_date_efi_cat | eFI score converted to category (<0.12: fit, >=0.12-<0.24: mild, >=0.34-<0.36: moderate, >=0.36: severe) | |
+| pre_index_date_earliest_{med} | earliest script for non-diabetes medication before/at index date | |
+| pre_index_date_latest_{med} | latest script for non-diabetes medication before/at index date | |
+| post_index_date_first_{med} | earliest script for non-diabetes medication after (not at) index date | |
 | smoking_cat | Smoking category at index date: Non-smoker, Ex-smoker or Active smoker | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#smoking) |
 | qrisk2_smoking_cat | QRISK2 smoking category code (0-4) | |
 | qrisk2_smoking_cat_uncoded | Decoded version of qrisk2_smoking_cat: 0=Non-smoker, 1= Ex-smoker, 2=Light smoker, 3=Moderate smoker, 4=Heavy smoker | |
 | alcohol_cat | Alcohol consumption category at index date: None, Within limits, Excess or Heavy | Derived from [our algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#alcohol) |
+| primary_death_cause1-3 | primary death cause from ONS data (ICD10; 'underlying_cause'1-3 in cleaned ONS death table - multiple values because raw table had multiple rows per patient with same death date) |
+| secondary_death_cause1-17 | secondary death cases from ONS data (ICD10; 'cause'1-17' in cleaned ONS death table - can be >15 because raw table had multiple rows per patient with same death date) |
+| cv_death_primary_cause | 1 if primary cause of death is CV |
+| cv_death_any_cause | 1 if any (primary or secondary) cause of death is CV |
+| hf_death_primary_cause | 1 if primary cause of death is heart failure |
+| hf_death_any_cause | 1 if any (primary or secondary) cause of death is heart failure |
+| kf_death_primary_cause | 1 if primary cause of death is kidney failure |
+| kf_death_any_cause | 1 if any (primary or secondary) cause of death is kidney failure |
