@@ -40,7 +40,8 @@ The below diagram shows the R scripts (in grey boxes) used to create the final c
 
 ```mermaid
 graph TD;
-    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
+    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity<br> & all_patid_ethnicity"|B["<b>Diabetes cohort</b> with static <br> patient data including <br> ethnicity and IMD*"]
+    A-->|"all_patid_death_causes"|K["<b>CVD/renal death causes</b> <br> for all patients"]
     A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD stages</b> <br> for all patients"]
     A-->|"baseline_biomarkers <br> (requires index date)"|E["<b>Biomarkers</b> <br> at index date"]
     A-->|"comorbidities <br> (requires index date)"|F["<b>Comorbidities</b> <br> at index date"]
@@ -53,6 +54,8 @@ graph TD;
     G-->|"final_merge"|J
     H-->|"final_merge"|J
     I-->|"final_merge"|J
+    K-->|"final_merge"|J
+    
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019.
 
