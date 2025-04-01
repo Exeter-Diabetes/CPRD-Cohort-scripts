@@ -61,7 +61,7 @@ for (i in meds) {
 
 ############################################################################################
 
-# Clean scripts (remove if before DOB or after lcd/deregistration/death), then merge with drug start dates
+# Clean scripts (remove if before DOB or after lcd/deregistration), then merge with drug start dates
 ## NB: for biomarkers, cleaning and combining with drug start dates is 2 separate steps with caching between, but as there are fewer cleaning steps for meds I have made this one step here
 
 # Get drug start dates

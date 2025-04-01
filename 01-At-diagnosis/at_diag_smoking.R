@@ -15,9 +15,9 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("at_diag")
 
@@ -42,13 +42,13 @@ raw_smoking_medcodes <- cprd$tables$observation %>%
 
 ############################################################################################
 
-# Clean: remove if before DOB or after lcd/deregistration/death, and re-cache
+# Clean: remove if before DOB or after lcd/deregistration, and re-cache
 ## Remove duplicates for patid, date, 2 x categories and testvalue
 ## Keep testvalue, numunitid and medcodeid - need for QRISK2
 
 clean_smoking_medcodes <- raw_smoking_medcodes %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
+  filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
   select(patid, date=obsdate, medcodeid, smoking_cat, qrisk2_smoking_cat, testvalue, numunitid) %>%
   distinct() %>%
   analysis$cached("clean_smoking_medcodes", indexes=c("patid", "date", "smoking_cat", "qrisk2_smoking_cat"))

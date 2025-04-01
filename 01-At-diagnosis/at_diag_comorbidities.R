@@ -15,9 +15,9 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
+codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("at_diag")
 
@@ -27,9 +27,11 @@ analysis = cprd$analysis("at_diag")
 # Define comorbidities
 ## If you add comorbidity to the end of this list, code should run fine to incorporate new comorbidity, as long as you delete final 'comorbidities' table
 
-comorbids <- c("af", #atrial fibrillation
+comorbids <- c("af",
                "angina",
+               "anxiety_disorders",
                "asthma",
+               "benignprostatehyperplasia",
                "bronchiectasis",
                "ckd5_code",
                "cld",
@@ -37,14 +39,27 @@ comorbids <- c("af", #atrial fibrillation
                "cysticfibrosis",
                "dementia",
                "diabeticnephropathy",
+               "dka",
+               "falls",
+               "fh_diabetes", #note includes sibling, child, parents
+               "fh_premature_cvd", #family history of premature CVD - for QRISK2
+               "frailty_simple",
                "haem_cancer",
                "heartfailure",
+               "hosp_cause_majoramputation",
+               "hosp_cause_minoramputation",
                "hypertension",
                "ihd", #ischaemic heart disease
+               "incident_mi",
+               "incident_stroke",
+               "lowerlimbfracture",
+               "micturition_control",
                "myocardialinfarction",
                "neuropathy",
+               "osteoporosis",
                "otherneuroconditions",
                "pad", #peripheral arterial disease
+               "photocoagulation",
                "pulmonaryfibrosis",
                "pulmonaryhypertension",
                "retinopathy",
@@ -54,8 +69,10 @@ comorbids <- c("af", #atrial fibrillation
                "solidorgantransplant",
                "stroke",
                "tia",  #transient ischaemic attack
-               "fh_premature_cvd",
-               "frailty_simple"
+               "unstableangina",
+               "urinary_frequency",
+               "vitreoushemorrhage",
+               "volume_depletion"
 )
 
 
@@ -113,24 +130,49 @@ for (i in comorbids) {
 }
 
 
-# Make new primary cause hospitalisation for heart failure
+# Make new primary cause hospitalisation for heart failure, incident MI, and incident stroke comorbidities
 
 raw_primary_hhf_icd10 <- raw_heartfailure_icd10 %>%
   filter(d_order==1) %>%
   analysis$cached("raw_primary_hhf_icd10", indexes=c("patid", "epistart"))
 
+raw_primary_incident_mi_icd10 <- raw_incident_mi_icd10 %>%
+  filter(d_order==1) %>%
+  analysis$cached("raw_primary_incident_mi_icd10", indexes=c("patid", "epistart"))
+
+raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
+  filter(d_order==1) %>%
+  analysis$cached("raw_primary_incident_stroke_icd10", indexes=c("patid", "epistart"))
+
 
 ## Add to beginning of list so don't have to remake interim tables when add new comorbidity to end of above list
-comorbids <- c("primary_hhf", comorbids)
+comorbids <- c("primary_hhf", "primary_incident_mi", "primary_incident_stroke", comorbids)
+
 
 # Separate frailty by severity into three different categories
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
 raw_frailty_mild_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Mild")
 raw_frailty_moderate_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Moderate")
 raw_frailty_severe_medcodes <- raw_frailty_simple_medcodes %>% filter(frailty_simple_cat=="Severe")
-
-## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
 comorbids <- setdiff(comorbids, "frailty_simple")
 comorbids <- c("frailty_mild", "frailty_moderate", "frailty_severe", comorbids)
+
+
+# Separate family history by whether positive or negative
+## Add to beginning of list so don't have to remake tables when add new comorbidity to end of above list
+raw_fh_diabetes_positive_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diabetes_cat!="negative")
+raw_fh_diabetes_negative_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diabetes_cat=="negative")
+comorbids <- setdiff(comorbids, "fh_diabetes")
+comorbids <- c("fh_diabetes_positive", "fh_diabetes_negative", comorbids)
+
+
+# Do photocoagulation manually as uses UKPDS codelist
+raw_photocoagulation_opcs4 <- cprd$tables$hesProceduresEpi %>%
+  inner_join(codes$ukpds_opcs4_photocoagulation, by=c("OPCS"="opcs4")) %>%
+  analysis$cached(raw_tablename, indexes=c("patid", "evdate"))
+
+
+
 
 
 ############################################################################################
@@ -230,7 +272,7 @@ for (i in comorbids) {
 
   all_codes_clean <- all_codes %>%
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(date>=min_dob & ((source=="gp" & date<=gp_ons_end_date) | ((source=="hes_icd10" | source=="hes_opcs4") & (is.na(gp_ons_death_date) | date<=gp_ons_death_date)))) %>%
+    filter(date>=min_dob & date<=gp_end_date) %>%
     select(patid, date, source, code)
   
   rm(all_codes)
@@ -252,6 +294,9 @@ for (i in comorbids) {
 ############################################################################################
 
 # Find earliest pre-index date, latest pre-index date and first post-index date dates
+## Leave amputation and family history of diabetes for now as need to be processed differently
+
+comorbids <- setdiff(comorbids, c("hosp_cause_majoramputation", "hosp_cause_minoramputation", "fh_diabetes_positive", "fh_diabetes_negative"))
 
 comorbidities <- index_dates
 
@@ -288,4 +333,65 @@ for (i in comorbids) {
     analysis$cached(interim_comorbidity_table, unique_indexes="patid")
 }
 
-comorbidities <- comorbidities %>% analysis$cached("comorbidities", unique_indexes="patid")
+
+############################################################################################
+
+# Make separate tables for amputation and fh_diabetes as need to combine 2 x amputation codes / combine positive and negative fh_diabetes codes first
+
+## Amputation variable - use earliest of hosp_cause_majoramputation and hosp_cause_minoramputation
+
+amputation <- full_hosp_cause_majoramputation_index_merge %>% union_all(full_hosp_cause_minoramputation_index_merge)
+
+pre_index_date_amputation <- amputation %>%
+  filter(date<=index_date) %>%
+  group_by(patid) %>%
+  summarise(pre_index_date_earliest_amputation=min(date, na.rm=TRUE),
+            pre_index_date_latest_amputation=max(date, na.rm=TRUE)) %>%
+  ungroup()
+
+post_index_date_amputation <- amputation %>%
+  filter(date>index_date) %>%
+  group_by(patid) %>%
+  summarise(post_index_date_first_amputation=min(date, na.rm=TRUE)) %>%
+  ungroup()
+
+amputation_outcome <- index_dates %>%
+  left_join(pre_index_date_amputation, by="patid") %>%
+  left_join(post_index_date_amputation, by="patid") %>%
+  mutate(pre_index_date_amputation=!is.na(pre_index_date_earliest_amputation)) %>%
+  analysis$cached("comorbidities_interim_amputation_outcome", unique_indexes="patid")
+
+
+## Family history of diabetes - binary variable or missing
+
+fh_diabetes_positive_latest <- full_fh_diabetes_positive_index_merge %>%
+  filter(date<=index_date) %>%
+  group_by(patid) %>%
+  summarise(fh_diabetes_positive_latest=max(date, na.rm=TRUE)) %>%
+  ungroup()
+
+fh_diabetes_negative_latest <- full_fh_diabetes_negative_index_merge %>%
+  filter(date<=index_date) %>%
+  group_by(patid) %>%
+  summarise(fh_diabetes_negative_latest=max(date, na.rm=TRUE)) %>%
+  ungroup()
+
+fh_diabetes <- index_dates %>%
+  left_join(fh_diabetes_positive_latest, by="patid") %>%
+  left_join(fh_diabetes_negative_latest, by="patid") %>%
+  mutate(fh_diabetes=ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest==fh_diabetes_negative_latest, NA,
+                            ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest>fh_diabetes_negative_latest, 1L,
+                                   ifelse(!is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest) & fh_diabetes_positive_latest<fh_diabetes_negative_latest, 0L,
+                                          ifelse(!is.na(fh_diabetes_positive_latest) & is.na(fh_diabetes_negative_latest), 1L,
+                                                 ifelse(is.na(fh_diabetes_positive_latest) & !is.na(fh_diabetes_negative_latest), 0L, NA)))))) %>%
+  select(patid, index_date, fh_diabetes) %>%
+  analysis$cached("comorbidities_interim_fh_diabetes", unique_indexes="patid")
+
+############################################################################################
+
+# Join together interim_comorbidity_table with amputation, family history of diabetes and hospital admission tables
+
+comorbidities <- comorbidities %>%
+  left_join(amputation_outcome, by="patid") %>%
+  left_join(fh_diabetes, by="patid") %>%
+  analysis$cached("comorbidities", unique_indexes="patid")

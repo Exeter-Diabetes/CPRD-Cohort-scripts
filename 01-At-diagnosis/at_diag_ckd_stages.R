@@ -10,7 +10,7 @@ library(aurum)
 library(EHRBiomarkr)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 
 analysis = cprd$analysis("at_diag")
 

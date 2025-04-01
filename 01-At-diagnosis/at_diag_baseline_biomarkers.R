@@ -69,7 +69,7 @@ raw_hba1c_medcodes <- cprd$tables$observation %>%
 ## Only keep those within acceptable value limits
 ## Only keep those with valid unit codes (numunitid)
 ## If multiple values on the same day, take mean
-## Remove those with invalid dates (before DOB or after LCD/death/deregistration)
+## Remove those with invalid dates (before DOB or after LCD/deregistration)
 ### HbA1c only: remove if <1990 and assume in % and convert to mmol/mol if <=20 (https://github.com/Exeter-Diabetes/CPRD-Codelists#hba1c)
 
 
@@ -92,7 +92,7 @@ for (i in biomarkers) {
     ungroup() %>%
     
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>%
+    filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
     
     select(patid, date=obsdate, testvalue) %>%
     
@@ -117,7 +117,7 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
   ungroup() %>%
     
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(obsdate>=min_dob & obsdate<=gp_ons_end_date & year(obsdate)>=1990) %>%
+  filter(obsdate>=min_dob & obsdate<=gp_end_date & year(obsdate)>=1990) %>%
     
   select(patid, date=obsdate, testvalue) %>%
     
@@ -125,7 +125,7 @@ clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
 
 
 # Make eGFR table from creatinine readings and add to list of biomarkers
-## Use DOBs produced in all_t1t2_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
+## Use DOBs produced in all_diabetes_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
 ## Also need gender from Patient table for eGFR
 
 analysis = cprd$analysis("diabetes_cohort")
