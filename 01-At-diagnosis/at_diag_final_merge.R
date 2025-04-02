@@ -20,14 +20,19 @@ analysis = cprd$analysis("at_diag")
 ## Cohort and patient characteristics including Townsend scores
 analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
+death_causes <- death_causes %>% analysis$cached("death_causes")
 
 ## Baseline biomarkers plus CKD stage
 analysis = cprd$analysis("at_diag")
 baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers")
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
-## Comorbidities
+## Comorbidities and eFI
 comorbidities <- comorbidities %>% analysis$cached("comorbidities")
+efi <- efi %>% analysis$cached("efi")
+
+## Non-diabetes meds
+non_diabetes_meds <- non_diabetes_meds %>% analysis$cached("non_diabetes_meds")
 
 ## Smoking status
 smoking <- smoking %>% analysis$cached("smoking")
@@ -46,24 +51,10 @@ final_merge <- diabetes_cohort %>%
   left_join((baseline_biomarkers %>% select(-index_date)), by="patid") %>%
   left_join(ckd_stages, by="patid") %>%
   left_join((comorbidities %>% select(-index_date)), by="patid") %>%
+  left_join((efi %>% select(-index_date)), by="patid") %>%
   left_join(smoking, by="patid") %>%
   left_join(alcohol, by="patid") %>%
+  left_join(death_causes, by="patid") %>%
   analysis$cached("final_merge", unique_indexes="patid")
 
-
-############################################################################################
-
-# Export to R data object
-## Convert integer64 datatypes to double
-
-at_diag_cohort <- collect(final_merge %>% mutate(patid=as.character(patid)))
-
-is.integer64 <- function(x){
-  class(x)=="integer64"
-}
-
-at_diag_cohort <- at_diag_cohort %>%
-  mutate_if(is.integer64, as.integer)
-
-save(at_diag_cohort, file="20230529_at_diagnosis_cohort.Rda")
 

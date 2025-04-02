@@ -59,7 +59,6 @@ comorbids <- c("af",
                "osteoporosis",
                "otherneuroconditions",
                "pad", #peripheral arterial disease
-               "photocoagulation",
                "pulmonaryfibrosis",
                "pulmonaryhypertension",
                "retinopathy",
@@ -69,6 +68,7 @@ comorbids <- c("af",
                "solidorgantransplant",
                "stroke",
                "tia",  #transient ischaemic attack
+               "ukpds_photocoagulation",
                "unstableangina",
                "urinary_frequency",
                "vitreoushemorrhage",
@@ -170,9 +170,6 @@ comorbids <- c("fh_diabetes_positive", "fh_diabetes_negative", comorbids)
 raw_photocoagulation_opcs4 <- cprd$tables$hesProceduresEpi %>%
   inner_join(codes$ukpds_opcs4_photocoagulation, by=c("OPCS"="opcs4")) %>%
   analysis$cached(raw_tablename, indexes=c("patid", "evdate"))
-
-
-
 
 
 ############################################################################################
@@ -340,7 +337,7 @@ for (i in comorbids) {
 
 ## Amputation variable - use earliest of hosp_cause_majoramputation and hosp_cause_minoramputation
 
-amputation <- full_hosp_cause_majoramputation_index_merge %>% union_all(full_hosp_cause_minoramputation_index_merge)
+amputation <- full_hosp_cause_majoramputation_index_date_merge %>% union_all(full_hosp_cause_minoramputation_index_date_merge)
 
 pre_index_date_amputation <- amputation %>%
   filter(date<=index_date) %>%
@@ -364,13 +361,13 @@ amputation_outcome <- index_dates %>%
 
 ## Family history of diabetes - binary variable or missing
 
-fh_diabetes_positive_latest <- full_fh_diabetes_positive_index_merge %>%
+fh_diabetes_positive_latest <- full_fh_diabetes_positive_index_date_merge %>%
   filter(date<=index_date) %>%
   group_by(patid) %>%
   summarise(fh_diabetes_positive_latest=max(date, na.rm=TRUE)) %>%
   ungroup()
 
-fh_diabetes_negative_latest <- full_fh_diabetes_negative_index_merge %>%
+fh_diabetes_negative_latest <- full_fh_diabetes_negative_index_date_merge %>%
   filter(date<=index_date) %>%
   group_by(patid) %>%
   summarise(fh_diabetes_negative_latest=max(date, na.rm=TRUE)) %>%
@@ -392,6 +389,6 @@ fh_diabetes <- index_dates %>%
 # Join together interim_comorbidity_table with amputation, family history of diabetes and hospital admission tables
 
 comorbidities <- comorbidities %>%
-  left_join(amputation_outcome, by="patid") %>%
-  left_join(fh_diabetes, by="patid") %>%
+  left_join((amputation_outcome %>% select(-index_date)), by="patid") %>%
+  left_join((fh_diabetes %>% select(-index_date)), by="patid") %>%
   analysis$cached("comorbidities", unique_indexes="patid")

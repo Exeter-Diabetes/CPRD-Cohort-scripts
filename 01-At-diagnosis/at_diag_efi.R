@@ -1,5 +1,6 @@
 
 # Calculates electronic frailty index (https://pubmed.ncbi.nlm.nih.gov/26944937/) at index date
+# Polypharmacy assumed to be 1
 
 ############################################################################################
 
@@ -69,7 +70,7 @@ for (deficit in efi_deficits) {
 
 ############################################################################################
 
-# Clean medcodes then merge with drug start dates
+# Clean medcodes then merge with index dates
 # Remove medcodes before DOB or after lcd/deregistration
 
 analysis = cprd$analysis("all")
@@ -143,7 +144,7 @@ for (deficit in efi_deficits) {
   deficit <- get_short_deficit(deficit)
   
   # Define table and column names
-  index_date_merge_tablename <- paste0("full_", deficit, "_index_date_merge")
+  index_date_merge_tablename <- paste0("full_", deficit, "_diag_merge")
   interim_efi_table <- paste0("efi_interim_", deficit)
   pre_index_date_indicator <- paste0("pre_index_date_", deficit)
   pre_index_date_earliest_date_variable <- paste0("pre_index_date_earliest_", deficit)
@@ -179,15 +180,28 @@ efi <- efi %>%
   select(-matches("^pre_index_date_earliest_"))
 
 
+# - There are 203,198 patients that do not have a predrug_occurence of diabetes using the efi_diabetes codelist
+#   These patients have records of diabetes medication in drug_start_stop and have record of diabetes using QOF codes
+#   Fill all predrug_diabetes occurrences with 1
+# - Fill all predrug_polypharmacy with 1 (assume every patient is on 5 or more medications for now).
+
+efi <- efi %>%
+  mutate(predrug_efi_diabetes = 1,
+         predrug_efi_polypharmacy = 1) %>%
+  analysis$cached(
+    "efi_deficits",
+    unique_indexes = "patid"
+  )
+
 
 # Sum deficits and calculate score
 
 efi_deficits_short <- lapply(efi_deficits, get_short_deficit)
-deficit_vars <- paste0("predrug_", efi_deficits_short)
+deficit_vars <- paste0("pre_index_date_", efi_deficits_short)
 
 sql_adding_expr <- paste(deficit_vars, collapse = " + ")
 
-efi_test <- efi %>%
+efi <- efi %>%
   mutate(efi_n_deficits=dbplyr::sql(sql_adding_expr),
          predrug_efi_score = efi_n_deficits / 36,
          predrug_efi_cat = case_when(
@@ -196,5 +210,5 @@ efi_test <- efi %>%
            predrug_efi_score >= 0.24 & predrug_efi_score < 0.36 ~ "moderate",
            predrug_efi_score >=0.36 ~ "severe" )) %>%
   analysis$cached(
-    "efi_test",
+    "efi",
     unique_indexes = "patid")
