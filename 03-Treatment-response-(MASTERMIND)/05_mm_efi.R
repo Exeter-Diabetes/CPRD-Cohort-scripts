@@ -1,5 +1,6 @@
 
 # Calculates electronic frailty index (https://pubmed.ncbi.nlm.nih.gov/26944937/) at drug start dates
+# Polypharmacy assumed to be 1
 
 ############################################################################################
 
@@ -202,7 +203,7 @@ deficit_vars <- paste0("predrug_", efi_deficits_short)
 
 sql_adding_expr <- paste(deficit_vars, collapse = " + ")
 
-efi_test <- efi %>%
+efi <- efi %>%
   mutate(efi_n_deficits=dbplyr::sql(sql_adding_expr),
          predrug_efi_score = efi_n_deficits / 36,
          predrug_efi_cat = case_when(
@@ -211,6 +212,6 @@ efi_test <- efi %>%
            predrug_efi_score >= 0.24 & predrug_efi_score < 0.36 ~ "moderate",
            predrug_efi_score >=0.36 ~ "severe" )) %>%
   analysis$cached(
-    "efi_test",
+    "efi",
     indexes = c("patid", "dstartdate", "drug_substance")
   )
