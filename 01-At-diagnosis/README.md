@@ -1,6 +1,6 @@
 # At-diagnosis cohort
 
-The 'at-diagnosis' cohort (n=771,678) consists of all those in the diabetes cohort (n=1,138,179; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with a valid diagnosis date (i.e. excluding those with a diagnosis date set to missing as it was with -30 to +90 days of the registration start date, n=60,530). Additionally, those with a diagnosis date before registration start were excluded (additional n=305,971). The cohort dataset includes biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
+The 'at-diagnosis' cohort (n=1,232,500) consists of all those in the diabetes cohort (n=2,081,045; see [flow diagram](https://github.com/Exeter-Diabetes/CPRD-Cohort-scripts/blob/main/README.md#introduction)) with a valid diagnosis date (i.e. excluding those with a diagnosis date set to missing as it was with -30 to +90 days of the registration start date, n=139,296). Additionally, those with a diagnosis date before registration start were excluded (additional n=709,249). The cohort dataset includes biomarker/comorbidity/sociodemographic info at diabetes diagnosis date.
 
 &nbsp;
 
