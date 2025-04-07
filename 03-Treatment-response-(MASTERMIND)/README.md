@@ -149,7 +149,7 @@ Death causes included: cardiovascular (CV) death as the primary cause or any cau
 | diabetes_type | diabetes type | See [algorithm](https://github.com/Exeter-Diabetes/CPRD-Codelists#diabetes-algorithms)<br />See above note next to dm_diag_date_all variable on young diagnosis in T2Ds |
 | regstartdate | registration start date | |
 | gp_end_date | earliest of last collection date from practice and deregistration | |
-| death_date | ONS death date | NA if no death date |
+| death_date | ONS death date | NA if no death date **or no linkage** |
 | with_hes | 1 for patients with HES linkage, otherwise 0 | |
 | hes_end_date | End date of HES record (31/03/2023) | |
 | dstartdate | start date of drug substance in current row. If drug_class_start==1, then it is the start date of the current drug class period | uses dstart_class/dstart_substance=1 - see below 'Other variables produced in 01_mm_drug_sorting_and_combos but not included in final table' |
