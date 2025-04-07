@@ -36,10 +36,11 @@ today <- as.character(Sys.Date(), format="%Y%m%d")
 
 # Get handles to pre-existing data tables
 
-## Cohort and patient characteristics including Townsend scores
+## Cohort and patient characteristics including Townsend scores and death causes
 analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 townsend_score <- townsend_score %>% analysis$cached("patid_townsend_score")
+death_causes <- death_causes %>% analysis$cached("death_causes")
 
 ## Drug info
 analysis = cprd$analysis("mm")
@@ -69,9 +70,6 @@ discontinuation <- discontinuation %>% analysis$cached("discontinuation")
 
 ## Glycaemic failure
 glycaemic_failure <- glycaemic_failure %>% analysis$cached("glycaemic_failure")
-
-## Death causes
-death_causes <- death_causes %>% analysis$cached("death_causes")
 
 
 ############################################################################################

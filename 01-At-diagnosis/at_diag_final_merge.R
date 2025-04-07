@@ -15,9 +15,16 @@ analysis = cprd$analysis("at_diag")
 
 ############################################################################################
 
+# Today's date for table name
+
+today <- as.character(Sys.Date(), format="%Y%m%d")
+
+
+############################################################################################
+
 # Get handles to pre-existing data tables
 
-## Cohort and patient characteristics including Townsend scores
+## Cohort and patient characteristics including death causes
 analysis = cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 death_causes <- death_causes %>% analysis$cached("death_causes")
@@ -55,6 +62,6 @@ final_merge <- diabetes_cohort %>%
   left_join(smoking, by="patid") %>%
   left_join(alcohol, by="patid") %>%
   left_join(death_causes, by="patid") %>%
-  analysis$cached("final_merge", unique_indexes="patid")
+  analysis$cached(paste0("final_", today), unique_indexes="patid")
 
 
