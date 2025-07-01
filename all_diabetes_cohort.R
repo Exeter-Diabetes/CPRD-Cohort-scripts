@@ -8,6 +8,8 @@
 ## all_patid_ethnicity, from all_patid_ethnicity.R script as per https://github.com/Exeter-Diabetes/CPRD-Codelists#ethnicity
 
 
+# NB: in the future may need to think about not using high dose semaglutide to define diabetes diagnosis date: in Jun 2025 cohort we have 3 people starting on semaglutide, dose unclear earlier than any diabetes code/HbA1c/other OHA/insulin.
+
 ############################################################################################
 
 #Setup

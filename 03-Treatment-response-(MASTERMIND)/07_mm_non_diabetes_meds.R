@@ -33,7 +33,10 @@ meds <- c("ace_inhibitors",
           "ksparing_diuretics",
           "statins",
           "arb",
-          "finerenone")
+          "finerenone",
+          "oralsteroids",
+          "definite_genital_infection_meds",
+          "topical_candidal_meds")
 
 
 ############################################################################################
@@ -98,7 +101,10 @@ for (i in meds) {
 
 ############################################################################################
 
-# Find earliest predrug, latest predrug and first postdrug dates
+# Find earliest predrug, latest predrug and first postdrug date
+## Remove topical_candidal_meds as needs to be used in combination with genital_infection_nonspec (see script 04_mm_comorbidities)
+
+meds <- setdiff(meds, "topical_candidal_meds")
 
 non_diabetes_meds <- drug_start_stop %>%
   select(patid, dstartdate, drug_class, drug_substance, drug_instance)
@@ -135,9 +141,12 @@ for (i in meds) {
 }
 
 
-# Cache final version
+# Cache final version and rename definite_genital_infection_meds to prodspecific_gi
 
 non_diabetes_meds <- non_diabetes_meds %>%
+  rename(predrug_earliest_prodspecific_gi=predrug_earliest_definite_genital_infection_meds,
+         predrug_latest_prodspecific_gi=predrug_latest_definite_genital_infection_meds,
+         postdrug_first_prodspecific_gi=postdrug_first_definite_genital_infection_meds) %>%
   analysis$cached("non_diabetes_meds", indexes=c("patid", "dstartdate", "drug_substance"))
 
 

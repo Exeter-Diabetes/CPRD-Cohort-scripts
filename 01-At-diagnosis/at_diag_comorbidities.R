@@ -140,7 +140,7 @@ raw_primary_incident_mi_icd10 <- raw_incident_mi_icd10 %>%
   filter(d_order==1) %>%
   analysis$cached("raw_primary_incident_mi_icd10", indexes=c("patid", "epistart"))
 
-raw_primary_incident_stroke_icd10 <- raw_incident_mi_icd10 %>%
+raw_primary_incident_stroke_icd10 <- raw_incident_stroke_icd10 %>%
   filter(d_order==1) %>%
   analysis$cached("raw_primary_incident_stroke_icd10", indexes=c("patid", "epistart"))
 
@@ -164,12 +164,6 @@ raw_fh_diabetes_positive_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diab
 raw_fh_diabetes_negative_medcodes <- raw_fh_diabetes_medcodes %>% filter(fh_diabetes_cat=="negative")
 comorbids <- setdiff(comorbids, "fh_diabetes")
 comorbids <- c("fh_diabetes_positive", "fh_diabetes_negative", comorbids)
-
-
-# Do photocoagulation manually as uses UKPDS codelist
-raw_photocoagulation_opcs4 <- cprd$tables$hesProceduresEpi %>%
-  inner_join(codes$ukpds_opcs4_photocoagulation, by=c("OPCS"="opcs4")) %>%
-  analysis$cached(raw_tablename, indexes=c("patid", "evdate"))
 
 
 ############################################################################################
