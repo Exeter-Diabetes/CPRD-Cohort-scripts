@@ -31,7 +31,7 @@ comorbids <- c("af",
                "angina",
                "anxiety_disorders",
                "asthma",
-               "benignprostatehyperplasia",
+               "bph",
                "bronchiectasis",
                "ckd5_code",
                "cld",
@@ -212,7 +212,7 @@ for (i in comorbids) {
     
     icd10_codes <- get(icd10_tablename) %>%
       select(patid, date=epistart, code=ICD) %>%
-      mutate(source="hes_icd10")
+      mutate(source="hes")
 
   }
     
@@ -220,7 +220,7 @@ for (i in comorbids) {
     
     opcs4_codes <- get(opcs4_tablename) %>%
       select(patid, date=evdate, code=OPCS) %>%
-      mutate(source="hes_opcs4")
+      mutate(source="hes")
     
   }
   
@@ -263,7 +263,7 @@ for (i in comorbids) {
 
   all_codes_clean <- all_codes %>%
     inner_join(cprd$tables$validDateLookup, by="patid") %>%
-    filter(date>=min_dob & date<=gp_end_date) %>%
+    filter(date>=min_dob & ((source=="gp" & date<=gp_end_date) | (source=="hes" & date<=as.Date("2023-03-31")))) %>%
     select(patid, date, source, code)
   
   rm(all_codes)

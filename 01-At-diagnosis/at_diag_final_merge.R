@@ -17,7 +17,7 @@ analysis = cprd$analysis("at_diag")
 
 # Today's date for table name
 
-today <- as.character(Sys.Date(), format="%Y%m%d")
+today <- format(Sys.Date(), "%Y%m%d")
 
 
 ############################################################################################
@@ -50,10 +50,10 @@ alcohol <- alcohol %>% analysis$cached("alcohol")
 
 ############################################################################################
 
-# Bring together
+# Bring together and remove if diagnosed before registration or within 90 days after, or if death<=diagnosis date
 
 final_merge <- diabetes_cohort %>%
-  filter(!is.na(dm_diag_date)) %>%
+  filter(!is.na(dm_diag_date) & (is.na(death_date) | death_date>dm_diag_date)) %>%
   select(-c(dm_diag_date_all, dm_diag_age_all)) %>%
   left_join((baseline_biomarkers %>% select(-index_date)), by="patid") %>%
   left_join(ckd_stages, by="patid") %>%

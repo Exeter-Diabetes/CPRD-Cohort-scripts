@@ -1,6 +1,7 @@
 
 # Extract dataset of all first instance drug periods (i.e. the first time patient has taken this particular drug class) for ALL DIABETES/T2Ds, regardless of linkage
 ## Exclude drug periods starting within 90 days of registration
+## Exclude drug periods after death
 ## Set drugline to missing where diagnosed before registration
 
 ## Do not exclude where first line
@@ -29,7 +30,7 @@ analysis = cprd$analysis("mm")
 
 # Today's date for table names
 
-today <- as.character(Sys.Date(), format="%Y%m%d")
+today <- format(Sys.Date(), "%Y%m%d")
 
 
 ############################################################################################
@@ -116,6 +117,17 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 # 1,346,921
 
 
+### Exclude drug periods starting after or on same day as death
+all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
+  filter(is.na(death_date) | death_date>dstartdate)
+
+all_diabetes_1stinstance %>% count()
+# 3,004,813
+
+all_diabetes_1stinstance %>% distinct(patid) %>% count()
+# 1,346,887
+
+
 ## Merge in biomarkers, comorbidities, eFI, non-diabetes meds, smoking status, alcohol
 ### Could merge on druginstance too, but quicker not to
 ### Remove some variables to avoid duplicates
@@ -149,16 +161,16 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   mutate(dstartdate_age=datediff(dstartdate, dob)/365.25,
          dstartdate_dm_dur_all=datediff(dstartdate, dm_diag_date_all)/365.25,
          dstartdate_dm_dur=datediff(dstartdate, dm_diag_date)/365.25) %>%
-  analysis$cached(paste0(today, "_all_1stinstance_interim_4"), indexes=c("patid", "dstartdate", "drug_class"))
+  analysis$cached(paste0(today, "_all_1stinstance_interim_4"), indexes=c("patid", "dstartdate", "drug_substance"))
   
 
 # Check counts
 
 all_diabetes_1stinstance %>% count()
-# 3,004,907
+# 3,004,813
 
 all_diabetes_1stinstance %>% distinct(patid) %>% count()
-# 1,346,921
+# 1,346,887
 
 
 ############################################################################################
@@ -414,13 +426,13 @@ t2d_1stinstance <- all_diabetes_1stinstance %>% filter(diabetes_type=="type 2") 
 
 ### Check unique patid count
 t2d_1stinstance %>% distinct(patid) %>% count()
-#1,270,009
+#1,269,977
 
 
 ############################################################################################
 
 # Make dataset of all drug starts so that can see whether people later initiate SGLT2i/GLP1 etc.
-## Add in discontinuation variables
+## Not cleaned to remove those close to reg start / after death
 
 ## Just T2s
 t2d_all_drug_periods <- all_diabetes %>%

@@ -179,7 +179,7 @@ earliest_clean_ckd5 <- raw_ckd5_code_medcodes %>%
   union_all((raw_ckd5_code_icd10 %>% select(patid, date=epistart) %>% mutate(source="hes"))) %>%
   union_all((raw_ckd5_code_opcs4 %>% select(patid, date=evdate) %>% mutate(source="hes"))) %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
-  filter(date>=min_dob & date<=gp_end_date) %>%
+  filter(date>=min_dob & ((source=="gp" & date<=gp_end_date) | (source=="hes" & date<=as.Date("2023-03-31")))) %>%
   group_by(patid) %>%
   summarise(first_test_date=min(date, na.rm=TRUE))%>%
   ungroup() %>%
