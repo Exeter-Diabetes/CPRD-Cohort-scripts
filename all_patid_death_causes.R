@@ -4,6 +4,8 @@
 ## Heart failure
 ## Kidney failure
 
+# Most deaths <2001 are recorded as ICD9 codes so will not be identified by this script
+
 # Final table is 1 row per patid, don't need 1 row per drug period as all drug periods are prior to death
 
 ############################################################################################
