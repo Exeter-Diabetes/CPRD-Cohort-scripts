@@ -106,6 +106,7 @@ kf_death_any <- kf_death_primary %>%
 
 death_causes <- cprd$tables$onsDeath %>%
   select(patid, contains("cause")) %>%
+  select(-c(contains("icd9"))) %>%
   rename(primary_death_cause1=underlying_cause_1,
          primary_death_cause2=underlying_cause_2,
          primary_death_cause3=underlying_cause_3,
