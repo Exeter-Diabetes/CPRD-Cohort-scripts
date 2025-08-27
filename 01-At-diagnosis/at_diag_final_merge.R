@@ -59,6 +59,7 @@ final_merge <- diabetes_cohort %>%
   left_join(ckd_stages, by="patid") %>%
   left_join((comorbidities %>% select(-index_date)), by="patid") %>%
   left_join((efi %>% select(-index_date)), by="patid") %>%
+  left_join((non_diabetes_meds %>% select(-index_date)), by="patid") %>%
   left_join(smoking, by="patid") %>%
   left_join(alcohol, by="patid") %>%
   left_join(death_causes, by="patid") %>%
