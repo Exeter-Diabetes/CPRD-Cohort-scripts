@@ -188,8 +188,8 @@ efi <- efi %>%
 # - Fill all predrug_polypharmacy with 1 (assume every patient is on 5 or more medications for now).
 
 efi <- efi %>%
-  mutate(predrug_efi_diabetes = 1,
-         predrug_efi_polypharmacy = 1) %>%
+  mutate(predrug_efi_diabetes = 1L,
+         predrug_efi_polypharmacy = 1L) %>%
   analysis$cached(
     "efi_deficits",
     indexes = c("patid", "dstartdate", "drug_substance")
