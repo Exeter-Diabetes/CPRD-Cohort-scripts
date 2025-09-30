@@ -3,7 +3,7 @@
 
 # Uses:
 ## IMD2019 decile
-## IMD2019 decile-LSOA 2011 lookup from: https://www.gov.uk/government/statistics/english-indices-of-deprivation-2015 
+## IMD2019 decile-LSOA 2011 lookup from: https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019
 ## LSOA2011-TDS 2011 from: https://statistics.ukdataservice.ac.uk/dataset/2011-uk-townsend-deprivation-scores/resource/de580af3-6a9f-4795-b651-449ae16ac2be
 
 # See: https://github.com/drkgyoung/Exeter_Diabetes_codelists/blob/main/readme.md#townsend-deprivation-scores
