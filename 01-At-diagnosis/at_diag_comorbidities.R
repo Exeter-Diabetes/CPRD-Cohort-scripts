@@ -380,9 +380,29 @@ fh_diabetes <- index_dates %>%
 
 ############################################################################################
 
+# Add next non-elective hospital admission
+
+next_hosp_admi <- index_dates %>%
+  inner_join(cprd$tables$hesHospital, by="patid") %>%
+  filter(!is.na(admidate) & admidate>index_date & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
+  group_by(patid) %>%
+  mutate(earliest_spell=min(spno, na.rm=TRUE)) %>% #have confirmed that lower spell number = earlier spell
+  filter(spno==earliest_spell) %>%
+  ungroup() %>%
+  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
+  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
+  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
+  filter(d_order==1) %>%
+  select(patid, index_date, postdiag_first_emergency_hosp=epistart.x, postdiag_first_emergency_hosp_cause=ICD) %>%
+  analysis$cached("next_hosp_admi", unique_indexes="patid")
+  
+
+############################################################################################
+
 # Join together interim_comorbidity_table with amputation, family history of diabetes and hospital admission tables
 
 comorbidities <- comorbidities %>%
   left_join((amputation_outcome %>% select(-index_date)), by="patid") %>%
   left_join((fh_diabetes %>% select(-index_date)), by="patid") %>%
+  left_join((next_hosp_admi %>% select(-index_date)), by="patid") %>%
   analysis$cached("comorbidities", unique_indexes="patid")
