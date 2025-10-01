@@ -112,7 +112,7 @@ for (deficit in efi_deficits) {
   
   rm(medcodes)
   
-  # Merge with drug start info
+  # Merge with diagnosis date info
   data <- medcodes_clean %>%
     inner_join(index_dates, by="patid") %>%
     mutate(datediff = datediff(date, index_date)) %>%
@@ -149,7 +149,7 @@ for (deficit in efi_deficits) {
   pre_index_date_indicator <- paste0("pre_index_date_", deficit)
   pre_index_date_earliest_date_variable <- paste0("pre_index_date_earliest_", deficit)
   
-  # Get earliest date of predrug occurrence
+  # Get earliest date of pre-diagnosis occurrence
   pre_index_date <- get(index_date_merge_tablename) %>%
     filter(date <= index_date) %>%
     group_by(patid) %>%
@@ -162,8 +162,8 @@ for (deficit in efi_deficits) {
   # Convert the earliest date variable to a symbol
   pre_index_date_earliest_date_variable  <- sym(pre_index_date_earliest_date_variable)
   
-  # Merge predrug data into the eFI table and create a boolean indicator (1 if 
-  # there was ever an occurrence of this deficit on or before drug start date)
+  # Merge pre-index date data into the eFI table and create a boolean indicator (1 if 
+  # there was ever an occurrence of this deficit on or before diagnosis)
   efi <- efi %>%
     left_join(pre_index_date, by = "patid") %>%
     mutate(
@@ -179,15 +179,10 @@ for (deficit in efi_deficits) {
 efi <- efi %>%
   select(-matches("^pre_index_date_earliest_"))
 
-
-# - There are 203,198 patients that do not have a predrug_occurence of diabetes using the efi_diabetes codelist
-#   These patients have records of diabetes medication in drug_start_stop and have record of diabetes using QOF codes
-#   Fill all predrug_diabetes occurrences with 1
-# - Fill all predrug_polypharmacy with 1 (assume every patient is on 5 or more medications for now).
-
+# Set diabetes and polypharmacy to 1
 efi <- efi %>%
-  mutate(predrug_efi_diabetes = 1,
-         predrug_efi_polypharmacy = 1) %>%
+  mutate(pre_index_date_efi_diabetes = 1,
+         pre_index_date_efi_polypharmacy = 1) %>%
   analysis$cached(
     "efi_deficits",
     unique_indexes = "patid"
@@ -203,12 +198,12 @@ sql_adding_expr <- paste(deficit_vars, collapse = " + ")
 
 efi <- efi %>%
   mutate(efi_n_deficits=dbplyr::sql(sql_adding_expr),
-         predrug_efi_score = efi_n_deficits / 36,
-         predrug_efi_cat = case_when(
-           predrug_efi_score < 0.12 ~ "fit",
-           predrug_efi_score >= 0.12 & predrug_efi_score < 0.24 ~ "mild",
-           predrug_efi_score >= 0.24 & predrug_efi_score < 0.36 ~ "moderate",
-           predrug_efi_score >=0.36 ~ "severe" )) %>%
+         pre_index_date_efi_score = efi_n_deficits / 36,
+         pre_index_date_efi_cat = case_when(
+           pre_index_date_efi_score < 0.12 ~ "fit",
+           pre_index_date_efi_score >= 0.12 & pre_index_date_efi_score < 0.24 ~ "mild",
+           pre_index_date_efi_score >= 0.24 & pre_index_date_efi_score < 0.36 ~ "moderate",
+           pre_index_date_efi_score >=0.36 ~ "severe" )) %>%
   analysis$cached(
     "efi",
     unique_indexes = "patid")
