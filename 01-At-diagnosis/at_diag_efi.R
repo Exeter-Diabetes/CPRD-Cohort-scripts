@@ -181,8 +181,8 @@ efi <- efi %>%
 
 # Set diabetes and polypharmacy to 1
 efi <- efi %>%
-  mutate(pre_index_date_efi_diabetes = 1,
-         pre_index_date_efi_polypharmacy = 1) %>%
+  mutate(pre_index_date_efi_diabetes = 1L,
+         pre_index_date_efi_polypharmacy = 1L) %>%
   analysis$cached(
     "efi_deficits",
     unique_indexes = "patid"
