@@ -334,7 +334,7 @@ for (i in comorbids) {
 drug_start_stop <- drug_start_stop %>%
   select(patid, dstartdate, drug_substance)
 
-## Unspecific GI variable - have to have genital_infection_non_spec medcode and topical_candidal_meds prodcode on same day
+## Unspecific GI variable - have to have genital_infection_nonspec medcode and topical_candidal_meds prodcode on same day
 
 topical_candidal_meds <- topical_candidal_meds %>% analysis$cached("full_topical_candidal_meds_drug_merge")
 
