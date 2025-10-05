@@ -285,7 +285,7 @@ for (i in comorbids) {
 ############################################################################################
 
 # Find earliest predrug, latest predrug and first postdrug dates
-## Leave genital_infection_non_spec, amputation and family history of diabetes for now as need to be processed differently
+## Leave genital_infection_nonspec, amputation and family history of diabetes for now as need to be processed differently
 
 comorbids <- setdiff(comorbids, c("genital_infection_nonspec", "hosp_cause_majoramputation", "hosp_cause_minoramputation", "fh_diabetes_positive", "fh_diabetes_negative"))
 
