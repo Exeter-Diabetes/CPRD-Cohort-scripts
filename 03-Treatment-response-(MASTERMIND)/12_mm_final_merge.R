@@ -167,7 +167,7 @@ all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
 # Check counts
 
 all_diabetes_1stinstance %>% count()
-# 3,018,684
+# 3,004,813
 
 all_diabetes_1stinstance %>% distinct(patid) %>% count()
 # 1,346,887
