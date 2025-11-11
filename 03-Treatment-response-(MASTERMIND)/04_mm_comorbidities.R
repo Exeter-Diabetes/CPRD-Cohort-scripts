@@ -492,6 +492,11 @@ prev_urgent_referrals <- drug_start_stop %>%
   mutate(latest_ref = max(obsdate, na.rm = TRUE)) %>% # have confirmed that highest ref number = latest ref
   filter(obsdate == latest_ref) %>%
   ungroup() %>%
+  # This distinct was added to ensure only one row per patid-dstartdate-drug_substance. 
+  #  The rows have already been thinned to be only the most recent pre drug but a patient
+  #  could have multiple referrals in one day. If the specific test being referred is important,
+  #  then this line might need to be changed.
+  distinct() %>%
   select(patid, dstartdate, drug_substance, predrug_latest_urgent_ref = obsdate)
   
     
