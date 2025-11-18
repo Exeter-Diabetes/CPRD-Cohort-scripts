@@ -23,7 +23,7 @@ analysis = cprd$analysis("mm")
 
 # Define medications
 
-## Haven't included definite_genital_infection_meds, topical_candidal_meds, immunosuppressants, oralsteroids, oestrogens or flu vaccine as not updated
+## Haven't included immunosuppressants, oestrogens or flu vaccine as not updated
 
 meds <- c("ace_inhibitors",
           "beta_blockers",
@@ -34,7 +34,7 @@ meds <- c("ace_inhibitors",
           "statins",
           "arb",
           "finerenone",
-          "oralsteroids",
+          "oral_steroids",
           "definite_genital_infection_meds",
           "topical_candidal_meds")
 
