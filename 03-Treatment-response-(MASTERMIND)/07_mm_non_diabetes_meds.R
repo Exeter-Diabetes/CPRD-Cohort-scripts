@@ -34,7 +34,7 @@ meds <- c("ace_inhibitors",
           "statins",
           "arb",
           "finerenone",
-          "oral_steroids",
+          "oralsteroids",
           "definite_genital_infection_meds",
           "topical_candidal_meds")
 
