@@ -282,7 +282,7 @@ non_T1T2_ids <- raw_diabetes_medcodes %>%
   distinct(patid) %>%
   analysis$cached("non_T1T2_ids", unique_indexes="patid")
 
-non_T1T2_ids %>% count() #14505
+non_T1T2_ids %>% count() #14508
 
 non_T1T2_ids <- non_T1T2_ids %>% mutate(diabetes_type="other",
                                         diabetes_type_post_yob="other")
@@ -523,6 +523,6 @@ diabetes_cohort <- diabetes_type_final %>%
 
 
 diabetes_cohort %>% count() # 2081045
-diabetes_cohort %>% filter(diabetes_type == "type 2") %>% count() # 1916916
+diabetes_cohort %>% filter(diabetes_type == "type 2") %>% count() # 1916915
 diabetes_cohort %>% filter(diabetes_type == "type 1") %>% count() # 153212
-diabetes_cohort %>% filter(diabetes_type == "other") %>% count() # 10917
+diabetes_cohort %>% filter(diabetes_type == "other") %>% count() # 10918

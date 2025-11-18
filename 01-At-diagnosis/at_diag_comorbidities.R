@@ -395,6 +395,20 @@ next_hosp_admi <- index_dates %>%
   filter(d_order==1) %>%
   select(patid, index_date, postdiag_first_emergency_hosp=epistart.x, postdiag_first_emergency_hosp_cause=ICD) %>%
   analysis$cached("next_hosp_admi", unique_indexes="patid")
+
+next_hosp_admi_after_interval <- index_dates %>%
+  inner_join(cprd$tables$hesHospital, by="patid") %>%
+  filter(!is.na(admidate) & datediff(admidate, index_date)>=14 & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
+  group_by(patid) %>%
+  mutate(earliest_spell=min(spno, na.rm=TRUE)) %>% #have confirmed that lower spell number = earlier spell
+  filter(spno==earliest_spell) %>%
+  ungroup() %>%
+  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
+  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
+  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
+  filter(d_order==1) %>%
+  select(patid, index_date, postdiag_first_emergency_hosp_post_interval=epistart.x, postdiag_first_emergency_hosp_cause_post_interval=ICD) %>%
+  analysis$cached("next_hosp_admi_after_interval", unique_indexes="patid")
   
 
 ############################################################################################
