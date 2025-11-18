@@ -136,6 +136,8 @@ Comorbidities included: atrial fibrillation, angina, asthma, bronchiectasis, CKD
 | gp_end_date | earliest of last collection date from practice and deregistration | |
 | death_date | ONS death date | NA if no death date |
 | with_hes | 1 for patients with HES linkage, otherwise 0| |
+| usualgpstaffid | unique usual GP staff identifier | |
+| usualgp_jobcat | Job category for usual GP staff identifier: 46 categories | |
 | pre{biomarker} | biomarker value at baseline | For all biomarkers except HbA1c: pre{biomarker} is closest biomarker to index date within window of -730 days (2 years before index date) and +7 days (a week after index date)<br /><br />For HbA1c: prehba1c is closest HbA1c to index date within window of -183 days (6 months before index date) and +7 days (a week after index date) |
 | pre{biomarker}date | date of baseline biomarker | |
 | pre{biomarker}datediff | days between index date and baseline biomarker (negative: biomarker measured before index date) | |

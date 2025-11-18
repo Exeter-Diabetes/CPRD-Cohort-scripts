@@ -377,6 +377,8 @@ current_oha <- clean_oha %>%
   analysis$cached("current_oha", unique_indexes="patid")
 
 
+
+
 # Calculate diabetes type when include and exclude diabetes medcodes in year of birth (yob)
 
 diabetes_type_prelim <- diabetes_cohort_ids %>%
@@ -406,6 +408,29 @@ diabetes_type_prelim <- diabetes_cohort_ids %>%
   
   analysis$cached("diabetes_type_prelim", unique_indexes="patid")
 
+
+############################################################################################
+
+# Usual GP for a patient
+
+## take the usual gp id
+usual_gp_information <- cprd$tables$patient %>%
+  select(patid, usualgpstaffid) %>%
+  mutate(staffid = usualgpstaffid) %>%
+  ## join with the job category from staff table
+  left_join(
+    cprd$tables$staff %>%
+      select(staffid, jobcatid), by = c("staffid")
+  ) %>%
+  ## join with descriptions of job categories
+  left_join(
+    cprd$tables$jobCat, by = c("jobcatid")
+  ) %>%
+  ## rename and take columns needed
+  rename("usualgp_jobcat" = description) %>%
+  select(patid, usualgpstaffid, usualgp_jobcat) %>%
+  analysis$cached("usual_gp_information", unique_indexes = "patid")
+  
 
 ############################################################################################
 
@@ -487,11 +512,12 @@ diabetes_cohort <- diabetes_type_final %>%
   left_join((cprd$tables$patientImd %>% select(patid, imd_decile)), by="patid") %>%
   left_join((cprd$tables$validDateLookup %>% select(patid, gp_end_date)), by="patid") %>%
   left_join((cprd$tables$patidsWithLinkage %>% mutate(with_hes=1L) %>% select(patid, with_hes, hes_end_date)), by="patid") %>%
+  left_join(usual_gp_information, by = c("patid")) %>%
   mutate(with_hes=ifelse(is.na(with_hes), 0L, 1L)) %>%
   
   left_join(ethnicity, by="patid") %>%
   
-  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd_decile, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date_all, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_date, dm_diag_codetype, dm_diag_age_all, dm_diag_age, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_end_date, death_date=reg_date_of_death, with_hes, hes_end_date) %>%
+  select(patid, gender, dob, pracid, prac_region=region, ethnicity_5cat, ethnicity_16cat, ethnicity_qrisk2, imd_decile, has_insulin, type1_code_count, type2_code_count, raw_dm_diag_dmcodedate, raw_dm_diag_date_all, dm_diag_dmcodedate, dm_diag_hba1cdate, dm_diag_ohadate, dm_diag_insdate, dm_diag_date_all, dm_diag_date, dm_diag_codetype, dm_diag_age_all, dm_diag_age, dm_diag_before_reg, ins_in_1_year, current_oha, diabetes_type, regstartdate, gp_end_date, death_date=reg_date_of_death, with_hes, hes_end_date, usualgpstaffid, usualgp_jobcat) %>%
   
   analysis$cached("diabetes_cohort", unique_indexes="patid", indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_date", "dm_diag_age_all", "dm_diag_age", "diabetes_type"))
 

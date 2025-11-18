@@ -213,8 +213,11 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | fh_diabetes | binary 0/1 for whether family history of diabetes reported before/at dstartdate | If patient has codes for both positive and negative family history: most recent before/at dstartdate used; if both on same day classed as missing) |
 | hosp_admission_prev_year | 1 if patient has 1 or more hospital admision in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
 | hosp_admission_prev_year_count | Number of hospital admissions in the previous year to drug start (not including dstartdate).<br />NA if no admissions or if HES data not available - changed to 0 if no admissions and HES data available in final merge script | |
+| predrug_latest_emergency_hosp | latest inpatient hospital admission before (or at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) | |
+| predrug_latest_emergency_hosp_cause | primary cause of admission (ICD10 code) for latest emergency inpatient hospital admission (date of admission in predrug_latest_emergency_hosp variable) | |
 | postdrug_first_emergency_hosp | earliest inpatient hospital admission after (not at) dstartdate - any cause; emergency only (excluding admimeth=11, 12, or 13) | |
 | postdrug_first_emergency_hosp_cause | primary cause of admission (ICD10 code) for earliest emergency inpatient hospital admission (date of admission in postdrug_first_emergency_hosp variable) | |
+| predrug_latest_urgent_ref | latest urgent referral before (or at) dstartdate - any kind | |
 | predrug_efi_{deficit} | Binary variables for each eFI deficit (if any instance before dstartdate). Polypharmacy coded as 1 for all patients. | |
 | efi_n_deficits | Number of eFI deficits (out of 36) | |
 | predrug_efi_score | eFI score (efi_n_deficits/36) | |

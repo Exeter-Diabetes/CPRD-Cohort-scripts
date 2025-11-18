@@ -431,6 +431,20 @@ hosp_admi_prev_year_count <- drug_start_stop %>%
   summarise(hosp_admission_prev_year_count=n()) %>%
   ungroup()
 
+# Pre drug initiation latest hospital admission
+prev_hosp_admi <- drug_start_stop %>%
+  inner_join(cprd$tables$hesHospital, by = c("patid")) %>%
+  filter(!is.na(admidate) & admidate <= dstartdate & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
+  group_by(patid, dstartdate, drug_substance) %>%
+  mutate(latest_spell = max(spno, na.rm = TRUE)) %>% # have confirmed that highest spell number = latest spell
+  filter(spno==latest_spell) %>%
+  ungroup() %>%
+  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
+  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
+  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
+  filter(d_order==1) %>%
+  select(patid, dstartdate, drug_substance, predrug_latest_emergency_hosp=epistart.x, predrug_latest_emergency_hosp_cause=ICD)
+
 # Can have multiple episodes and multiple spells starting on same date - need first episode of first spell
 next_hosp_admi <- drug_start_stop %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
@@ -450,8 +464,45 @@ hosp_admi <- drug_start_stop %>%
   left_join(hosp_admi_prev_year, by=c("patid", "dstartdate", "drug_substance")) %>%
   left_join(hosp_admi_prev_year_count, by=c("patid", "dstartdate", "drug_substance")) %>%
   left_join(next_hosp_admi, by=c("patid", "dstartdate", "drug_substance")) %>%
+  left_join(prev_hosp_admi, by = c("patid", "dstartdate", "drug_substance")) %>%
   analysis$cached("comorbidities_interim_hosp_admi", indexes=c("patid", "dstartdate", "drug_substance"))
 
+
+############################################################################################
+
+# Latest predrug urgent referral from the referrals table
+prev_urgent_referrals <- drug_start_stop %>%
+  inner_join(
+    cprd$tables$refUrgency %>%
+      filter(description == "Urgent") %>% # making sure it is only urgent
+      select(-description) %>%
+      left_join(
+        cprd$tables$referral %>%
+          select(patid, obsid, refurgencyid), by = c("refurgencyid")
+      ) %>% 
+      select(-refurgencyid) %>%
+      left_join(
+        cprd$tables$observation %>% 
+          select(patid, obsid, obsdate), by = c("patid", "obsid")
+      ) %>%
+      select(-obsid), by = c("patid")
+  ) %>%
+  filter(!is.na(obsdate) & obsdate <= dstartdate) %>%
+  group_by(patid, dstartdate, drug_substance) %>%
+  mutate(latest_ref = max(obsdate, na.rm = TRUE)) %>% # have confirmed that highest ref number = latest ref
+  filter(obsdate == latest_ref) %>%
+  ungroup() %>%
+  # This distinct was added to ensure only one row per patid-dstartdate-drug_substance. 
+  #  The rows have already been thinned to be only the most recent pre drug but a patient
+  #  could have multiple referrals in one day. If the specific test being referred is important,
+  #  then this line might need to be changed.
+  distinct() %>%
+  select(patid, dstartdate, drug_substance, predrug_latest_urgent_ref = obsdate)
+  
+    
+referrals <- drug_start_stop %>%
+  left_join(prev_urgent_referrals, by = c("patid", "dstartdate", "drug_substance")) %>%
+  analysis$cached("comorbidities_interim_referrals", indexes = c("patid", "dstartdate", "drug_substance"))
 
 ############################################################################################
 
@@ -467,5 +518,6 @@ comorbidities <- comorbidities %>%
   left_join(amputation_outcome, by=c("patid", "dstartdate", "drug_substance")) %>%
   left_join(fh_diabetes, by=c("patid", "dstartdate", "drug_substance")) %>%
   left_join(hosp_admi, by=c("patid", "dstartdate", "drug_substance")) %>%
+  left_join(referrals, by = c("patid", "dstartdate", "drug_substance")) %>%
   analysis$cached("comorbidities", indexes=c("patid", "dstartdate", "drug_substance"))
 
