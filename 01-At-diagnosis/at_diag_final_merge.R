@@ -31,12 +31,14 @@ death_causes <- death_causes %>% analysis$cached("death_causes")
 
 ## Baseline biomarkers plus CKD stage
 analysis = cprd$analysis("at_diag")
-baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers")
+baseline_biomarkers <- baseline_biomarkers_bmi_extended_window %>% analysis$cached("baseline_biomarkers")
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
-## Comorbidities and eFI
+## Comorbidities and eFI and nephropathy severity
 comorbidities <- comorbidities %>% analysis$cached("comorbidities")
 efi <- efi %>% analysis$cached("efi")
+microvascular_complications <- microvascular_complications %>% analysis$cached("microvascular_complications")
+
 
 ## Non-diabetes meds
 non_diabetes_meds <- non_diabetes_meds %>% analysis$cached("non_diabetes_meds")
@@ -63,6 +65,9 @@ final_merge <- diabetes_cohort %>%
   left_join(smoking, by="patid") %>%
   left_join(alcohol, by="patid") %>%
   left_join(death_causes, by="patid") %>%
+  left_join((microvascular_complications %>% select(-index_date)), by = "patid") %>%
   analysis$cached(paste0("final_", today), unique_indexes="patid")
+
+
 
 

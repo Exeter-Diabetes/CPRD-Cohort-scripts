@@ -22,6 +22,7 @@ codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 analysis = cprd$analysis("at_diag")
 
 
+
 ############################################################################################
 
 # Define comorbidities
@@ -38,7 +39,6 @@ comorbids <- c("af",
                "copd",
                "cysticfibrosis",
                "dementia",
-               "diabeticnephropathy",
                "dka",
                "falls",
                "fh_diabetes", #note includes sibling, child, parents
@@ -55,28 +55,36 @@ comorbids <- c("af",
                "lowerlimbfracture",
                "micturition_control",
                "myocardialinfarction",
-               "neuropathy",
                "osteoporosis",
                "otherneuroconditions",
                "pad", #peripheral arterial disease
                "pulmonaryfibrosis",
                "pulmonaryhypertension",
-               "retinopathy",
                "revasc", #revascularisation procedure
                "rheumatoidarthritis",
                "solid_cancer",
                "solidorgantransplant",
                "stroke",
                "tia",  #transient ischaemic attack
-               "ukpds_photocoagulation",
                "unstableangina",
                "urinary_frequency",
-               "vitreoushemorrhage",
-               "volume_depletion"
-)
+               "volume_depletion",
+               # -----microvascular-------
+               "non_severe_retinopathy",
+               "severe_retinopathy",
+               "non_severe_neuropathy",
+               "painful_peripheral_neuropathy",
+               "neuropathic_pain",
+               "foot_ulcer_infection_ischaemia",
+               "gastroparesis",
+               "charcot_foot",
+               "lower_limb_amputation",
+               "vitreous_and_pre_retinal_haemorrhage",
+               "blindness_and_visual_impairment")
 
 
 ############################################################################################
+
 
 # Pull out all raw code instances and cache with 'all_patid' prefix
 ## Some of these already exist from previous analyses
@@ -85,13 +93,29 @@ comorbids <- c("af",
 
 analysis = cprd$analysis("all_patid")
 
+short_comorbid_map <- list(
+  "vitreous_and_pre_retinal_haemorrhage" = "vitreous_and_pre_haemorrhage",
+  "painful_peripheral_neuropathy"        = "painful_neuropathy",
+  "foot_ulcer_infection_ischaemia"       = "foot_ulcer_ischaemia",
+  "blindness_and_visual_impairment"      = "blindness_and_vis_impairment"
+)
+
+get_short_comorbid <- function(x) {
+  if (x %in% names(short_comorbid_map)) {
+    return(short_comorbid_map[[x]])
+  } else {
+    return(x)
+  }
+}
+
 
 for (i in comorbids) {
+  short_i <- get_short_comorbid(i) 
   
   if (length(codes[[i]]) > 0) {
     print(paste("making", i, "medcode table"))
     
-    raw_tablename <- paste0("raw_", i, "_medcodes")
+    raw_tablename <- paste0("raw_", short_i, "_medcodes")
     
     data <- cprd$tables$observation %>%
       inner_join(codes[[i]], by="medcodeid") %>%
@@ -104,7 +128,7 @@ for (i in comorbids) {
   if (length(codes[[paste0("icd10_", i)]]) > 0 & i!="hypertension") {
     print(paste("making", i, "ICD10 code table"))
     
-    raw_tablename <- paste0("raw_", i, "_icd10")
+    raw_tablename <- paste0("raw_", short_i, "_icd10")
     
     data <- cprd$tables$hesDiagnosisEpi %>%
       inner_join(codes[[paste0("icd10_",i)]], sql_on="LHS.ICD LIKE CONCAT(icd10,'%')") %>%
@@ -117,7 +141,7 @@ for (i in comorbids) {
   if (length(codes[[paste0("opcs4_", i)]]) > 0) {
     print(paste("making", i, "OPCS4 code table"))
     
-    raw_tablename <- paste0("raw_", i, "_opcs4")
+    raw_tablename <- paste0("raw_", short_i, "_opcs4")
     
     data <- cprd$tables$hesProceduresEpi %>%
       inner_join(codes[[paste0("opcs4_",i)]],by=c("OPCS"="opcs4")) %>%
@@ -190,14 +214,15 @@ index_dates <- diabetes_cohort %>%
 analysis = cprd$analysis("at_diag")
 
 for (i in comorbids) {
+  short_i <- get_short_comorbid(i) 
   
-  print(paste("merging index dates with", i, "code occurrences"))
+  print(paste("merging index dates with",i, "code occurrences"))
   
-  index_date_merge_tablename <- paste0("full_", i, "_index_date_merge")
+  index_date_merge_tablename <- paste0("full_", short_i, "_index_date_merge")
   
-  medcode_tablename <- paste0("raw_", i, "_medcodes")
-  icd10_tablename <- paste0("raw_", i, "_icd10")
-  opcs4_tablename <- paste0("raw_", i, "_opcs4")
+  medcode_tablename <- paste0("raw_", short_i, "_medcodes")
+  icd10_tablename <- paste0("raw_", short_i, "_icd10")
+  opcs4_tablename <- paste0("raw_", short_i, "_opcs4")
   
 
   if (exists(medcode_tablename)) {
@@ -293,10 +318,12 @@ comorbidities <- index_dates
 
 for (i in comorbids) {
   
+  short_i <- get_short_comorbid(i) 
+  
   print(paste("working out pre- and post-index date code occurrences for", i))
   
-  index_date_merge_tablename <- paste0("full_", i, "_index_date_merge")
-  interim_comorbidity_table <- paste0("comorbidities_interim_", i)
+  index_date_merge_tablename <- paste0("full_", short_i, "_index_date_merge")
+  interim_comorbidity_table <- paste0("comorbidities_interim_", short_i)
   pre_index_date_earliest_date_variable <- paste0("pre_index_date_earliest_", i)
   pre_index_date_latest_date_variable <- paste0("pre_index_date_latest_", i)
   pre_index_date_variable <- paste0("pre_index_date_", i)
@@ -380,6 +407,11 @@ fh_diabetes <- index_dates %>%
 
 ############################################################################################
 
+
+
+
+
+
 # Add next non-elective hospital admission
 
 next_hosp_admi <- index_dates %>%
@@ -395,23 +427,22 @@ next_hosp_admi <- index_dates %>%
   filter(d_order==1) %>%
   select(patid, index_date, postdiag_first_emergency_hosp=epistart.x, postdiag_first_emergency_hosp_cause=ICD) %>%
   analysis$cached("next_hosp_admi", unique_indexes="patid")
-
-next_hosp_admi_after_interval <- index_dates %>%
-  inner_join(cprd$tables$hesHospital, by="patid") %>%
-  filter(!is.na(admidate) & datediff(admidate, index_date)>=14 & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
-  group_by(patid) %>%
-  mutate(earliest_spell=min(spno, na.rm=TRUE)) %>% #have confirmed that lower spell number = earlier spell
-  filter(spno==earliest_spell) %>%
-  ungroup() %>%
-  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
-  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
-  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
-  filter(d_order==1) %>%
-  select(patid, index_date, postdiag_first_emergency_hosp_post_interval=epistart.x, postdiag_first_emergency_hosp_cause_post_interval=ICD) %>%
-  analysis$cached("next_hosp_admi_after_interval", unique_indexes="patid")
   
 
 ############################################################################################
+
+# Rename severe retinopathy columns to proliferative retinopathy. 
+# severe_retinopathy will be created in 'at_diag_microvascular_comorbidities' and be a composite 
+# of multiple severe retinopathy outcomes
+comorbidities <- comorbidities %>%
+  rename(
+    pre_index_date_earliest_proliferative_retinopathy = pre_index_date_earliest_severe_retinopathy,
+    pre_index_date_latest_proliferative_retinopathy   = pre_index_date_latest_severe_retinopathy,
+    pre_index_date_proliferative_retinopathy          = pre_index_date_severe_retinopathy,
+    post_index_date_first_proliferative_retinopathy   = post_index_date_first_severe_retinopathy
+  )
+
+
 
 # Join together interim_comorbidity_table with amputation, family history of diabetes and hospital admission tables
 
