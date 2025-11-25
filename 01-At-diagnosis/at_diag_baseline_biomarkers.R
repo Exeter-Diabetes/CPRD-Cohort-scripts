@@ -253,6 +253,161 @@ for (i in biomarkers_no_height) {
     
 }
 
+## ACR two consectuive high readings
+
+analysis = cprd$analysis("all")
+
+acr_long <- acr_long %>% analysis$cached("patid_acr_long")
+
+# Add gender column to ACR values
+acr_long <- acr_long %>%
+  left_join(
+    diabetes_cohort %>% select(patid, gender),  
+    by = "patid"
+  )
+
+
+# Two consecutive high ACR readings (men ≥2.5, women ≥3.5) and at least 90 days between readings
+acr_confirmed_high <- acr_long %>%
+  group_by(patid) %>%
+  dbplyr::window_order(date) %>%
+  # Sex specific ACR thresholds 
+  mutate(
+    threshold = case_when(
+      gender == 1L ~ 2.5,   
+      gender == 2L ~ 3.5,   
+      TRUE         ~ 3.0 # if gender is missing use > 3    
+    ),
+    acr_high   = testvalue > threshold,
+    prev_high  = lag(acr_high),
+    prev_date  = lag(date),
+    gap_days   = datediff(date, prev_date)         
+  ) %>%
+  # two consecutive highs and at least 90 days apart
+  filter(acr_high & prev_high & gap_days >= 90) %>%
+  ungroup() %>%
+  select(
+    patid,
+    gender, threshold,
+    first_high_date       = prev_date,           
+    confirm_date_acr_high = date, # second consecutive test as confirmation date
+    gap_days
+  ) %>%
+  distinct() 
+
+analysis = cprd$analysis("at_diag")
+
+# Join ACR readings with index dates
+acr_idx <- acr_confirmed_high %>%
+  inner_join(baseline_biomarkers %>% select(patid), by = "patid") %>%
+  inner_join(index_dates, by = "patid") %>%
+  select(patid, index_date, confirm_date_acr_high) 
+
+# Create pre and post index date flags
+acr_flags <- acr_idx %>%
+  group_by(patid) %>%
+  summarise(
+    preacr_confirmed_earliest =
+      min(if_else(confirm_date_acr_high <= index_date, confirm_date_acr_high, as.Date(NA))),
+    preacr_confirmed_latest =
+      max(if_else(confirm_date_acr_high <= index_date, confirm_date_acr_high, as.Date(NA))),
+    postacr_confirmed_earliest =
+      min(if_else(confirm_date_acr_high >  index_date, confirm_date_acr_high, as.Date(NA))),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    preacr_confirmed  = as.integer(!is.na(preacr_confirmed_earliest)),
+    postacr_confirmed = as.integer(!is.na(postacr_confirmed_earliest))
+  )
+
+# Join ACR confirmation flags to baseline biomarkers
+baseline_biomarkers <- baseline_biomarkers %>%
+  left_join(
+    acr_flags %>%
+      select(
+        patid,
+        preacr_confirmed,
+        preacr_confirmed_earliest,
+        preacr_confirmed_latest,
+        postacr_confirmed,
+        postacr_confirmed_earliest
+      ),
+    by = "patid"
+  ) %>%
+  mutate(
+    preacr_confirmed  = coalesce(preacr_confirmed, 0L),
+    postacr_confirmed = coalesce(postacr_confirmed, 0L)
+  )
+
+
+
+
+
+### Add in 40% decline in eGFR outcome: both based on single measurement and where confirmed by a second measurement at least 28 days later
+### Join drug start dates with all longitudinal eGFR measurements, and only keep later eGFR measurements which are <=60% of the baseline value
+### Checked and those with null eGFR do get dropped
+
+analysis = cprd$analysis("all")
+
+egfr_long <- egfr_long %>% analysis$cached("patid_clean_egfr_medcodes")
+
+analysis = cprd$analysis("at_diag")
+
+post_egfr_40_dates <- baseline_biomarkers %>%
+  select(patid, index_date, preegfr) %>%
+  filter(!is.na(preegfr)) %>%
+  left_join(egfr_long, by = "patid") %>%
+  filter(datediff(date, index_date) > 0,
+         testvalue <= 0.6 * preegfr) %>%
+  rename(egfr_40_date = date)
+
+# eGFR 40% decline confirmation: any later eGFR (≥ 28 days after first low) also ≤ 60% of baseline
+post_egfr40_decline_confirmed <- post_egfr_40_dates %>%
+  select(patid, index_date, preegfr, egfr_40_date) %>%
+  inner_join(egfr_long, by = "patid") %>%
+  filter(datediff(date, egfr_40_date) >= 28,
+         testvalue <= 0.6 * preegfr) %>%
+  group_by(patid, index_date) %>%
+  summarise(
+    postegfr_40_decline_confirmed_earliest = min(date, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(postegfr_40_decline_confirmed = 1L) %>%
+  analysis$cached("postegfr_40_decline_confirmed", indexes=c("patid"))
+
+## confirmed 50% decline in eGFR
+post_egfr_50_dates <- baseline_biomarkers %>%
+  select(patid, index_date, preegfr) %>%
+  filter(!is.na(preegfr)) %>%
+  left_join(egfr_long, by = "patid") %>%
+  filter(datediff(date, index_date) > 0,
+         testvalue <= 0.5 * preegfr) %>%
+  rename(egfr_50_date = date)
+
+# eGFR 50% decline confirmation: any later eGFR (≥ 28 days after first low) also ≤ 50% of baseline
+post_egfr50_decline_confirmed <- post_egfr_50_dates %>%
+  select(patid, index_date, preegfr, egfr_50_date) %>%
+  inner_join(egfr_long, by = "patid") %>%
+  filter(datediff(date, egfr_50_date) >= 28,
+         testvalue <= 0.5 * preegfr) %>%
+  group_by(patid, index_date) %>%
+  summarise(
+    postegfr_50_decline_confirmed_earliest = min(date, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(postegfr_50_decline_confirmed = 1L)%>%
+  analysis$cached("postegfr_50_decline_confirmed", indexes=c("patid"))
+
+
+
+# Join eGFR 40% and 50% decline to baseline biomarkers
+baseline_biomarkers <- baseline_biomarkers %>%
+  left_join(post_egfr40_decline_confirmed, by = c("patid","index_date")) %>%
+  left_join(post_egfr50_decline_confirmed, by = c("patid","index_date")) %>%
+  mutate(
+    postegfr_40_decline_confirmed = coalesce(postegfr_40_decline_confirmed, 0L),
+    postegfr_50_decline_confirmed = coalesce(postegfr_50_decline_confirmed, 0L)
+  )
 
 ## Height - only keep readings at/post-index date, and find mean
 
@@ -294,6 +449,42 @@ baseline_hba1c <- full_hba1c_index_date_merge %>%
          prehba1cdatediff=datediff) %>%
     
   select(-c(testvalue, min_timediff, index_date))
+
+
+
+# 42.1% missing BMI, mean BMI = 32.3
+# Extend prebmi window - if prebmi is missing take BMI value one year after diagnosis or up to 5 years before diagnosis
+bmi_fill <- clean_bmi_medcodes %>%
+  inner_join(index_dates, by = "patid") %>%
+  mutate(
+    date_diff = datediff(date, index_date),
+    priority = case_when(
+      date_diff >= 0   & date_diff <= 365    ~ 1L,  # within 1 year after index
+      date_diff <  0   & date_diff >= -5*365 ~ 2L,  # within 5 years before index
+      TRUE                                   ~ 3L
+    ),
+    abs_date_diff = abs(date_diff)
+  ) %>%
+  # keep only within 1y post or 5y pre
+  filter(priority < 3L) %>%
+  group_by(patid) %>%
+  slice_min(order_by = priority, with_ties = TRUE) %>%
+  slice_min(order_by = abs_date_diff, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  rename(
+    bmi_best      = testvalue,
+    bmi_best_date = date
+  ) %>%
+  select(patid, bmi_best, bmi_best_date)
+
+baseline_biomarkers <- baseline_biomarkers %>%
+  left_join(bmi_fill, by = "patid") %>%
+  mutate(
+    prebmi = if_else(is.na(prebmi), bmi_best, prebmi)
+  )
+
+# % missing BMI after extending window = 14%, mean BMI = 31.8
+
 
 
 ## Join HbA1c to main table
