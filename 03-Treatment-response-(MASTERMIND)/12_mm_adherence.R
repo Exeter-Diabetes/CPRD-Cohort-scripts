@@ -175,271 +175,124 @@ adherence_start_stop <- drug_class_start_stop %>%
 
 
 
+############################################################################################
+
+# Calculate MPR based on different definitions:
+#  - Max adherence date
+#  - Prescription duration rules
+
+## This caches a lot of tables with the names compute_mpr_int{1,2,3}{_suffix}
+
+
+## Function computing MPR
+compute_mpr <- function(duration_col, suffix, max_date_var) {
+  
+  # Input definitions
+  ## duration_col: column containing the duration of the prescription 
+  ## suffix: suffix for cached table and MPR variable - specification of the combo being tested
+  ## max_date_var: column containing the max date of prescriptions
+  
+  # Link prescriptions in window (using placeholder names from input)
+  interim_1 <- adherence_start_stop %>%
+    ## Combine prescriptions
+    inner_join(
+      adherence_relevant_scripts_duration,
+        by = c("patid", "drug_class", "dstartdate_class")
+    ) %>%
+    ## Select important variables
+    select(
+      patid, drug_class, dstartdate_class, !!sym(max_date_var), 
+      date, coverage = !!sym(duration_col)
+    ) %>%
+    ## Select only important prescriptions
+    filter(date >= dstartdate_class & date < !!sym(max_date_var)) %>%
+    ## Cached
+    analysis$cached(
+      paste0("compute_mpr_int1_", suffix),
+      indexes = c("patid", "drug_class", "dstartdate_class")
+    )
+  
+  # Sum up coverage
+  interim_2 <- interim_1 %>%
+    ## Group by patid / drug taken / date of drug start
+    group_by(patid, drug_class, dstartdate_class) %>%
+    ## Calculate days covered by prescriptions in that period
+    mutate(days_covered = sum(coverage, na.rm = TRUE)) %>%
+    ## Remove grouping
+    ungroup() %>%
+    ## Select only important variables
+    select(patid, drug_class, dstartdate_class, !!sym(max_date_var), days_covered) %>%
+    ## Remove repeated rows from several prescriptions
+    distinct() %>%
+    ## Cached
+    analysis$cached(
+      paste0("compute_mpr_int2_", suffix),
+      indexes = c("patid", "drug_class", "dstartdate_class")
+    )
+  
+  # Compute MPR
+  mpr <- interim_2 %>%
+    ## Calculate days passed from drug start and max adherence date
+    mutate(days_passed = datediff(!!sym(max_date_var), dstartdate_class)) %>%
+    ## Calculate MPR (custom name for the function)
+    mutate(!!paste0("MPR_", suffix) := days_covered / days_passed * 100) %>%
+    ## Cached
+    analysis$cached(
+      paste0("compute_mpr_int3_", suffix),
+      indexes = c("patid", "drug_class", "dstartdate_class")
+    )
+  
+  return(mpr)
+  
+}
+
+
+## Different adherence rules and durations
+
+### Adherence 12m
+
+mpr_12m_rule_1 <- compute_mpr(
+  duration_col = "duration_rule_1",
+  suffix = "12m_rule_1",
+  max_date_var = "max_adherence_date_12m"
+)
+
+mpr_12m_rule_2 <- compute_mpr(
+  duration_col = "duration_rule_2",
+  suffix = "12m_rule_2",
+  max_date_var = "max_adherence_date_12m"
+)
+
+mpr_12m_rule_3 <- compute_mpr(
+  duration_col = "duration_rule_3",
+  suffix = "12m_rule_3",
+  max_date_var = "max_adherence_date_12m"
+)
+
+### Adherence drug combo
+
+mpr_combo_rule_1 <- compute_mpr(
+  duration_col = "duration_rule_1",
+  suffix = "combo_rule_1",
+  max_date_var = "max_adherence_date_combo_resp"
+)
+
+mpr_combo_rule_2 <- compute_mpr(
+  duration_col = "duration_rule_2",
+  suffix = "combo_rule_2",
+  max_date_var = "max_adherence_date_combo_resp"
+)
+
+mpr_combo_rule_3 <- compute_mpr(
+  duration_col = "duration_rule_3",
+  suffix = "combo_rule_3",
+  max_date_var = "max_adherence_date_combo_resp"
+)
 
 
 
 
 
-
-
-# ############################################################################################
-# 
-# # Bring together drug class start/stop dates (from drug_start_stop) and HbA1c response dates
-# 
-# ## Load cached drug class start/stop tables
-# drug_class_start_stop <- drug_class_start_stop %>% analysis$cached("drug_class_start_stop")
-# combo_class_start_stop <- combo_class_start_stop %>% analysis$cached("combo_class_start_stop")
-# 
-# ## Load HbA1c outcome datasets (post-initiation)
-# post12m_hba1c <- post12m_hba1c %>% analysis$cached("post12m_hba1c")
-# post6m_hba1c <- post6m_hba1c %>% analysis$cached("post6m_hba1c")
-# 
-# # Adherence measures:
-# # - Start: dstartdate_class
-# #
-# # - Stop:
-# #  - Adherence for 12m post initiation, earliest of (NAME: _12m)
-# #    - 1y post initiation
-# #    - dstopdrug_class
-# #  - Adherence connected to HbA1c, earliest of (NAME: _combo_resp)
-# #    - 12m HbA1c outcome
-# #    - 6m HbA1c outcome
-# #    - dcstopdate (stop of drug combo)
-# #    - 1y post initiation
-# 
-# 
-# 
-# adherence_start_stop <- drug_class_start_stop %>%
-#   # Retain identifiers and therapy window boundaries
-#   select(patid, drug_class, dstartdate_class, dstopdate_class) %>%
-#   
-#   # Compute the 1-year post-initiation cut-off for truncating adherence periods
-#   mutate(one_year_post_initiation = sql("date_add(dstartdate_class, interval 365 day)")) %>%
-#   
-#   # Attach 12-month HbA1c response if available
-#   left_join(
-#     post12m_hba1c %>%
-#       rename(dstartdate_class = dstartdate) %>%   # Ensures exact match to therapy start date
-#       select(patid, drug_class, drug_substance, dstartdate_class, post_biomarker_12mdate),
-#     by = c("patid", "drug_class", "dstartdate_class")
-#   ) %>%
-#   
-#   # Attach 6-month HbA1c response if 12-month is missing
-#   left_join(
-#     post6m_hba1c %>%
-#       rename(dstartdate_class = dstartdate) %>%   # Same rationale as above
-#       select(patid, drug_class, dstartdate_class, post_biomarker_6mdate),
-#     by = c("patid", "drug_class", "dstartdate_class")
-#   ) %>%
-#   
-#   # Attach drug combo nextremdrug
-#   left_join(
-#     combo_class_start_stop %>%
-#       select(patid, dcstartdate, dcstopdate),
-#     by = c("patid", "dstartdate_class" = "dcstartdate")
-#   ) %>%
-# 
-#   # Determine the adherence start and stop dates for both variables
-#   mutate(
-#     ## Stop for adherence 12m
-#     max_adherence_date_12m = pmin(dstopdate_class, one_year_post_initiation, na.rm = TRUE),
-#     
-#     ## Stop for adherence connected to combo response
-#     max_adherence_date_combo_resp = case_when(
-#       # Primary: if a 12-month outcome exists, adherence window finishes there
-#       !is.na(post_biomarker_12mdate) ~ post_biomarker_12mdate,
-#       
-#       # Secondary: if a 6-month outcome exists, adherence window finishes there
-#       !is.na(post_biomarker_6mdate) ~ post_biomarker_6mdate,
-#       
-#       # Otherwise: end at earliest of drug combo stop or 1y cut-off
-#       TRUE ~ pmin(dcstopdate, one_year_post_initiation, na.rm = TRUE)
-#       
-#     )
-#   ) %>%
-#   
-#   # Keep only what is needed for adherence evaluation
-#     select(patid, drug_class, dstartdate_class, max_adherence_date_12m, max_adherence_date_combo_resp) %>%
-#     analysis$cached("adherence_start_stop", indexes = c("patid", "drug_class", "dstartdate_class"))
-#   
-# 
-# adherence_start_stop %>% count()
-# # 5,992,175
-
-# ############################################################################################
-# 
-# # Combine all_scripts_long with the start and stop dates for adherence
-# ## From this, we will be able to find prescriptions during effective times
-# 
-# ## Load all prescribing records
-# all_scripts_long <- all_scripts_long %>% analysis$cached("all_scripts_long")
-# 
-# relevant_scripts_long <- adherence_start_stop %>%
-#   # Merge adherence windows with all prescriptions for same patient and drug class
-#   inner_join(
-#     all_scripts_long,
-#     by = c("patid", "drug_class")
-#   ) %>%
-#   
-#   # Keep variables required to calculate coverage (plus some extra for trouble shooting)
-#   select(patid, drug_class, dstartdate_class, max_adherence_date_12m, date, quantity, duration_cleaned, daily_dose) %>%
-#   
-#   # Restrict to prescriptions written during the adherence window
-#   filter(date >= dstartdate_class & date < max_adherence_date_12m) %>%
-#   
-#   # Reduce to coverage_relevant fields
-#   select(patid, drug_class, dstartdate_class, max_adherence_date_12m, date, coverage = duration_cleaned) %>%
-#   
-#   # Cache table
-#   analysis$cached("relevant_scripts_long", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-
-
-
-
-
-
-
-
-# ## Cleaning duration values using explicit rules:
-# # Rule 1: duration ≤ 0 → invalid → set to NA
-# # Rule 2: if duration missing but both quantity and daily_dose valid -> infer duration
-# # Rule 3: if duration missing but both quantiy and daily_dose valid (dose_unit == NA) -> infer duration
-# # Final: duration_cleaned = best available estimate following rules 1–2
-# 
-# all_scripts_long_duration_clean <- all_scripts_long %>%
-#   # Keep relevant prescribing elements
-#   select(patid, drug_class, date, dosageid, quantity, duration) %>%
-#   
-#   # Add dose metadata to allow calculation of inferred duration
-#   left_join(
-#     cprd$tables$commonDose %>%
-#       select(dosageid, daily_dose, dose_frequency, dose_duration, dose_unit),
-#     by = c("dosageid")
-#   ) %>%
-#   
-#   select(-dosageid) %>%
-#   
-#   # Rule 1: enforce removal of invalid durations
-#   mutate(duration_rule_1 = ifelse(!is.na(duration) & duration <= 0, NA, duration)) %>%
-#   
-#   # Rule 2: infer duration if possible using quantity / daily_dose
-#   mutate(duration_rule_2 = ifelse(
-#     is.na(duration_rule_1) &
-#       !is.na(daily_dose) & daily_dose > 0 &
-#       !is.na(quantity) & quantity > 0,
-#     quantity / daily_dose,
-#     duration_rule_1
-#   )) %>%
-#   
-#   # Rule 3: infer duration if possible using quantity / daily_dose (dose_unit == NA)
-#   mutate(duration_rule_3 = ifelse(
-#     is.na(duration_rule_1) &
-#       !is.na(daily_dose) & daily_dose > 0 & is.na(dose_unit) &
-#       !is.na(quantity) & quantity > 0,
-#     quantity / daily_dose,
-#     duration_rule_1
-#   )) %>%
-#   
-#   # Final cleaned duration used for adherence coverage
-#   mutate(duration_cleaned = duration_rule_2) %>%
-#   
-#   analysis$cached("all_scripts_long_duration_clean", indexes=c("patid", "date"))
-# 
-# # > table(Rule_2 = !is.na(test$duration_rule_2), Rule_3 = !is.na(test$duration_rule_3))
-# #             Rule_3
-# # Rule_2      FALSE      TRUE
-# # FALSE  25418097         0
-# # TRUE    6883442 189262196
-
-
-# ############################################################################################
-# all_scripts_long_duration_clean <- all_scripts_long_duration_clean %>%
-#   mutate(duration_clean_rule2 = duration_rule_2, duration_clean_rule3 = duration_rule_3)
-# 
-# 
-# 
-# # Testing ChatGPT code
-# 
-# compute_mpr <- function(duration_col,
-#                         suffix,
-#                         adherence_window_var,
-#                         max_date_var,
-#                         table_prefix) {
-#   
-#   # Step 1: link prescriptions in window
-#   interim_1 <- adherence_start_stop %>%
-#     inner_join(
-#       all_scripts_long_duration_clean,
-#       by = c("patid", "drug_class")
-#     ) %>%
-#     select(
-#       patid, drug_class, dstartdate_class, !!max_date_var, date,
-#       coverage = !!sym(duration_col)
-#     ) %>%
-#     filter(date >= dstartdate_class & date < !!max_date_var) %>%
-#     analysis$cached(
-#       paste0(table_prefix, "_interim_1_", suffix),
-#       indexes = c("patid", "drug_class", "dstartdate_class")
-#     )
-#   
-#   # Step 2: sum up coverage
-#   interim_2 <- interim_1 %>%
-#     group_by(patid, drug_class, dstartdate_class) %>%
-#     mutate(days_covered = sum(coverage, na.rm = TRUE)) %>%
-#     ungroup() %>%
-#     select(patid, drug_class, dstartdate_class, !!max_date_var, days_covered) %>%
-#     distinct() %>%
-#     analysis$cached(
-#       paste0(table_prefix, "_interim_2_", suffix),
-#       indexes = c("patid", "drug_class", "dstartdate_class")
-#     )
-#   
-#   # Step 3: compute MPR
-#   mpr <- interim_2 %>%
-#     mutate(days_passed = datediff(!!max_date_var, dstartdate_class)) %>%
-#     mutate(!!paste0("MPR_", suffix) := days_covered / days_passed * 100) %>%
-#     analysis$cached(
-#       paste0("mpr_", table_prefix, "_", suffix),
-#       indexes = c("patid", "drug_class", "dstartdate_class")
-#     )
-#   
-#   return(mpr)
-# }
-# 
-# mpr_12m_rule2 <- compute_mpr(
-#   duration_col = "duration_clean_rule2",
-#   suffix = "12m_rule2",
-#   adherence_window_var = dstartdate_class,
-#   max_date_var = sym("max_adherence_date_12m"),
-#   table_prefix = "coverage_12m"
-# )
-# 
-# mpr_combo_rule2 <- compute_mpr(
-#   duration_col = "duration_clean_rule2",
-#   suffix = "combo_rule2",
-#   adherence_window_var = dstartdate_class,
-#   max_date_var = sym("max_adherence_date_combo_resp"),
-#   table_prefix = "coverage_combo"
-# )
-# 
-# mpr_12m_rule3 <- compute_mpr(
-#   duration_col = "duration_clean_rule3",
-#   suffix = "12m_rule3",
-#   adherence_window_var = dstartdate_class,
-#   max_date_var = sym("max_adherence_date_12m"),
-#   table_prefix = "coverage_12m"
-# )
-# 
-# mpr_combo_rule3 <- compute_mpr(
-#   duration_col = "duration_clean_rule3",
-#   suffix = "combo_rule3",
-#   adherence_window_var = dstartdate_class,
-#   max_date_var = sym("max_adherence_date_combo_resp"),
-#   table_prefix = "coverage_combo"
-# )
-# 
-# 
 # 
 # adherence_compared <- drug_class_start_stop %>%
 #   select(patid, drug_class, dstartdate_class) %>%
@@ -470,153 +323,6 @@ adherence_start_stop <- drug_class_start_stop %>%
 # 
 # 
 # 
-# #############################################################################################
-
-# Find prescriptions during the effective times
-
-## Adherence at max 12-months ----
-
-### Get prescriptions in the timeframe
-adherence_12m_coverage_interim_1 <- adherence_start_stop %>%
-  # Merge adherence windows with all prescriptions for same patient and drug class
-  inner_join(
-    all_scripts_long_duration_clean,
-    by = c("patid", "drug_class")
-  ) %>%
-  
-  # Keep variables required to calculate coverage (plus some extra for trouble shooting)
-  select(patid, drug_class, dstartdate_class, max_adherence_date_12m, date, quantity, duration_cleaned, daily_dose) %>%
-  
-  # Restrict to prescriptions written during the adherence window
-  filter(date >= dstartdate_class & date < max_adherence_date_12m) %>%
-  
-  # Reduce to coverage_relevant fields
-  select(patid, drug_class, dstartdate_class, max_adherence_date_12m, date, coverage = duration_cleaned) %>%
-  
-  # Cache table
-  analysis$cached("adherence_12m_coverage_interim_1", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-
-### Calculate time covered by prescriptions
-
-adherence_12m_coverage_interim_2 <- adherence_12m_coverage_interim_1 %>%
-  # Group by patid, drug_class and dstartdate_class
-  group_by(patid, drug_class, dstartdate_class) %>%
-  
-  # Sum all prescription duration within the adherence window
-  mutate(days_covered = sum(coverage, na.rm = TRUE)) %>%
-  
-  # Remove groups
-  ungroup() %>%
-  
-  # Ensure uniqueness per patient/therapy/date
-  select(patid, drug_class, dstartdate_class, max_adherence_date_12m, days_covered) %>% # select to reduce size of table
-  distinct() %>%
-  
-  # Cached
-  analysis$cached("adherence_12m_coverage_interim_2", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-adherence_12m_coverage_interim_2 %>% count()
-# 5,180,854
-
-### Calculate MPR (medical possession ratio)
-
-adherence_12m_coverage <- adherence_12m_coverage_interim_2 %>%
-  # Determine length of adherence window
-  mutate(days_passed = datediff(max_adherence_date_12m, dstartdate_class)) %>%
-  
-  # Compute MPR = (days with medication supplied) / (days in evaluation window)
-  mutate(MPR_12m = days_covered / days_passed * 100) %>%
-  
-  # Cached
-  analysis$cached("adherence_12m_coverage", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-
-## Adherence at combo ----
-
-### Get prescriptions in the timeframe
-adherence_combo_resp_coverage_interim_1 <- adherence_start_stop %>%
-  # Merge adherence windows with all prescriptions for same patient and drug class
-  inner_join(
-    all_scripts_long_duration_clean,
-    by = c("patid", "drug_class")
-  ) %>%
-  
-  # Keep variables required to calculate coverage (plus some extra for trouble shooting)
-  select(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp, date, quantity, duration_cleaned, daily_dose) %>%
-  
-  # Restrict to prescriptions written during the adherence window
-  filter(date >= dstartdate_class & date < max_adherence_date_combo_resp) %>%
-  
-  # Reduce to coverage_relevant fields
-  select(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp, date, coverage = duration_cleaned) %>%
-  
-  # Cache table
-  analysis$cached("adherence_combo_resp_coverage_interim_1", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-
-### Calculate time covered by prescriptions
-
-adherence_combo_resp_coverage_interim_2 <- adherence_combo_resp_coverage_interim_1 %>%
-  # Group by patid, drug_class and dstartdate_class
-  group_by(patid, drug_class, dstartdate_class) %>%
-  
-  # Sum all prescription duration within the adherence window
-  mutate(days_covered = sum(coverage, na.rm = TRUE)) %>%
-  
-  # Remove groups
-  ungroup() %>%
-  
-  # Ensure uniqueness per patient/therapy/date
-  select(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp, days_covered) %>% # select to reduce size of table
-  distinct() %>%
-  
-  # Cached
-  analysis$cached("adherence_combo_resp_coverage_interim_2", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-adherence_combo_resp_coverage_interim_2 %>% count()
-# 4,940,567
-
-### Calculate MPR (medical possession ratio)
-
-adherence_combo_resp_coverage <- adherence_combo_resp_coverage_interim_2 %>%
-  # Determine length of adherence window
-  mutate(days_passed = datediff(max_adherence_date_combo_resp, dstartdate_class)) %>%
-  
-  # Compute MPR = (days with medication supplied) / (days in evaluation window)
-  mutate(MPR_combo_resp = days_covered / days_passed * 100) %>%
-  
-  # Cached
-  analysis$cached("adherence_combo_resp_coverage", indexes = c("patid", "drug_class", "dstartdate_class"))
-
-
-
-############################################################################################
-
-adherence <- drug_class_start_stop %>%
-  # Take the variables important for matching
-  select(patid, drug_class, dstartdate_class) %>%
-  
-  # Combine with MPR for the 12 months
-  left_join(
-    adherence_12m_coverage %>%
-      select(patid, drug_class, dstartdate_class, MPR_12m),
-    by = c("patid", "drug_class", "dstartdate_class")
-  ) %>%
-  
-  # Combine with MPR for combo resp
-  left_join(
-    adherence_combo_resp_coverage %>%
-      select(patid, drug_class, dstartdate_class, MPR_combo_resp),
-    by = c("patid", "drug_class", "dstartdate_class")
-  ) %>%
-
-  analysis$cached("adherence", indexes = c("patid", "drug_class", "dstartdate_class"))
-  
-adherence %>% count()
-# 5,185,629
-
-
 
 # 
 # ############################################################################################
