@@ -35,13 +35,16 @@ raw_creatinine_blood_medcodes <- cprd$tables$observation %>%
 
 ## Clean creatinine readings
 clean_creatinine_blood_medcodes <- raw_creatinine_blood_medcodes %>%
+  clean_biomarker_values(testvalue, "creatinine_blood") %>%
+  clean_biomarker_units(numunitid, "creatinine_blood") %>%
   group_by(patid, obsdate) %>%
   summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
   ungroup() %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
   select(patid, date=obsdate, testvalue) %>%
-  analysis$cached("clean_creatinine_blood_medcodes", indexes=c("patid", "date", "testvalue"))
+  analysis$cached("clean_creatinine_blood_medcodes_test", indexes=c("patid", "date", "testvalue"))
+
 
 #clean_creatinine_blood_medcodes %>% count()
 #44,775,705
