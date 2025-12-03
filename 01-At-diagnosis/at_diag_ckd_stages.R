@@ -1,4 +1,3 @@
-
 # Longitudinal CKD stages already defined from all_patid_ckd_stages script
 # This script: define baseline CKD stage at index date (diagnosis date)
 
@@ -22,7 +21,7 @@ analysis = cprd$analysis("at_diag")
 analysis = cprd$analysis("all_patid")
 
 ckd_stages_from_algorithm <- ckd_stages_from_algorithm %>% analysis$cached("ckd_stages_from_algorithm")
-                  
+
 
 ################################################################################################################################
 
@@ -58,12 +57,44 @@ ckd_stage_drug_merge <- index_dates %>%
                                        ifelse(preckdstage=="stage_3b", stage_3b,
                                               ifelse(preckdstage=="stage_3a", stage_3a,
                                                      ifelse(preckdstage=="stage_2", stage_2,
-                                                            ifelse(preckdstage=="stage_1", stage_1, NA)))))),
+                                                            ifelse(preckdstage=="stage_1", stage_1, NA_character_)))))),
          
-         preckdstagedatediff=datediff(preckdstagedate, index_date)) %>%
-  
-  select(patid, preckdstage, preckdstagedate, preckdstagedatediff) %>%
-  
-  analysis$cached("ckd_stages", unique_indexes="patid")
-                                
- 
+         preckdstagedatediff=datediff(preckdstagedate, index_date),
+         
+         # Define post ckd stages as >7 days after index_date.
+         # Each stage has its own date + flag so a patient can appear in multiple columns as they progress over time
+         postckdstage3a_date = if_else(!is.na(stage_3a) & datediff(stage_3a, index_date) > 7, stage_3a, as.Date(NA)),
+         postckdstage3b_date = if_else(!is.na(stage_3b) & datediff(stage_3b, index_date) > 7, stage_3b, as.Date(NA)),
+         postckdstage4_date  = if_else(!is.na(stage_4)  & datediff(stage_4,  index_date) > 7, stage_4,  as.Date(NA)),
+         postckdstage5_date  = if_else(!is.na(stage_5)  & datediff(stage_5,  index_date) > 7, stage_5,  as.Date(NA)),
+         
+         postckdstage3a = as.integer(!is.na(postckdstage3a_date)),
+         postckdstage3b = as.integer(!is.na(postckdstage3b_date)),
+         postckdstage4  = as.integer(!is.na(postckdstage4_date)),
+         postckdstage5  = as.integer(!is.na(postckdstage5_date)),
+         
+         
+         # - earliest date of any stage >=3 (3a/3b/4/5) 
+         postckdstage345_any_date = pmin(
+           if_else(is.na(postckdstage3a_date), as.Date("2050-01-01"), postckdstage3a_date),
+           if_else(is.na(postckdstage3b_date), as.Date("2050-01-01"), postckdstage3b_date),
+           if_else(is.na(postckdstage4_date),  as.Date("2050-01-01"), postckdstage4_date),
+           if_else(is.na(postckdstage5_date),  as.Date("2050-01-01"), postckdstage5_date),
+           na.rm = TRUE
+         ),
+         postckdstage345_any_date = if_else(postckdstage345_any_date == as.Date("2050-01-01"), as.Date(NA), postckdstage345_any_date),
+         postckdstage345_any = as.integer(!is.na(postckdstage345_any_date)),
+  ) %>%
+  select(
+    patid,
+    preckdstage, preckdstagedate, preckdstagedatediff,
+    postckdstage3a,postckdstage3a_date,
+    postckdstage3b,postckdstage3b_date, 
+    postckdstage4,postckdstage4_date,  
+    postckdstage5,postckdstage5_date,
+    postckdstage345_any, postckdstage345_any_date
+  ) %>%
+   analysis$cached("ckd_stages", unique_indexes = "patid")
+
+
+
