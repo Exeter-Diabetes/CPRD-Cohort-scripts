@@ -7,6 +7,7 @@
 # Setup
 library(tidyverse)
 library(aurum)
+
 rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
@@ -291,42 +292,454 @@ mpr_combo_rule_3 <- compute_mpr(
 
 
 
+############################################################################################
+
+# This is the translation from the stata code to R
+
+# Calculate Stata-style MPR variants using Rule 3 and 12-month period:
+#   - MPR_raw: The base fixed-period MPR (similar to MPR_12m_rule_3)
+#   - MPR_excl_m: MPR with standard data quality exclusions (MPR_m)
+#   - MPR_excl_t: MPR excluding missing days from the denominator (MPR_t)
+#   - MPR_minus1st: MPR excluding the first prescription
+
+# Prepare script-level indicators and join end dates for use in the calculation function
+base_data_for_stata_mpr <- adherence_relevant_scripts_duration %>%
+  select(
+    patid, drug_class, dstartdate_class, date,
+    quantity, daily_dose, duration_rule_3
+  ) %>%
+  
+  # Calculate necessary prescription-level flags for exclusions
+  mutate(
+    is_valid_px = ifelse(!is.na(quantity) & quantity > 0 & !is.na(daily_dose) & daily_dose > 0, TRUE, FALSE),
+    is_missing_data = ifelse(is_valid_px == TRUE, FALSE, TRUE),
+    coverage = duration_rule_3
+  ) %>%
+  
+  # Add prescription counter (pdecount) and first prescription details
+  group_by(patid, drug_class, dstartdate_class) %>%
+  dbplyr::window_order(date) %>%
+  mutate(
+    pdecount = row_number(),
+    days1stpx = ifelse(pdecount == 1, coverage, NA),
+    gap1stpx = ifelse(pdecount == 1, datediff(lead(date), date), NA)
+  ) %>%
+  ungroup() %>%
+  
+  # Join the pre-calculated end dates
+  inner_join(
+    adherence_start_stop %>%
+      select(patid, drug_class, dstartdate_class, max_adherence_date_12m, max_adherence_date_combo_resp),
+    by = c("patid", "drug_class", "dstartdate_class")
+  ) %>%
+  analysis$cached("compute_mpr_stata_base_scripts_with_dates", indexes = c("patid", "drug_class", "dstartdate_class"))
 
 
-# 
-# adherence_compared <- drug_class_start_stop %>%
-#   select(patid, drug_class, dstartdate_class) %>%
-#   
-#   left_join(mpr_12m_rule2 %>% select(patid, drug_class, dstartdate_class, MPR_12m_rule2),
-#             by = c("patid", "drug_class", "dstartdate_class")) %>%
-#   
-#   left_join(mpr_12m_rule3 %>% select(patid, drug_class, dstartdate_class, MPR_12m_rule3),
-#             by = c("patid", "drug_class", "dstartdate_class")) %>%
-#   
-#   left_join(mpr_combo_rule2 %>% select(patid, drug_class, dstartdate_class, MPR_combo_rule2),
-#             by = c("patid", "drug_class", "dstartdate_class")) %>%
-#   
-#   left_join(mpr_combo_rule3 %>% select(patid, drug_class, dstartdate_class, MPR_combo_rule3),
-#             by = c("patid", "drug_class", "dstartdate_class")) %>%
-#   
-#   analysis$cached("adherence_compared",
-#                   indexes = c("patid", "drug_class", "dstartdate_class"))
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
+## Reusable Function for Stata MPR Calculations
 
+# This function uses non-standard evaluation (!!sym) to handle the period_end_col string
+calculate_stata_mpr_variants <- function(
+    data, 
+    period_end_col, 
+    prefix,
+    cache_name_agg
+) {
+  
+  period_end_sym <- sym(period_end_col) 
+  
+  # --- INTERIM CACHE 1: AGGREGATION ---
+  # Perform the computationally heavy grouping and summation/aggregation.
+  mpr_components_agg <- data %>%
+    # Filter prescriptions relevant to the current period
+    filter(date >= dstartdate_class & date < !!period_end_sym) %>%
+    
+    group_by(patid, drug_class, dstartdate_class, !!period_end_sym) %>%
+    summarise(
+      total_coverage = sum(coverage, na.rm = TRUE),
+      days_in_window = datediff(!!period_end_sym, dstartdate_class),
+      
+      # Exclusions components
+      ptndd0y1 = sum(!is.na(daily_dose) & daily_dose == 0, na.rm = TRUE),
+      ptqty0y1 = sum(!is.na(quantity) & quantity == 0, na.rm = TRUE),
+      numvalidpxy1 = sum(is_valid_px, na.rm = TRUE),
+      total_missing_data_px = sum(is_missing_data, na.rm = TRUE),
+      
+      # First prescription values (needed for MPR_minus1st)
+      days1stpx = max(days1stpx, na.rm = TRUE),
+      gap1stpx = max(gap1stpx, na.rm = TRUE),
+      
+      .groups = 'drop'
+    ) %>%
+    
+    # *** INTERIM CACHE POINT ***
+    # The cache name now uses the provided cache_name_agg argument, e.g., "compute_mpr_stata_12m_agg"
+    analysis$cached(cache_name_agg, indexes = c("patid", "drug_class", "dstartdate_class"))
+  
+  # --- FINAL CALCULATIONS ---
+  mpr_components <- mpr_components_agg %>%
+    
+    # Calculate Base MPR
+    mutate(days_in_window = ifelse(is.na(days_in_window) | days_in_window <= 0, NA, days_in_window)) %>%
+    mutate(!!paste0(prefix, "_raw") := total_coverage / days_in_window * 100) %>%
+    
+    # --- Calculate MPR_excl_m (Adherence with Exclusions) ---
+    mutate(
+      !!paste0(prefix, "_excl_m") := !!sym(paste0(prefix, "_raw")),
+      !!paste0(prefix, "_excl_m") := ifelse(ptndd0y1 > 0 | ptqty0y1 > 0, NA, !!sym(paste0(prefix, "_excl_m"))),
+      !!paste0(prefix, "_excl_m") := ifelse(numvalidpxy1 < 3, NA, !!sym(paste0(prefix, "_excl_m")))
+    ) %>%
+    
+    # --- Calculate MPR_excl_t (Excluding Missing Periods) ---
+    mutate(
+      !!paste0(prefix, "_excl_t") := !!sym(paste0(prefix, "_raw")),
+      !!paste0(prefix, "_excl_t") := ifelse(is.na(!!sym(paste0(prefix, "_excl_m"))), NA, !!sym(paste0(prefix, "_excl_t"))),
+      !!paste0(prefix, "_excl_t") := ifelse(total_missing_data_px > 90, NA, !!sym(paste0(prefix, "_excl_t")))
+    ) %>%
+    
+    # --- Calculate MPR_minus1st (First Entry Removed) ---
+    mutate(
+      covy1miss1st = total_coverage - days1stpx,
+      daysy1miss1st = days_in_window - gap1stpx,
+      
+      !!paste0(prefix, "_minus1st") := ifelse(
+        !is.na(days1stpx) & daysy1miss1st > 0,
+        covy1miss1st / daysy1miss1st * 100,
+        NA
+      ),
+      !!paste0(prefix, "_minus1st") := ifelse(is.na(!!sym(paste0(prefix, "_excl_m"))), NA, !!sym(paste0(prefix, "_minus1st")))
+    ) %>%
+    
+    select(patid, drug_class, dstartdate_class, starts_with(prefix))
+  
+  return(mpr_components)
+}
+
+## 3. Apply the function to both periods with explicit cache names
+
+# A. Fixed 12m Period
+mpr_stata_12m <- calculate_stata_mpr_variants(
+  data = base_data_for_stata_mpr,
+  period_end_col = "max_adherence_date_12m",
+  prefix = "MPR_12m_stata",
+  cache_name_agg = "compute_mpr_stata_12m_agg"
+) %>% analysis$cached("compute_mpr_stata_12m_final", indexes = c("patid", "drug_class", "dstartdate_class"))
+
+# B. Combo Response Max Adherence Period
+mpr_stata_combo <- calculate_stata_mpr_variants(
+  data = base_data_for_stata_mpr,
+  period_end_col = "max_adherence_date_combo_resp",
+  prefix = "MPR_combo_stata",
+  cache_name_agg = "compute_mpr_stata_combo_agg"
+) %>% analysis$cached("compute_mpr_stata_combo_final", indexes = c("patid", "drug_class", "dstartdate_class"))
+
+############################################################################################
+
+
+adherence_compared <- drug_class_start_stop %>%
+  select(patid, drug_class, dstartdate_class) %>%
+  
+  # rule 1
+  left_join(mpr_12m_rule_1 %>% select(patid, drug_class, dstartdate_class, MPR_12m_rule_1),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  left_join(mpr_combo_rule_1 %>% select(patid, drug_class, dstartdate_class, MPR_combo_rule_1),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  analysis$cached("adherence_compared_interim_1",
+                  indexes = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  left_join(mpr_12m_rule_2 %>% select(patid, drug_class, dstartdate_class, MPR_12m_rule_2),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  left_join(mpr_combo_rule_2 %>% select(patid, drug_class, dstartdate_class, MPR_combo_rule_2),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  analysis$cached("adherence_compared_interim_2",
+                  indexes = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  left_join(mpr_12m_rule_3 %>% select(patid, drug_class, dstartdate_class, MPR_12m_rule_3),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+
+  left_join(mpr_combo_rule_3 %>% select(patid, drug_class, dstartdate_class, MPR_combo_rule_3),
+            by = c("patid", "drug_class", "dstartdate_class")) %>%
+
+  analysis$cached("adherence_compared_interim_3",
+                  indexes = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  # --- NEW: Stata-based MPR variants (12m Fixed) ---
+  left_join(mpr_stata_12m, by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  # --- NEW: Stata-based MPR variants (Combo Response Max Adherence) ---
+  left_join(mpr_stata_combo, by = c("patid", "drug_class", "dstartdate_class")) %>%
+  
+  analysis$cached("adherence_compared_interim_4",
+                  indexes = c("patid", "drug_class", "dstartdate_class"))
+
+# count(adherence_compared)
+# 5,990,512
+
+
+
+
+
+
+
+############################################################################################
+
+##
+# Custom dosages
+##
+delete_dosages <- adherence_relevant_scripts %>%
+  select(dosageid) %>%
+  distinct() %>%
+  left_join(
+    cprd$tables$commonDose, by = c("dosageid")
+  ) %>%
+  analysis$cached("delete_dosage_information", index = c("dosageid"))
+
+count(delete_dosages)
+# 960,937
+
+
+delete_dosages_2 <- adherence_relevant_scripts %>%
+  select(dosageid) %>%
+  distinct() %>%
+  inner_join(
+    cprd$tables$commonDose, by = c("dosageid")
+  ) %>%
+  analysis$cached("delete_dosage_information_2", index = c("dosageid"))
+
+count(delete_dosages_2)
+# 20,508
+
+# test <- delete_dosages_2 %>% collect()
 # 
-# ############################################################################################
-# 
+# readr::write_csv(delete_dosages_2 %>% collect(), "03-Treatment-response-(MASTERMIND)/commonDose_table_shorter.csv")
+
+
+
+##
+# Below is an investigation on weird numbers of adherence that we are getting
+##
+
+# load libraries
+library(purrr)
+
+adherence_compared_local<- adherence_compared %>%
+  collect()
+
+
+## Number of patients (and %) with adherence categories
+# List of MPR columns
+mpr_cols <- adherence_compared_local %>%
+  select(starts_with("MPR")) %>%
+  colnames()
+
+# Total N of dataset
+N_total <- nrow(adherence_compared_local)
+
+# Function to categorize MPR
+categorise_mpr <- function(x) {
+  case_when(
+    is.na(x) ~ "NA",
+    x < 20 ~ "<20%",
+    x > 120 ~ ">120%",
+    x >= 20 & x <80 ~ "20%-80%",
+    TRUE ~ "80%-120%",
+    # TRUE ~ "20%-120%"
+  )
+}
+
+# Generate counts + % relative to full dataset
+mpr_summary_list <- map(mpr_cols, function(col) {
+  adherence_compared_local %>%
+    transmute(MPR_cat = categorise_mpr(.data[[col]])) %>%
+    count(MPR_cat) %>%
+    mutate(
+      pct = round(100 * n / N_total, 2),
+      MPR_column = col
+    )
+})
+
+# Combine all summaries
+mpr_summary <- bind_rows(mpr_summary_list) %>%
+  select(MPR_column, MPR_cat, n, pct) %>%
+  mutate(
+    n   = format(n, big.mark = ",", scientific = FALSE),
+    pct = sprintf("%.1f", round(pct, 1)),
+    value = paste0(n, " (", pct, "%)"),
+    type = case_when(
+      grepl("12m", MPR_column) ~ "12m",
+      grepl("combo", MPR_column) ~ "combo"
+    ),
+    rule = as.numeric(sub(".*rule_", "", MPR_column))
+  ) %>%
+  select(MPR_column, type, rule, MPR_cat, value) %>%
+  pivot_wider(
+    names_from = MPR_cat,
+    values_from = value
+  ) %>%
+  arrange(type, rule) %>%
+  # select(type, rule, `<20%`, `20%-120%`, `>120%`, `NA`)  # reordered columns
+  select(type, rule, `<20%`, `20%-80%`,`80%-120%`, `>120%`, `NA`)  # reordered columns
+
+mpr_summary
+
+
+# Vector of drug classes to include
+selected_drugclass <- c("MFN", "SGLT2", "GLP1", "DPP4", "TZD", "SU")
+
+# Filter data for selected drug classes
+adherence_filtered <- adherence_compared_local %>%
+  filter(drug_class %in% selected_drugclass)
+
+# List of MPR columns
+mpr_cols <- adherence_filtered %>%
+  select(starts_with("MPR")) %>%
+  colnames()
+
+# Total N of filtered dataset
+N_total <- nrow(adherence_filtered)
+
+# Function to categorize MPR
+categorise_mpr <- function(x) {
+  case_when(
+    is.na(x) ~ "NA",
+    x < 20 ~ "<20%",
+    x > 120 ~ ">120%",
+    x >= 20 & x <80 ~ "20%-80%",
+    TRUE ~ "80%-120%",
+    # TRUE ~ "20%-120%"
+  )
+}
+
+# Generate counts + % relative to filtered dataset
+mpr_summary_list <- map(mpr_cols, function(col) {
+  adherence_filtered %>%
+    transmute(MPR_cat = categorise_mpr(.data[[col]])) %>%
+    count(MPR_cat) %>%
+    mutate(
+      pct = round(100 * n / N_total, 2),
+      MPR_column = col
+    )
+})
+
+# Combine all summaries
+mpr_summary <- bind_rows(mpr_summary_list) %>%
+  select(MPR_column, MPR_cat, n, pct) %>%
+  mutate(
+    n   = format(n, big.mark = ",", scientific = FALSE),
+    pct = sprintf("%.1f", round(pct, 1)),
+    value = paste0(n, " (", pct, "%)"),
+    type = case_when(
+      grepl("12m", MPR_column) ~ "12m",
+      grepl("combo", MPR_column) ~ "combo"
+    ),
+    rule = as.numeric(sub(".*rule_", "", MPR_column))
+  ) %>%
+  select(MPR_column, type, rule, MPR_cat, value) %>%
+  pivot_wider(
+    names_from = MPR_cat,
+    values_from = value
+  ) %>%
+  arrange(type, rule) %>%
+  # select(type, rule, `<20%`, `20%-120%`, `>120%`, `NA`)  # reordered columns
+  select(type, rule, `<20%`, `20%-80%`,`80%-120%`, `>120%`, `NA`)  # reordered columns
+
+mpr_summary
+
+
+
+## Investigate prescription data
+set.seed(123)
+adherence_compared_local %>%
+  select(patid, drug_class, dstartdate_class, MPR = MPR_12m_rule_3) %>%
+  mutate(
+    MPR_cat = case_when(
+      is.na(MPR) ~ "NA",
+      MPR < 20 ~ "<20%",
+      MPR > 120 ~ ">120%",
+      TRUE ~ "20%-120%"
+    )
+  ) %>% 
+  group_by(MPR_cat) %>%
+  sample_n(10) %>%
+  ungroup() %>% View()
+
+
+
+investigation <- adherence_relevant_scripts_duration %>%
+  filter(
+    (patid == "5672328821242" & drug_class == "MFN" & dstartdate_class == "2016-11-15") |
+      (patid == "11868312220289" & drug_class == "DPP4" & dstartdate_class == "2009-10-06") |
+      (patid == "254853620504" & drug_class == "INS" & dstartdate_class == "2016-08-02") |
+      (patid == "11783100821758" & drug_class == "SGLT2" & dstartdate_class == "2022-09-21") |
+      (patid == "8982268921302" & drug_class == "SGLT2" & dstartdate_class == "2022-11-15") |
+      (patid == "11906722620019" & drug_class == "SU" & dstartdate_class == "2006-12-12") |
+      (patid == "12219328820415" & drug_class == "SGLT2" & dstartdate_class == "2023-01-13") |
+      (patid == "3133292821100" & drug_class == "SGLT2" & dstartdate_class == "2017-08-17") |
+      (patid == "11871891021732" & drug_class == "MFN" & dstartdate_class == "2004-10-20") |
+      (patid == "5439544121275" & drug_class == "MFN" & dstartdate_class == "2012-08-24") |
+      (patid == "647663620276" & drug_class == "DPP4" & dstartdate_class == "2022-01-21") |
+      (patid == "5882165921405" & drug_class == "MFN" & dstartdate_class == "2014-03-20") |
+      (patid == "5415413820370" & drug_class == "SU" & dstartdate_class == "1996-09-30") |
+      (patid == "12082858021653" & drug_class == "MFN" & dstartdate_class == "2006-12-13") |
+      (patid == "972502520348" & drug_class == "INS" & dstartdate_class == "2012-01-13") |
+      (patid == "1023829920622" & drug_class == "SU" & dstartdate_class == "1996-07-10") |
+      (patid == "1786490920431" & drug_class == "SU" & dstartdate_class == "2002-05-31") |
+      (patid == "11637821121717" & drug_class == "MFN" & dstartdate_class == "2009-08-18") |
+      (patid == "600764120139" & drug_class == "SU" & dstartdate_class == "2021-02-17") |
+      (patid == "1982393020823" & drug_class == "INS" & dstartdate_class == "2009-01-29") |
+      (patid == "6245297921098" & drug_class == "MFN" & dstartdate_class == "2012-01-17") |
+      (patid == "5817864721465" & drug_class == "INS" & dstartdate_class == "2017-05-22") |
+      (patid == "12474602620915" & drug_class == "DPP4" & dstartdate_class == "2016-11-02") |
+      (patid == "5593044121301" & drug_class == "TZD" & dstartdate_class == "2006-11-22") |
+      (patid == "912513820210" & drug_class == "DPP4" & dstartdate_class == "2014-02-27") |
+      (patid == "2575923720424" & drug_class == "DPP4" & dstartdate_class == "2015-05-29") |
+      (patid == "536347820148" & drug_class == "MFN" & dstartdate_class == "2020-03-04") |
+      (patid == "5519442821346" & drug_class == "DPP4" & dstartdate_class == "2018-03-08") |
+      (patid == "5410375720108" & drug_class == "SU" & dstartdate_class == "2023-12-14") |
+      (patid == "6261197621529" & drug_class == "SU" & dstartdate_class == "2006-02-22") |
+      (patid == "6311559221201" & drug_class == "MFN" & dstartdate_class == "2014-09-01") |
+      (patid == "12184182520240" & drug_class == "SGLT2" & dstartdate_class == "2013-12-11") |
+      (patid == "6692024921629" & drug_class == "INS" & dstartdate_class == "2018-08-08") |
+      (patid == "928269920114" & drug_class == "GLP1" & dstartdate_class == "2021-11-08") |
+      (patid == "1196975920353" & drug_class == "TZD" & dstartdate_class == "2004-08-11") |
+      (patid == "12265918821861" & drug_class == "INS" & dstartdate_class == "2017-01-09") |
+      (patid == "605753520125" & drug_class == "DPP4" & dstartdate_class == "2022-09-13") |
+      (patid == "6345037521311" & drug_class == "MFN" & dstartdate_class == "2004-03-03") |
+      (patid == "5435548021243" & drug_class == "INS" & dstartdate_class == "1995-09-18") |
+      (patid == "685635820347" & drug_class == "TZD" & dstartdate_class == "2010-02-12")
+  ) %>%
+  analysis$cached("delete_investigation_interim_1", indexes = c("patid", "drug_class", "dstartdate_class")) %>%
+  left_join(
+    mpr_12m_rule_3, by = c("patid", "drug_class", "dstartdate_class")
+  ) %>%
+  analysis$cached("delete_investigation_interim_2", indexes = c("patid", "drug_class", "dstartdate_class")) %>%
+  filter(date >= dstartdate_class & date < max_adherence_date_12m) %>%
+  analysis$cached("delete_investigation_interim_3", indexes= c("patid", "drug_class", "dstartdate_class")) %>%
+  relocate(MPR_12m_rule_3, max_adherence_date_12m, duration_rule_3, duration, quantity, daily_dose, dose_unit, date, .after = dstopdate_class) %>%
+  relocate(dosage_text, .before = post_index_15m)
+
+investigation %>% 
+  collect() %>% 
+  arrange(MPR_12m_rule_3, patid, drug_class, dstartdate_class, date) %>%
+  group_by(patid, drug_class, dstartdate_class) %>%
+  mutate(ID = cur_group_id()) %>%
+  relocate(ID, .before = patid) %>%
+  view()
+
+
+
+## there seems to be an error where some people's max_adherence_data is not being calculated
+## duration 366
+
+
+
+
+
+
+
 # ## Delete below
 # 
 # # This is an investigation on weird numbers of adherence that we are getting
@@ -345,11 +758,11 @@ mpr_combo_rule_3 <- compute_mpr(
 #   )
 # 
 # table(adherence_summaries %>% select(MPR_cat)) %>% prop.table() * 100
-# # Summaries (n = 5185629)
-# ## <20% = 2.05%
-# ## 20-120% = 72.20%
-# ## >120% = 15.22%
-# ## NA = 10.53%
+# Summaries (n = 5185629)
+## <20% = 2.05%
+## 20-120% = 72.20%
+## >120% = 15.22%
+## NA = 10.53%
 # 
 # 
 # adherence_summaries %>%
