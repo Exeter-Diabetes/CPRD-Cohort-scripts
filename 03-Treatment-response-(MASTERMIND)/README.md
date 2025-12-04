@@ -61,17 +61,17 @@ graph TD;
     C---Z
     Z-->|"06_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
 
-    B-->|"12_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"12_mm_<br>final_merge"|J
-    O-->|"12_mm_<br>final_merge"|J
-    Q-->|"12_mm_<br>final_merge"|J
-    L-->|"12_mm_<br>final_merge"|J
-    F-->|"12_mm_<br>final_merge"|J
-    M-->|"12_mm_<br>final_merge"|J  
-    G-->|"12_mm_<br>final_merge"|J
-    D-->|"12_mm_<br>final_merge"|J
-    V-->|"12_mm_<br>final_merge"|J
-    I-->|"12_mm_<br>final_merge"|J  
+    B-->|"13_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
+    N-->|"13_mm_<br>final_merge"|J
+    O-->|"13_mm_<br>final_merge"|J
+    Q-->|"13_mm_<br>final_merge"|J
+    L-->|"13_mm_<br>final_merge"|J
+    F-->|"13_mm_<br>final_merge"|J
+    M-->|"13_mm_<br>final_merge"|J  
+    G-->|"13_mm_<br>final_merge"|J
+    D-->|"13_mm_<br>final_merge"|J
+    V-->|"13_mm_<br>final_merge"|J
+    I-->|"13_mm_<br>final_merge"|J  
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
@@ -101,7 +101,8 @@ The scripts shown in the above diagram (in grey boxes) can be found in this dire
 | **09_mm_alcohol**: finds alcohol consumption status at drug start dates | **mm_alcohol**: as per mm_drug_start_stop, with alcohol consumption status at drug start date where available |
 | **10_mm_discontinuation**: defines whether drug was discontinued within 3/6 months - done on a **drug class** basis | **mm_discontinuation**: as per mm_drug_start_stop, with discontinuation variables added |
 | **11_mm_glycaemic_failure**: defines whether patient ended up with high HbA1c(s) (range of thresholds tested) whilst on drug - done on a **drug class** basis | **mm_glycaemic_failure**: as per mm_drug_start_stop, with glycaemic failure variables added.<br>For Exeter Diabetes members only: [notes on considerations for analysing glycaemic/treatment failure](https://github.com/Exeter-Diabetes/CPRD_Aurum/blob/main/Mastermind/Failure%20analysis%20considerations.md). |
-| **12_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort, and an All diabetes cohort (inc Type 1 and other) | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table).<br />**mm_{today's date}\_all_diabetes_1stinstance**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other).<br />**mm_{today's date}\_all_diabetes_all_drug_periods**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other) |
+| **12_mm_adherence**: defines adherence measures for each drug initiated up to 12-month outcome or early discontinuation - done on a **drug class** basis | **mm_adherence**: as per mm_drug_start_stop, with adherence variables added |
+| **13_mm_final_merge**: pulls together results from other scripts to produce final dataset for a Type 2 diabetes cohort, and an All diabetes cohort (inc Type 1 and other) | **mm_{today's date}\_t2d_1stinstance**: as per mm_drug_start_stop, but includes first instance (druginstance==1) drug periods only, and excludes those starting within 91 days of registration. Only includes patids with T2D and HES linkage. Adds in variables from other scripts (e.g. comorbidities, non-diabetes meds), and adds some additional ones.<br />**mm_{today's date}\_t2d_all_drug_periods**: as per mm_drug_start_stop (i.e. all instances, not excluding those initiated within 91 days of registration), for patids with T2D and HES linkage (the same cohort as the mm_{today's date}\_t2d_1stinstance table).<br />**mm_{today's date}\_all_diabetes_1stinstance**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other).<br />**mm_{today's date}\_all_diabetes_all_drug_periods**: as above for T2D but including everyone with diabetes (Type 2, Type 1, other) |
 
 &nbsp;
 
