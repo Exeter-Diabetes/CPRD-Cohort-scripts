@@ -500,14 +500,14 @@ mpr_stata_12m <- base_data_stockpilling %>%
     MPR_12m_strict = case_when(
       count_invalid_px > 0 ~ NA_real_,
       count_valid_px < 3 ~ NA_real_,
-      TRUE ~ adherence_raw
+      TRUE ~ MPR_12m_raw
     ),
     
     # adherence T (denominator adjusted)
     # Denominator becomes: (Total Window - Days Missing)
     denom_t = total_days_in_window - coalesce(total_miss_days, 0),
     MPR_12m_adj = case_when(
-      is.na(adherence_m) ~ NA_real_,      # Apply M exclusions first
+      is.na(MPR_12m_strict) ~ NA_real_,      # Apply M exclusions first
       total_miss_days > 90 ~ NA_real_,    # Exclude if >90 days missing [cite: 15]
       denom_t > 0 ~ (total_coverage / denom_t) * 100,
       TRUE ~ NA_real_
@@ -518,7 +518,7 @@ mpr_stata_12m <- base_data_stockpilling %>%
     num_min1 = total_coverage - first_px_duration,
     denom_min1 = total_days_in_window - first_px_gap,
     MPR_12m_minus1st = case_when(
-      is.na(adherence_m) ~ NA_real_,
+      is.na(MPR_12m_strict) ~ NA_real_,
       denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
       TRUE ~ NA_real_
     )
@@ -564,14 +564,14 @@ mpr_stata_combo <- base_data_stockpilling %>%
     MPR_combo_strict = case_when(
       count_invalid_px > 0 ~ NA_real_,
       count_valid_px < 3 ~ NA_real_,
-      TRUE ~ adherence_raw
+      TRUE ~ MPR_combo_raw
     ),
     
     # adherence T (denominator adjusted)
     # Denominator becomes: (Total Window - Days Missing)
     denom_t = total_days_in_window - coalesce(total_miss_days, 0),
     MPR_combo_adj = case_when(
-      is.na(adherence_m) ~ NA_real_,      # Apply M exclusions first
+      is.na(MPR_combo_strict) ~ NA_real_,      # Apply M exclusions first
       total_miss_days > 90 ~ NA_real_,    # Exclude if >90 days missing [cite: 15]
       denom_t > 0 ~ (total_coverage / denom_t) * 100,
       TRUE ~ NA_real_
@@ -582,7 +582,7 @@ mpr_stata_combo <- base_data_stockpilling %>%
     num_min1 = total_coverage - first_px_duration,
     denom_min1 = total_days_in_window - first_px_gap,
     MPR_combo_minus1st = case_when(
-      is.na(adherence_m) ~ NA_real_,
+      is.na(MPR_combo_strict) ~ NA_real_,
       denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
       TRUE ~ NA_real_
     )
