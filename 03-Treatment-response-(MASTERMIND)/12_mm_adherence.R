@@ -438,8 +438,8 @@ mpr_combo_rule_3 <- compute_mpr(
 
 adherence_relevant_scripts_prepared <- adherence_relevant_scripts_duration %>%
   mutate(
-    is_valid_px = ifelse(!is.na(duration_rule_3), TRUE, FALSE),
-    is_missing_data = ifelse(is_valid_px == TRUE, FALSE, TRUE),
+    is_valid_px = ifelse(!is.na(duration_rule_3), 1, 0),
+    is_missing_data = ifelse(is_valid_px == 1, 0, 1),
     duration_rule_3 = coalesce(duration_rule_3, 0)
   ) %>%
   analysis$cached("adherence_relevant_scripts_prepared", indexes = c("patid", "drug_class", "dstartdate_class"))
@@ -455,7 +455,7 @@ base_data_stockpilling <- adherence_relevant_scripts_prepared %>%
     prev_end_date = lag(sql("date_add(date, interval duration_rule_3 - 1 day)")),
     
     # If overlap, shift start date to avoid double counting
-    effective_start_date = ifelse(!is.na(prev_end_date) | date <= prev_end_date, sql("date_add(prev_end_date, interval 1 day)"), date),
+    effective_start_date = ifelse(!is.na(prev_end_date) & date <= prev_end_date, sql("date_add(prev_end_date, interval 1 day)"), date),
     
     # 2. gap logic
     # calculate days until the next prescription start
@@ -489,7 +489,9 @@ mpr_stata_12m <- base_data_stockpilling %>%
     
     # we need the duration and gap of the very first script
     first_px_duration = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(duration_rule_3 ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
-    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)")
+    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
+  
+    .groups = "drop"
   ) %>%
   # calculate the variables for MPR
   mutate(
@@ -553,7 +555,9 @@ mpr_stata_combo <- base_data_stockpilling %>%
     
     # we need the duration and gap of the very first script
     first_px_duration = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(duration_rule_3 ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
-    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)")
+    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
+    
+    .groups = "drop"
   ) %>%
   # calculate the variables for MPR
   mutate(
