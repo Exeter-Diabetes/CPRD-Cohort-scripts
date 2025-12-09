@@ -5,7 +5,7 @@
 ############################################################################################
 
 # Setup
-library(tidyverse)
+require(tidyverse)
 library(aurum)
 
 rm(list=ls())
@@ -463,6 +463,9 @@ base_data_stockpilling <- adherence_relevant_scripts_prepared %>%
     
     # Time to gap to next script
     days_until_next = datediff(next_start_date, effective_start_date),
+    
+    # # Mark if this is the first prescription
+    # is_first_px = row_number() == 1,
   ) %>%
   ungroup() %>%
   analysis$cached("base_data_stockpilling", indexes = c("patid", "drug_class", "dstartdate_class"))
@@ -472,6 +475,7 @@ mpr_stata_12m <- base_data_stockpilling %>%
     adherence_start_stop, by = c("patid", "drug_class", "dstartdate_class")
   ) %>%
   filter(effective_start_date >= dstartdate_class & effective_start_date < max_adherence_date_12m) %>%
+  analysis$cached("compute_mpr_stata_12m_interim_1") %>%
   group_by(patid, drug_class, dstartdate_class, max_adherence_date_12m) %>%
   summarise(
     # numerator: total supply
@@ -479,57 +483,61 @@ mpr_stata_12m <- base_data_stockpilling %>%
     
     # denominator: total time window
     total_days_in_window = datediff(max_adherence_date_12m, dstartdate_class),
-    
+
     # count invalid prescriptions
     count_invalid_px = sum(is_missing_data, na.rm = TRUE),
     count_valid_px = sum(is_valid_px, na.rm = TRUE),
-    
+
     # sum of days associated with missing data
     total_miss_days = sum(ifelse(is_missing_data == 1, days_until_next, 0), na.rm = TRUE),
+
+    # # we need the duration and gap of the very first script
+    # first_px_duration = first(duration_rule_3[is_first_px == 1]),
+    # first_px_gap = first(days_until_next[is_first_px == 1]),
     
-    # we need the duration and gap of the very first script
-    first_px_duration = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(duration_rule_3 ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
-    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
-  
     .groups = "drop"
   ) %>%
+  
+  analysis$cached("compute_mpr_stata_12m_interim_2") %>%
+  
   # calculate the variables for MPR
   mutate(
     # raw adherence
     MPR_12m_raw = (total_coverage / total_days_in_window) * 100,
-    
+
     # adherence M (strict exclusion)
     MPR_12m_strict = case_when(
       count_invalid_px > 0 ~ NA_real_,
       count_valid_px < 3 ~ NA_real_,
       TRUE ~ MPR_12m_raw
     ),
-    
+
     # adherence T (denominator adjusted)
     # Denominator becomes: (Total Window - Days Missing)
     denom_t = total_days_in_window - coalesce(total_miss_days, 0),
     MPR_12m_adj = case_when(
-      is.na(MPR_12m_strict) ~ NA_real_,      # Apply M exclusions first
+      is.na(MPR_12m_raw) ~ NA_real_,      # Apply M exclusions first (might not need)
       total_miss_days > 90 ~ NA_real_,    # Exclude if >90 days missing [cite: 15]
       denom_t > 0 ~ (total_coverage / denom_t) * 100,
       TRUE ~ NA_real_
-    ),
-    
-    # Adherence Minus 1st [cite: 17]
-    # Remove first script from Numerator and Denominator
-    num_min1 = total_coverage - first_px_duration,
-    denom_min1 = total_days_in_window - first_px_gap,
-    MPR_12m_minus1st = case_when(
-      is.na(MPR_12m_strict) ~ NA_real_,
-      denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
-      TRUE ~ NA_real_
     )
-    
+
+    # Adherence Minus 1st [cite: 17] - people might titrate
+    # Remove first script from Numerator and Denominator
+    # num_min1 = total_coverage - first_px_duration,
+    # denom_min1 = total_days_in_window - first_px_gap,
+    # MPR_12m_minus1st = case_when(
+    #   is.na(MPR_12m_strict) ~ NA_real_,
+    #   denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
+    #   TRUE ~ NA_real_
+    # )
+
   ) %>%
-  select(patid, drug_class, dstartdate_class, max_adherence_date_12m, 
-         MPR_12m_raw, MPR_12m_strict, MPR_12m_adj, MPR_12m_minus1st, 
+  select(patid, drug_class, dstartdate_class, max_adherence_date_12m,
+         MPR_12m_raw, MPR_12m_strict, MPR_12m_adj, 
+         # MPR_12m_minus1st,
          total_days_in_window, total_miss_days, count_valid_px, count_invalid_px) %>%
-  
+
   analysis$cached("compute_mpr_stata_12m", indexes = c("patid", "drug_class", "dstartdate_class"))
 
 
@@ -538,6 +546,7 @@ mpr_stata_combo <- base_data_stockpilling %>%
     adherence_start_stop, by = c("patid", "drug_class", "dstartdate_class")
   ) %>%
   filter(effective_start_date >= dstartdate_class & effective_start_date < max_adherence_date_combo_resp) %>%
+  analysis$cached("compute_mpr_stata_combo_interim_1") %>%
   group_by(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp) %>%
   summarise(
     # numerator: total supply
@@ -553,12 +562,15 @@ mpr_stata_combo <- base_data_stockpilling %>%
     # sum of days associated with missing data
     total_miss_days = sum(ifelse(is_missing_data == 1, days_until_next, 0), na.rm = TRUE),
     
-    # we need the duration and gap of the very first script
-    first_px_duration = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(duration_rule_3 ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
-    first_px_gap = sql("CAST(SUBSTRING_INDEX(GROUP_CONCAT(days_until_next ORDER BY effective_start_date), ',', 1) AS UNSIGNED)"),
+    # # we need the duration and gap of the very first script
+    # first_px_duration = first(duration_rule_3[is_first_px == 1]),
+    # first_px_gap = first(days_until_next[is_first_px == 1]),
     
     .groups = "drop"
   ) %>%
+  
+  analysis$cached("compute_mpr_stata_combo_interim_2") %>%
+  
   # calculate the variables for MPR
   mutate(
     # raw adherence
@@ -575,25 +587,26 @@ mpr_stata_combo <- base_data_stockpilling %>%
     # Denominator becomes: (Total Window - Days Missing)
     denom_t = total_days_in_window - coalesce(total_miss_days, 0),
     MPR_combo_adj = case_when(
-      is.na(MPR_combo_strict) ~ NA_real_,      # Apply M exclusions first
+      is.na(MPR_combo_raw) ~ NA_real_,      # Apply M exclusions first (might not need)
       total_miss_days > 90 ~ NA_real_,    # Exclude if >90 days missing [cite: 15]
       denom_t > 0 ~ (total_coverage / denom_t) * 100,
       TRUE ~ NA_real_
-    ),
+    )
     
     # Adherence Minus 1st [cite: 17]
     # Remove first script from Numerator and Denominator
-    num_min1 = total_coverage - first_px_duration,
-    denom_min1 = total_days_in_window - first_px_gap,
-    MPR_combo_minus1st = case_when(
-      is.na(MPR_combo_strict) ~ NA_real_,
-      denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
-      TRUE ~ NA_real_
-    )
+    # num_min1 = total_coverage - first_px_duration,
+    # denom_min1 = total_days_in_window - first_px_gap,
+    # MPR_combo_minus1st = case_when(
+    #   is.na(MPR_combo_strict) ~ NA_real_,
+    #   denom_min1 > 0 ~ (num_min1 / denom_min1) * 100,
+    #   TRUE ~ NA_real_
+    # )
     
   ) %>%
-  select(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp, 
-         MPR_combo_raw, MPR_combo_strict, MPR_combo_adj, MPR_combo_minus1st, 
+  select(patid, drug_class, dstartdate_class, max_adherence_date_combo_resp,
+         MPR_combo_raw, MPR_combo_strict, MPR_combo_adj, 
+         # MPR_combo_minus1st,
          total_days_in_window, total_miss_days, count_valid_px, count_invalid_px) %>%
   
   analysis$cached("compute_mpr_stata_combo", indexes = c("patid", "drug_class", "dstartdate_class"))
@@ -601,10 +614,6 @@ mpr_stata_combo <- base_data_stockpilling %>%
 
 
 ############################################################################################
-
-
-
-
 
 
 adherence_compared <- drug_class_start_stop %>%
@@ -638,55 +647,28 @@ adherence_compared <- drug_class_start_stop %>%
   analysis$cached("adherence_compared_interim_3",
                   indexes = c("patid", "drug_class", "dstartdate_class")) %>%
   
-  # # --- NEW: Stata-based MPR variants (12m Fixed) ---
-  # left_join(mpr_stata_12m, by = c("patid", "drug_class", "dstartdate_class")) %>%
-  # 
-  # # --- NEW: Stata-based MPR variants (Combo Response Max Adherence) ---
-  # left_join(mpr_stata_combo, by = c("patid", "drug_class", "dstartdate_class")) %>%
-  # 
-  # analysis$cached("adherence_compared_interim_4",
-  #                 indexes = c("patid", "drug_class", "dstartdate_class"))
+  # --- NEW: Stata-based MPR variants (12m Fixed) ---
+  left_join(
+    mpr_stata_12m %>%
+      select(patid, drug_class, dstartdate_class, MPR_12m_raw, MPR_12m_strict, MPR_12m_adj), 
+    by = c("patid", "drug_class", "dstartdate_class")
+  ) %>%
+
+  # --- NEW: Stata-based MPR variants (Combo Response Max Adherence) ---
+  left_join(
+    mpr_stata_combo %>%
+      select(patid, drug_class, dstartdate_class, MPR_combo_raw, MPR_combo_strict, MPR_combo_adj), 
+    by = c("patid", "drug_class", "dstartdate_class")
+  ) %>%
+
+  analysis$cached("adherence_compared_interim_4",
+                  indexes = c("patid", "drug_class", "dstartdate_class"))
 
 # count(adherence_compared)
 # 5,990,512
 
 
-
-
-
-
-
 ############################################################################################
-
-# ##
-# # Custom dosages
-# ##
-# delete_dosages <- adherence_relevant_scripts %>%
-#   select(dosageid) %>%
-#   distinct() %>%
-#   left_join(
-#     cprd$tables$commonDose, by = c("dosageid")
-#   ) %>%
-#   analysis$cached("delete_dosage_information", index = c("dosageid"))
-# 
-# count(delete_dosages)
-# # 960,937
-# 
-# 
-# delete_dosages_2 <- adherence_relevant_scripts %>%
-#   select(dosageid) %>%
-#   distinct() %>%
-#   inner_join(
-#     cprd$tables$commonDose, by = c("dosageid")
-#   ) %>%
-#   analysis$cached("delete_dosage_information_2", index = c("dosageid"))
-# 
-# count(delete_dosages_2)
-# # 20,508
-# 
-# # test <- delete_dosages_2 %>% collect()
-# # 
-# # readr::write_csv(delete_dosages_2 %>% collect(), "03-Treatment-response-(MASTERMIND)/commonDose_table_shorter.csv")
 
 
 
@@ -737,19 +719,30 @@ mpr_summary_list <- map(mpr_cols, function(col) {
 mpr_summary <- bind_rows(mpr_summary_list) %>%
   select(MPR_column, MPR_cat, n, pct) %>%
   mutate(
-    n   = format(n, big.mark = ",", scientific = FALSE),
+    n = format(n, big.mark = ",", scientific = FALSE),
     pct = sprintf("%.1f", round(pct, 1)),
     value = paste0(n, " (", pct, "%)"),
     type = case_when(
       grepl("12m", MPR_column) ~ "12m",
       grepl("combo", MPR_column) ~ "combo"
     ),
-    rule = as.numeric(sub(".*rule_", "", MPR_column))
+    rule = case_when(
+      grepl("rule_1", MPR_column) ~ "rule 1",
+      grepl("rule_2", MPR_column) ~ "rule 2",
+      grepl("rule_3", MPR_column) ~ "rule 3",
+      grepl("adj", MPR_column) ~ "stata adj",
+      grepl("strict", MPR_column) ~ "stata strict",
+      grepl("raw", MPR_column) ~ "stata raw"
+    )
   ) %>%
   select(MPR_column, type, rule, MPR_cat, value) %>%
   pivot_wider(
     names_from = MPR_cat,
     values_from = value
+  ) %>%
+  mutate(
+    type = factor(type, levels = c("12m", "combo")),
+    rule = factor(rule, levels = c("rule 1", "rule 2", "rule 3", "stata raw", "stata strict", "stata adj"))
   ) %>%
   arrange(type, rule) %>%
   # select(type, rule, `<20%`, `20%-120%`, `>120%`, `NA`)  # reordered columns
@@ -807,12 +800,23 @@ mpr_summary <- bind_rows(mpr_summary_list) %>%
       grepl("12m", MPR_column) ~ "12m",
       grepl("combo", MPR_column) ~ "combo"
     ),
-    rule = as.numeric(sub(".*rule_", "", MPR_column))
+    rule = case_when(
+      grepl("rule_1", MPR_column) ~ "rule 1",
+      grepl("rule_2", MPR_column) ~ "rule 2",
+      grepl("rule_3", MPR_column) ~ "rule 3",
+      grepl("adj", MPR_column) ~ "stata adj",
+      grepl("strict", MPR_column) ~ "stata strict",
+      grepl("raw", MPR_column) ~ "stata raw"
+    )
   ) %>%
   select(MPR_column, type, rule, MPR_cat, value) %>%
   pivot_wider(
     names_from = MPR_cat,
     values_from = value
+  ) %>%
+  mutate(
+    type = factor(type, levels = c("12m", "combo")),
+    rule = factor(rule, levels = c("rule 1", "rule 2", "rule 3", "stata raw", "stata strict", "stata adj"))
   ) %>%
   arrange(type, rule) %>%
   # select(type, rule, `<20%`, `20%-120%`, `>120%`, `NA`)  # reordered columns
