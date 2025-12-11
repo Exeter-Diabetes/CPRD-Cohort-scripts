@@ -31,31 +31,188 @@ analysis = cprd$analysis("pedro_BP_183")
 ############################################################################################
 
 # Define biomarkers
+## Keep HbA1c separate as processed differently
 ## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'mm_baseline_biomarkers' table
 
-biomarkers <- c("hba1c", "sbp", "dbp", "acr_from_separate", "egfr", "weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr")
+biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "albumin_urine", "creatinine_urine", "sbp_home", "sbp_practice")
 
 
 ############################################################################################
 
-# Pull out all clean biomarker values
+# Pull out all raw biomarker values and cache
 
 analysis = cprd$analysis("all_patid")
 
 for (i in biomarkers) {
   
-  # print current biomarkers
   print(i)
-  # table name
-  raw_tablename <- paste0("clean_", i, "_medcodes")
-  # load clean table for biomarker
-  data <- data %>%
-    # cache this table (load)
+  
+  raw_tablename <- paste0("raw_", i, "_medcodes")
+  
+  data <- cprd$tables$observation %>%
+    inner_join(codes[[i]], by="medcodeid") %>%
     analysis$cached(raw_tablename, indexes=c("patid", "obsdate", "testvalue", "numunitid"))
-  # cache table name
+  
   assign(raw_tablename, data)
   
 }
+
+# HbA1c table should already be present from all_diabetes_cohort script
+
+raw_hba1c_medcodes <- cprd$tables$observation %>%
+  inner_join(codes$hba1c, by="medcodeid") %>%
+  analysis$cached("raw_hba1c_medcodes", indexes=c("patid", "obsdate", "testvalue", "numunitid"))
+
+
+############################################################################################
+
+# Clean biomarkers:
+## Only keep those within acceptable value limits
+## Only keep those with valid unit codes (numunitid)
+## If multiple values on the same day, take mean
+## Remove those with invalid dates (before DOB or after LCD/death/deregistration)
+
+## Urine albumin and creatinine: can't determine acceptable value limits as huge range in urine depending on how concentrated it is
+## Similarly, can't keep those with missing unit codes as might be mg/g (albumin) or mmol/umol (creatinine) and can't tell from value
+## Urine albumin: 66% of readings have unit code 183=mg/L; keep these. Remainder are missing or <1%
+## Urine creatinine: 85% of readings have unit codes 218=mmol/L and 8% 285=umol/L; keep these and convert umol/L to mmol/L. Rest are missing or <1%
+## Combine to get ACR and then clean values
+
+## Haematocrit only: convert all to proportion by dividing those >1 by 100
+## Haemoglobin only: convert all to g/L (some in g/dL) by multiplying values <30 by 10
+## HbA1c only: remove before 1990, and convert all values to mmol/mol
+### NB: HbA1c table already present from all_diabetes_cohort script
+
+
+analysis = cprd$analysis("all_patid")
+
+
+for (i in biomarkers) {
+  
+  print(i)
+  
+  raw_tablename <- paste0("raw_", i, "_medcodes")
+  clean_tablename <- paste0("clean_", i, "_medcodes")
+  
+  if (i=="haematocrit") {
+    message("Converting haematocrit values to proportion out of 1")
+    raw_data <- get(raw_tablename) %>%
+      mutate(testvalue=ifelse(testvalue>1, testvalue/100, testvalue))
+  }
+  else if (i=="haemoglobin") {
+    message("Converting haemoglobin values to g/L")
+    raw_data <- get(raw_tablename) %>%
+      mutate(testvalue=ifelse(testvalue<30, testvalue*10, testvalue))
+  }
+  else {
+    raw_data <- get(raw_tablename)
+  }
+  
+  
+  if (i=="albumin_urine") {
+    data <- raw_data %>%
+      filter(numunitid==183)
+  }
+  else if (i=="creatinine_urine") {
+    data <- raw_data %>%
+      filter(numunitid==218 | numunitid==285) %>%
+      mutate(testvalue=ifelse(numunitid==285, testvalue/1000, testvalue))
+  } else if (i=="sbp_home") {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, "sbp") %>%
+      clean_biomarker_units(numunitid, "sbp")
+  } else if (i=="sbp_practice") {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, "sbp") %>%
+      clean_biomarker_units(numunitid, "sbp")
+  } else {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, i) %>%
+      clean_biomarker_units(numunitid, i)
+  }
+  
+  
+  data <- data %>%
+    
+    group_by(patid,obsdate) %>%
+    summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
+    ungroup() %>%
+    
+    inner_join(cprd$tables$validDateLookup, by="patid") %>%
+    filter(obsdate>=min_dob & obsdate<=gp_end_date) %>%
+    
+    select(patid, date=obsdate, testvalue) %>%
+    
+    analysis$cached(clean_tablename, indexes=c("patid", "date", "testvalue"))
+  
+  assign(clean_tablename, data)
+  
+}
+
+
+# HbA1c table should already be present from all_diabetes_cohort script
+
+clean_hba1c_medcodes <- raw_hba1c_medcodes %>%
+  
+  mutate(testvalue=ifelse(testvalue<=20,((testvalue-2.152)/0.09148),testvalue)) %>%
+  
+  clean_biomarker_values(testvalue, "hba1c") %>%
+  clean_biomarker_units(numunitid, "hba1c") %>%
+  
+  group_by(patid,obsdate) %>%
+  summarise(testvalue=mean(testvalue, na.rm=TRUE)) %>%
+  ungroup() %>%
+  
+  inner_join(cprd$tables$validDateLookup, by="patid") %>%
+  filter(obsdate>=min_dob & obsdate<=gp_ons_end_date & year(obsdate)>=1990) %>%
+  
+  select(patid, date=obsdate, testvalue) %>%
+  
+  analysis$cached("clean_hba1c_medcodes", indexes=c("patid", "date", "testvalue"))
+
+
+# Make eGFR table from creatinine readings and add to list of biomarkers
+## Use DOBs produced in all_diabetes_cohort script to calculate age (uses yob, mob and also earliest medcode in yob to get dob, as per https://github.com/Exeter-Diabetes/CPRD-Codelists/blob/main/readme.md#general-notes-on-implementation)
+## Also need gender for eGFR
+
+analysis = cprd$analysis("diabetes_cohort")
+
+dob <- dob %>% analysis$cached("dob")
+
+analysis = cprd$analysis("all_patid")
+
+clean_egfr_medcodes <- clean_creatinine_blood_medcodes %>%
+  
+  inner_join((dob %>% select(patid, dob)), by="patid") %>%
+  inner_join((cprd$tables$patient %>% select(patid, gender)), by="patid") %>%
+  mutate(age_at_creat=(datediff(date, dob))/365.25,
+         sex=ifelse(gender==1, "male", ifelse(gender==2, "female", NA))) %>%
+  select(-c(dob, gender)) %>%
+  
+  ckd_epi_2021_egfr(creatinine=testvalue, sex=sex, age_at_creatinine=age_at_creat) %>%
+  select(-c(testvalue, sex, age_at_creat)) %>%
+  
+  rename(testvalue=ckd_epi_2021_egfr) %>%
+  filter(!is.na(testvalue)) %>%
+  analysis$cached("clean_egfr_medcodes", indexes=c("patid", "date", "testvalue"))
+
+biomarkers <- c("egfr", biomarkers)
+
+
+# Make ACR from separate urine albumin and urine creatinine measurements on the same day
+# Then clean values
+
+clean_acr_from_separate_medcodes <- clean_albumin_urine_medcodes %>%
+  inner_join((clean_creatinine_urine_medcodes %>% select(patid, creat_date=date, creat_value=testvalue)), by="patid") %>%
+  filter(date==creat_date) %>%
+  mutate(new_testvalue=testvalue/creat_value) %>%
+  select(patid, date, testvalue=new_testvalue) %>%
+  clean_biomarker_values(testvalue, "acr") %>%
+  analysis$cached("clean_acr_from_separate_medcodes", indexes=c("patid", "date", "testvalue"))
+
+biomarkers <- setdiff(biomarkers, c("albumin_urine", "creatinine_urine"))
+biomarkers <- c("acr_from_separate", biomarkers)
+
 
 
 ############################################################################################
