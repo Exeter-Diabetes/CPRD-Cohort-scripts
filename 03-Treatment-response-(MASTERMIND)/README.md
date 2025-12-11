@@ -19,59 +19,68 @@ The below diagram shows the R scripts (in grey boxes) used to create the treatme
 
 ```mermaid
 graph TD;
-    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] --> |"all_diabetes_cohort <br> & all_patid_ethnicity"|B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
-    A-->|"all_patid_townsend_<br>deprivation_score"|N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
-    A-->|"all_patid_<br>death_causes"|O["<b>Death causes</b><br>for all patients"]
-    A-->|"01_mm_drug_sorting_and_combos"|H["Drug start (index) and stop dates"]
 
-    A---P[ ]:::empty
-    H---P
-    E---P
-    P-->|"11_mm_glycaemic_<br>failure"|Q["<b>Glycaemic<br>failure</b><br>variables"]
+    A["<b>Our extract</b> <br> with linked HES APC, patient IMD, and ONS death data"] -->|"all_diabetes_cohort <br> & all_patid_ethnicity"| B["<b>Diabetes cohort<br></b> with static patient <br>data including <br>ethnicity and IMD*"]
 
-    A---Y[ ]:::empty
-    H---Y
-    Y-->|"02_mm_baseline_<br>biomarkers"|E["<b>Biomarkers</b> <br> at drug <br> start date"]
+    A -->|"all_patid_townsend_<br>deprivation_score"| N["<b>Townsend<br> Deprivation<br>score</b> for<br> all patients"]
+    A -->|"all_patid_<br>death_causes"| O["<b>Death causes</b><br>for all patients"]
+    A -->|"01_mm_drug_sorting_and_combos"| H["Drug start (index) and stop dates"]
 
-    E---T[ ]:::empty
-    A---T
-    H---T
-    T-->|"03_mm_response_<br>biomarkers"|L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
-    
-    A---W[ ]:::empty
-    H---W
-    W-->|"04_mm_comorbidities<br>& 05_mm_efi"|F["<b>Comorbidities<br>and eFI score</b> <br> at drug <br> start date"]
-    
-    H---U[ ]:::empty
-    A---U
-    U-->|"07_mm_non_<br>diabetes_meds"|M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
-    
-    H---X[ ]:::empty
-    A---X
-    X-->|"08_mm_smoking"|G["<b>Smoking status</b> <br> at drug <br> start date"]
-    
-    H-->|"10_mm_<br>discontinuation"|V["<b>Discontinuation</b><br> information"]
+    A --- P[ ]:::empty
+    H --- P
+    E --- P
+    P -->|"11_mm_glycaemic_<br>failure"| Q["<b>Glycaemic<br>failure</b><br>variables"]
 
-    H---R[ ]:::empty
-    A---R
-    R-->|"09_mm_alcohol"|D["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
- 
-    A-->|"all_patid_ckd_stages"|C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
-    H---Z[ ]:::empty
-    C---Z
-    Z-->|"06_mm_ckd_stages"|I["<b>CKD stage </b> <br> at drug <br> start date"]
+    A --- Y[ ]:::empty
+    H --- Y
+    Y -->|"02_mm_baseline_<br>biomarkers"| E["<b>Biomarkers</b> <br> at drug <br> start date"]
 
-    B-->|"13_mm_<br>final_merge"|J["<b>Final cohort dataset</b>"]
-    N-->|"13_mm_<br>final_merge"|J
-    O-->|"13_mm_<br>final_merge"|J
-    Q-->|"13_mm_<br>final_merge"|J
-    L-->|"13_mm_<br>final_merge"|J
-    F-->|"13_mm_<br>final_merge"|J
-    M-->|"13_mm_<br>final_merge"|J  
-    G-->|"13_mm_<br>final_merge"|J
-    D-->|"13_mm_<br>final_merge"|J
-    V-->|"13_mm_<br>final_merge"|J
-    I-->|"13_mm_<br>final_merge"|J  
+    E --- T[ ]:::empty
+    A --- T
+    H --- T
+    T -->|"03_mm_response_<br>biomarkers"| L["<b>Biomarkers</b> <br> 6/12 months <br> after drug <br>start date"]
+
+    A --- W[ ]:::empty
+    H --- W
+    W -->|"04_mm_comorbidities<br>& 05_mm_efi"| F["<b>Comorbidities<br>and eFI score</b> <br> at drug <br> start date"]
+
+    H --- U[ ]:::empty
+    A --- U
+    U -->|"07_mm_non_<br>diabetes_meds"| M["<b>Non-diabetes <br>medications</b> <br> at drug <br> start date"]
+
+    H --- X[ ]:::empty
+    A --- X
+    X -->|"08_mm_smoking"| G["<b>Smoking status</b> <br> at drug <br> start date"]
+
+    H -->|"10_mm_<br>discontinuation"| V["<b>Discontinuation</b><br> information"]
+
+    H --- R[ ]:::empty
+    A --- R
+    R -->|"09_mm_alcohol"| D["<b>Alcohol consumption status</b> <br> at drug <br> start date"]
+
+    A -->|"all_patid_ckd_stages"| C["<b>Longitudinal CKD <br> stages</b> for all <br> patients"]
+
+    H --- Z[ ]:::empty
+    C --- Z
+    Z -->|"06_mm_ckd_stages"| I["<b>CKD stage </b> <br> at drug <br> start date"]
+
+    A --- Z2[ ]:::empty
+    H --- Z2
+    L --- Z2
+    Z2 -->|"12_mm_adherence"| K["<b>Medication<br> Adherence (MPR)</b>"]
+
+    B -->|"13_mm_<br>final_merge"| J["<b>Final cohort dataset</b>"]
+    N -->|"13_mm_<br>final_merge"| J
+    O -->|"13_mm_<br>final_merge"| J
+    Q -->|"13_mm_<br>final_merge"| J
+    L -->|"13_mm_<br>final_merge"| J
+    F -->|"13_mm_<br>final_merge"| J
+    M -->|"13_mm_<br>final_merge"| J
+    G -->|"13_mm_<br>final_merge"| J
+    D -->|"13_mm_<br>final_merge"| J
+    V -->|"13_mm_<br>final_merge"| J
+    I -->|"13_mm_<br>final_merge"| J
+    K -->|"13_mm_<br>final_merge"| J
 ```
 \*IMD=Index of Multiple Deprivation; 'static' because we only have data from 2019 so only 1 value per patient.
 
@@ -256,6 +265,10 @@ ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1,
 | stopdrug_6m_6mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_6m_6mFU), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_6m_6mFU. | |
 | stopdrug_12m_3mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_12m_3mFU_MFN), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_12m_3mFU_MFN. | |
 | stopdrug_12m_6mFU_MFN_hist | History of metformin discontinuation: NA for all MFN drug periods. For other drugs: number of instances of MFN discontinued prior to current drug period (using stopdrug_12m_6mFU), where MFN dstopdate (last prescription) was earlier or on the same day as current dstartdate. NA if no prior MFN periods/all prior MFN periods have missing stopdrug_12m_6mFU. | |
+| MPR_raw_{timewindow} | Medication Possession Ratio (MPR) for current drug class period over specific time window. | timewindow options: 12m (takes date 12-months post initiation or dstopdate_class) and resphba1c (resphba1c takes post_biomarker_12mdate or post_biomarker_6mdate whichever is available in that order); calculated as (total days covered / number of days in time window) * 100 |
+| MPR_adj_{timewindow} | Adjusted Medication Possession Ratio (MPR) for current drug class period over specific time window. | timewindow options: 12m (takes date 12-months post initiation or dstopdate_class) and resphba1c (resphba1c takes post_biomarker_12mdate or post_biomarker_6mdate whichever is available in that order); calculated as (total days covered / number of days in time window - days without prescription information) * 100 |
+| MPR_strict_{timewindow} | Strict Medication Possession Ratio (MPR) for current drug class period over specific time window. | timewindow options: 12m (takes date 12-months post initiation or dstopdate_class) and resphba1c (resphba1c takes post_biomarker_12mdate or post_biomarker_6mdate whichever is available in that order); calculated as (total days covered / number of days in time window) * 100 but only if the period has at least 3 valid prescriptions (with duration of prescription data) and 0 invalid prescriptions |
+| MPR_min1_{timewindow} | Minus 1st prescription Medication Possession Ratio (MPR) for current drug class period over specific time window. | timewindow options: 12m (takes date 12-months post initiation or dstopdate_class) and resphba1c (resphba1c takes post_biomarker_12mdate or post_biomarker_6mdate whichever is available in that order); calculated as (total days covered / number of days in time window) * 100 but removing the information from the first prescription in the period |
 | dstartdate_age | age of patient at dstartdate in years | dstartdate - dob |
 | dstartdate_dm_dur_all | diabetes duration at dstartdate in years | dstartdate - dm_diag_date_all<br />Missing if dm_diag_date_all is missing i.e. if diagnosis date is within -30 to +90 days (inclusive) of registration start |
 | dstartdate_dm_dur | diabetes duration at dstartdate in years | dstartdate-dm_diag_date<br />Missing if dm_diag_date is missing; dm_diag_date is missing if dm_diag_date_all is missing (as per above: if diagnosis date is within -30 to +90 days (inclusive) of registration start) or additionally if diagnosis date is before registration |
