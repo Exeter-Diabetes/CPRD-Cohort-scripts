@@ -88,9 +88,6 @@ adherence_relevant_scripts_duration <- adherence_relevant_scripts %>%
 
 ############################################################################################
 
-
-############################################################################################
-
 # Calculate start/stop dates: Bring together drug class start/stop dates (from drug_start_stop) and HbA1c response dates
 
 ## Load cached drug class start/stop tables
@@ -215,7 +212,7 @@ base_data_stockpilling <- adherence_relevant_scripts_duration %>%
 
 # Calculate MPR rules for 12m
 
-mpr_12m <- base_data_stockpilling %>%
+compute_mpr_12m <- base_data_stockpilling %>%
   
   ## Join start and stop rules
   left_join(
@@ -320,7 +317,7 @@ mpr_12m <- base_data_stockpilling %>%
 
 # Calculate MPR rules for resphba1c
 
-mpr_resphba1c <- base_data_stockpilling %>%
+compute_mpr_resphba1c <- base_data_stockpilling %>%
   
   ## Join start and stop rules
   left_join(
