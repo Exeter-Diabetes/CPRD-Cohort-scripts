@@ -19,15 +19,13 @@
 # Setup
 library(tidyverse)
 library(aurum)
+library(EHRBiomarkr)
 rm(list=ls())
 
 
-cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
-
-
 cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
+codesets = cprd$codesets()
+codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 analysis = cprd$analysis("pedro_BP")
 
@@ -121,14 +119,6 @@ for (i in biomarkers) {
     data <- raw_data %>%
       filter(numunitid==218 | numunitid==285) %>%
       mutate(testvalue=ifelse(numunitid==285, testvalue/1000, testvalue))
-  } else if (i=="sbp_home") {
-    data <- raw_data %>%
-      clean_biomarker_values(testvalue, "sbp") %>%
-      clean_biomarker_units(numunitid, "sbp")
-  } else if (i=="sbp_practice") {
-    data <- raw_data %>%
-      clean_biomarker_values(testvalue, "sbp") %>%
-      clean_biomarker_units(numunitid, "sbp")
   } else {
     data <- raw_data %>%
       clean_biomarker_values(testvalue, i) %>%
