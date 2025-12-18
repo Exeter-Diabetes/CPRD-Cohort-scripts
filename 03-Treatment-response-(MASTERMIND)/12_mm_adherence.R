@@ -425,7 +425,7 @@ compute_mpr_resphba1c <- base_data_stockpilling %>%
 adherence <- drug_class_start_stop %>%
   
   ## Select important variables
-  select(patid, drug_class, dstartdate_class) %>%
+  select(patid, drug_class, dstartdate_class, dstopdate_class) %>%
   
   # Join 12m adherence
   left_join(
@@ -446,6 +446,40 @@ adherence <- drug_class_start_stop %>%
       ),
     by = c("patid", "drug_class", "dstartdate_class")
   ) %>%
+  
+  ## Cache
+  analysis$cached("adherence_interim_1", indexes = c("patid", "drug_class", "dstartdate_class"))
+
+  ## Add MFN adherence history mirroring discontinuation logic
+  mutate(
+    mfn_date = ifelse(drug_class == "MFN", dstopdate_class, dstartdate_class),
+    MPR_raw_12m_MFN = ifelse(drug_class == "MFN", MPR_raw_12m, NA_real_),
+    MPR_adj_12m_MFN = ifelse(drug_class == "MFN", MPR_adj_12m, NA_real_),
+    MPR_strict_12m_MFN = ifelse(drug_class == "MFN", MPR_strict_12m, NA_real_),
+    MPR_min1_12m_MFN = ifelse(drug_class == "MFN", MPR_min1_12m, NA_real_),
+    MPR_raw_resphba1c_MFN = ifelse(drug_class == "MFN", MPR_raw_resphba1c, NA_real_),
+    MPR_adj_resphba1c_MFN = ifelse(drug_class == "MFN", MPR_adj_resphba1c, NA_real_),
+    MPR_strict_resphba1c_MFN = ifelse(drug_class == "MFN", MPR_strict_resphba1c, NA_real_),
+    MPR_min1_resphba1c_MFN = ifelse(drug_class == "MFN", MPR_min1_resphba1c, NA_real_)
+  ) %>%
+  group_by(patid) %>%
+  dbplyr::window_order(mfn_date) %>%
+  mutate(
+    MPR_raw_12m_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_raw_12m_MFN)),
+    MPR_adj_12m_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_adj_12m_MFN)),
+    MPR_strict_12m_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_strict_12m_MFN)),
+    MPR_min1_12m_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_min1_12m_MFN)),
+    MPR_raw_resphba1c_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_raw_resphba1c_MFN)),
+    MPR_adj_resphba1c_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_adj_resphba1c_MFN)),
+    MPR_strict_resphba1c_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_strict_resphba1c_MFN)),
+    MPR_min1_resphba1c_MFN_hist = ifelse(drug_class == "MFN", NA_real_, cumsum(MPR_min1_resphba1c_MFN))
+  ) %>%
+  
+  ungroup() %>%
+  
+  select(-c(MPR_raw_12m_MFN, MPR_adj_12m_MFN, MPR_strict_12m_MFN, MPR_min1_12m_MFN,
+            MPR_raw_resphba1c_MFN, MPR_adj_resphba1c_MFN, MPR_strict_resphba1c_MFN, MPR_min1_resphba1c_MFN,
+            mfn_date, dstopdate_class)) %>%
   
   ## Cache
   analysis$cached("adherence", indexes = c("patid", "drug_class", "dstartdate_class"))
