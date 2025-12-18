@@ -422,6 +422,53 @@ compute_mpr_resphba1c <- base_data_stockpilling %>%
 
 ############################################################################################
 
+# First, get the first MFN initiation (drug_instance==1) MPR values for each patient
+mfn_first_initiation_adherence <- drug_class_start_stop %>%
+  filter(drug_class == "MFN" & drug_instance == 1) %>%
+  select(patid, dstartdate_class) %>%
+  
+  # Join 12m adherence for first MFN
+  left_join(
+    compute_mpr_12m %>%
+      filter(drug_class == "MFN") %>%
+      select(
+        patid, drug_class, dstartdate_class, 
+        MPR_raw_12m, MPR_adj_12m, MPR_strict_12m, MPR_min1_12m
+      ),
+    by = c("patid", "dstartdate_class")
+  ) %>%
+  
+  ## Join resphba1c adherence for first MFN
+  left_join(
+    compute_mpr_resphba1c %>%
+      filter(drug_class == "MFN") %>%
+      select(
+        patid, dstartdate_class, 
+        MPR_raw_resphba1c, MPR_adj_resphba1c, MPR_strict_resphba1c, MPR_min1_resphba1c
+      ),
+    by = c("patid", "dstartdate_class")
+  ) %>%
+  
+  # Rename to indicate these are from first MFN initiation
+  select(
+    patid,
+    dstartdate_class_MFN = dstartdate_class,
+    MPR_raw_12m_MFN_hist = MPR_raw_12m,
+    MPR_adj_12m_MFN_hist = MPR_adj_12m,
+    MPR_strict_12m_MFN_hist = MPR_strict_12m,
+    MPR_min1_12m_MFN_hist = MPR_min1_12m,
+    MPR_raw_resphba1c_MFN_hist = MPR_raw_resphba1c,
+    MPR_adj_resphba1c_MFN_hist = MPR_adj_resphba1c,
+    MPR_strict_resphba1c_MFN_hist = MPR_strict_resphba1c,
+    MPR_min1_resphba1c_MFN_hist = MPR_min1_resphba1c
+  ) %>%
+  
+  analysis$cached("mfn_first_initiation_adherence", indexes = "patid")
+
+
+############################################################################################
+
+# Now create the main adherence table
 adherence <- drug_class_start_stop %>%
   
   ## Select important variables
@@ -446,6 +493,35 @@ adherence <- drug_class_start_stop %>%
       ),
     by = c("patid", "drug_class", "dstartdate_class")
   ) %>%
+  
+  # Join first MFN initiation MPR values
+  left_join(
+    mfn_first_initiation_adherence, 
+    by = "patid"
+  ) %>%
+  
+  # Only include MFN history if: (1) not MFN itself, and (2) first MFN was before current treatment
+  mutate(
+    MPR_raw_12m_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                   MPR_raw_12m_MFN_hist, NA_real_),
+    MPR_adj_12m_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                   MPR_adj_12m_MFN_hist, NA_real_),
+    MPR_strict_12m_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                      MPR_strict_12m_MFN_hist, NA_real_),
+    MPR_min1_12m_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                    MPR_min1_12m_MFN_hist, NA_real_),
+    MPR_raw_resphba1c_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                         MPR_raw_resphba1c_MFN_hist, NA_real_),
+    MPR_adj_resphba1c_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                         MPR_adj_resphba1c_MFN_hist, NA_real_),
+    MPR_strict_resphba1c_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                            MPR_strict_resphba1c_MFN_hist, NA_real_),
+    MPR_min1_resphba1c_MFN_hist = ifelse(drug_class != "MFN" & !is.na(dstartdate_class_MFN) & dstartdate_class_MFN < dstartdate_class, 
+                                          MPR_min1_resphba1c_MFN_hist, NA_real_)
+  ) %>%
+  
+  # Remove temporary column
+  select(-dstartdate_class_MFN) %>%
   
   ## Cache
   analysis$cached("adherence", indexes = c("patid", "drug_class", "dstartdate_class"))
