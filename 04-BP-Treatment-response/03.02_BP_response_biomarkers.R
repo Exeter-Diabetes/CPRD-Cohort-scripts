@@ -28,10 +28,327 @@ analysis = cprd$analysis("pedro_BP_183")
 
 ############################################################################################
 
+# Load cleaned SBP data (home and practice) for outcome analysis
+
+analysis = cprd$analysis("all_patid")
+
+clean_sbp_home_medcodes <- clean_sbp_home_medcodes %>%
+  analysis$cached("clean_sbp_home_medcodes", indexes=c("patid", "date", "testvalue"))
+
+clean_sbp_practice_medcodes <- clean_sbp_practice_medcodes %>%
+  analysis$cached("clean_sbp_practice_medcodes", indexes=c("patid", "date", "testvalue"))
+
+analysis = cprd$analysis("pedro_BP_183")
+
+
+############################################################################################
+
 # Define biomarkers (can include HbA1c as processed the same as others; don't include height)
 ## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'pedro_BP_response_biomarkers' table
 
-biomarkers <- c("weight", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "hba1c", "egfr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "acr_from_separate")
+biomarkers <- c("weight", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "acr", "hba1c", "egfr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "acr_from_separate")
+
+
+############################################################################################
+
+# Load drug start/stop data
+
+drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
+combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
+
+# Combine home and practice SBP measurements for outcome analysis
+all_sbp_measurements <- clean_sbp_home_medcodes %>% 
+  mutate(type = "home") %>%
+  union_all(
+    clean_sbp_practice_medcodes %>% mutate(type = "practice")
+  )
+
+
+############################################################################################
+
+# Calculate 3-month outcome SBP, SBP_home, and SBP_practice (2-4 months, approximately days 60-120)
+## Within 2-4 months (60-120 days) after drug start
+## Use closest date to drug start within this window
+## If multiple values within 7 days of closest date, take average
+
+sbp_3m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  # Join with combined SBP measurements
+  inner_join(all_sbp_measurements, by = "patid") %>%
+  
+  # Calculate days difference from drug start
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  # Create minimum and maximum valid dates
+  mutate(minvaliddate3m = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime3m = pmin(ifelse(is.na(timetoaddrem), 122, timetoaddrem),
+                          ifelse(is.na(timetochange), 122, timetochange+30), 122, na.rm=TRUE),
+         lastvaliddate3m = if_else(maxtime3m<60, NA, sql("date_add(dstartdate, interval maxtime3m day)"))) %>%
+  
+  # Filter to within valid date range and before drug stop
+  filter(date >= minvaliddate3m & date <= lastvaliddate3m & date <= dstopdate) %>%
+  
+  # Find closest measurement to 3-month target (90 days), then include values within ±7 days of that chosen date
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 90),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  # Keep only measurements within 7 days of the chosen (closest-to-90d) measurement
+  filter(days_from_chosen <= 7) %>%
+  
+  # Calculate average SBP and volatility measures if multiple measurements within this window
+  summarise(
+    postsbp_3m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_3m = min(date, na.rm = TRUE),
+    postsbpdays_3m = min(days_from_start, na.rm = TRUE),
+    n_measurements_3m = n(),
+    postsbp_3m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_3m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_3m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_3m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    n_home_3m = sum(type == "home", na.rm = TRUE),
+    n_practice_3m = sum(type == "practice", na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_3m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 3-month outcome SBP_home (home measurements only)
+sbp_home_3m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_home_medcodes %>% mutate(type = "home"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate3m = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime3m = pmin(ifelse(is.na(timetoaddrem), 122, timetoaddrem),
+                          ifelse(is.na(timetochange), 122, timetochange+30), 122, na.rm=TRUE),
+         lastvaliddate3m = if_else(maxtime3m<60, NA, sql("date_add(dstartdate, interval maxtime3m day)"))) %>%
+  
+  filter(date >= minvaliddate3m & date <= lastvaliddate3m & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 90),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  filter(days_from_chosen <= 7) %>%
+  
+  summarise(
+    postsbp_home_3m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_home_3m = min(date, na.rm = TRUE),
+    postsbpdays_home_3m = min(days_from_start, na.rm = TRUE),
+    n_measurements_home_3m = n(),
+    postsbp_home_3m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_home_3m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_home_3m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_home_3m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_home_3m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 3-month outcome SBP_practice (practice measurements only)
+sbp_practice_3m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_practice_medcodes %>% mutate(type = "practice"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate3m = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime3m = pmin(ifelse(is.na(timetoaddrem), 122, timetoaddrem),
+                          ifelse(is.na(timetochange), 122, timetochange+30), 122, na.rm=TRUE),
+         lastvaliddate3m = if_else(maxtime3m<60, NA, sql("date_add(dstartdate, interval maxtime3m day)"))) %>%
+  
+  filter(date >= minvaliddate3m & date <= lastvaliddate3m & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 90),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  filter(days_from_chosen <= 7) %>%
+  
+  summarise(
+    postsbp_practice_3m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_practice_3m = min(date, na.rm = TRUE),
+    postsbpdays_practice_3m = min(days_from_start, na.rm = TRUE),
+    n_measurements_practice_3m = n(),
+    postsbp_practice_3m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_practice_3m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_practice_3m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_practice_3m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_practice_3m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+############################################################################################
+
+# Calculate 6-month outcome SBP, SBP_home, and SBP_practice (4-8 months, approximately days 120-240)
+## Within 4-8 months (120-240 days) after drug start
+## Use closest date to drug start within this window
+## If multiple values within 7 days of closest date, take average
+
+sbp_6m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(all_sbp_measurements, by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate6m = sql("date_add(dstartdate, interval 120 day)"),
+         maxtime6m = pmin(ifelse(is.na(timetoaddrem), 240, timetoaddrem),
+                          ifelse(is.na(timetochange), 240, timetochange+91), 240, na.rm=TRUE),
+         lastvaliddate6m = if_else(maxtime6m<120, NA, sql("date_add(dstartdate, interval maxtime6m day)"))) %>%
+  
+  filter(date >= minvaliddate6m & date <= lastvaliddate6m & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 180),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  filter(days_from_chosen <= 7) %>%
+  
+  summarise(
+    postsbp_6m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_6m = min(date, na.rm = TRUE),
+    postsbpdays_6m = min(days_from_start, na.rm = TRUE),
+    n_measurements_6m = n(),
+    postsbp_6m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_6m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_6m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_6m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    n_home_6m = sum(type == "home", na.rm = TRUE),
+    n_practice_6m = sum(type == "practice", na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_6m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 6-month outcome SBP_home (home measurements only)
+sbp_home_6m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_home_medcodes %>% mutate(type = "home"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate6m = sql("date_add(dstartdate, interval 120 day)"),
+         maxtime6m = pmin(ifelse(is.na(timetoaddrem), 240, timetoaddrem),
+                          ifelse(is.na(timetochange), 240, timetochange+91), 240, na.rm=TRUE),
+         lastvaliddate6m = if_else(maxtime6m<120, NA, sql("date_add(dstartdate, interval maxtime6m day)"))) %>%
+  
+  filter(date >= minvaliddate6m & date <= lastvaliddate6m & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 180),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  filter(days_from_chosen <= 7) %>%
+  
+  summarise(
+    postsbp_home_6m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_home_6m = min(date, na.rm = TRUE),
+    postsbpdays_home_6m = min(days_from_start, na.rm = TRUE),
+    n_measurements_home_6m = n(),
+    postsbp_home_6m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_home_6m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_home_6m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_home_6m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_home_6m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 6-month outcome SBP_practice (practice measurements only)
+sbp_practice_6m_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_practice_medcodes %>% mutate(type = "practice"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate6m = sql("date_add(dstartdate, interval 120 day)"),
+         maxtime6m = pmin(ifelse(is.na(timetoaddrem), 240, timetoaddrem),
+                          ifelse(is.na(timetochange), 240, timetochange+91), 240, na.rm=TRUE),
+         lastvaliddate6m = if_else(maxtime6m<120, NA, sql("date_add(dstartdate, interval maxtime6m day)"))) %>%
+  
+  filter(date >= minvaliddate6m & date <= lastvaliddate6m & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  mutate(
+    distance_to_target = abs(days_from_start - 180),
+    min_distance = min(distance_to_target, na.rm = TRUE),
+    chosen_date = min(if_else(distance_to_target == min_distance, date, as.Date(NA)))
+  ) %>%
+  mutate(days_from_chosen = abs(datediff(date, chosen_date))) %>%
+  
+  filter(days_from_chosen <= 7) %>%
+  
+  summarise(
+    postsbp_practice_6m = mean(testvalue, na.rm = TRUE),
+    postsbpdate_practice_6m = min(date, na.rm = TRUE),
+    postsbpdays_practice_6m = min(days_from_start, na.rm = TRUE),
+    n_measurements_practice_6m = n(),
+    postsbp_practice_6m_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_practice_6m_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_practice_6m_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_practice_6m_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_practice_6m_outcome", indexes = c("patid", "dstartdate", "drugclass"))
 
 
 ############################################################################################
@@ -326,6 +643,8 @@ for (i in biomarkers) {
 }
 
 
+############################################################################################
+
 # Add in next eGFR measurement
 
 analysis = cprd$analysis("all")
@@ -384,11 +703,19 @@ response_biomarkers <- response_biomarkers %>%
   relocate(prehba1c2yrs, .after=hba1cresp12m) %>%
   relocate(prehba1c2yrsdate, .after=prehba1c2yrs) %>%
   relocate(prehba1c2yrsdrugdiff, .after=prehba1c2yrsdate) %>%
+  analysis$cached("response_biomarkers_interim_1", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  # join 3-month outcome data
+  left_join(sbp_3m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_2", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_home_3m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_3", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_practice_3m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_4", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  # join 6-month outcome data
+  left_join(sbp_6m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_5", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_home_6m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_6", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_practice_6m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
   # cache this table
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
-
-
-
-
-
-
