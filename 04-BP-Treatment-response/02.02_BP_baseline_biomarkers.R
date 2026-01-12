@@ -118,6 +118,14 @@ for (i in biomarkers) {
     data <- raw_data %>%
       filter(numunitid==218 | numunitid==285) %>%
       mutate(testvalue=ifelse(numunitid==285, testvalue/1000, testvalue))
+  } else if (i=="sbp_home") {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, "sbp") %>%
+      clean_biomarker_units(numunitid, "sbp")
+  } else if (i=="sbp_practice") {
+    data <- raw_data %>%
+      clean_biomarker_values(testvalue, "sbp") %>%
+      clean_biomarker_units(numunitid, "sbp")
   } else {
     data <- raw_data %>%
       clean_biomarker_values(testvalue, i) %>%
@@ -220,6 +228,16 @@ drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
 
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
+# Create separate table for SBP that combines home and practice measurements
+analysis = cprd$analysis("all_patid")
+
+all_sbp_measurements <- clean_sbp_home_medcodes %>% 
+  mutate(type = "home") %>%
+  union_all(
+    clean_sbp_practice_medcodes %>% mutate(type = "practice")
+  )
+
+analysis = cprd$analysis("pedro_BP_183")
 
 drug_start_dates <- drug_start_stop %>%
   # combine both datasets with left join
@@ -238,25 +256,46 @@ for (i in biomarkers) {
   # biomarkers currently being used
   print(i)
   
-  # name of biomarker table
-  clean_tablename <- paste0("clean_", i, "_medcodes")
   # name of final table
   drug_merge_tablename <- paste0("full_", i, "_drug_merge")
   
-  # get the biomarker table needed
-  data <- get(clean_tablename) %>%
-    # join drug start dates (inner join to keep only those with information)
-    inner_join(drug_start_dates, by="patid") %>%
-    # create variable needed
-    mutate(drugdatediff=datediff(date, dstartdate)) %>%
-    # cache this table
-    analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+  # Special handling for SBP - use combined home and practice measurements
+  if (i == "sbp") {
+    data <- all_sbp_measurements %>%
+      # join drug start dates (inner join to keep only those with information)
+      inner_join(drug_start_dates, by="patid") %>%
+      # create variable needed
+      mutate(drugdatediff=datediff(date, dstartdate)) %>%
+      # cache this table
+      analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+  } else {
+    # name of biomarker table
+    clean_tablename <- paste0("clean_", i, "_medcodes")
+    
+    # get the biomarker table needed
+    data <- get(clean_tablename) %>%
+      # join drug start dates (inner join to keep only those with information)
+      inner_join(drug_start_dates, by="patid") %>%
+      # create variable needed
+      mutate(drugdatediff=datediff(date, dstartdate)) %>%
+      # cache this table
+      analysis$cached(drug_merge_tablename, indexes=c("patid", "dstartdate", "drugclass"))
+  }
   
   # assign new name
   assign(drug_merge_tablename, data)
   
 }
 
+
+# HbA1c (same as above)
+
+full_hba1c_drug_merge <- clean_hba1c_medcodes %>%
+  
+  inner_join(drug_start_dates, by="patid") %>%
+  mutate(drugdatediff=datediff(date, dstartdate)) %>%
+
+analysis$cached("full_hba1c_drug_merge", indexes=c("patid", "dstartdate", "drug_class", "drug_substance"))
 
 
 ############################################################################################
@@ -274,7 +313,7 @@ baseline_biomarkers <- drug_start_stop %>%
 ## For all except height: between 2 years prior and 7 days after drug start date
 
 
-biomarkers_no_height <- setdiff(biomarkers, "height")
+biomarkers_no_height <- setdiff(biomarkers, c("height", "sbp", "sbp_home", "sbp_practice"))
 
 for (i in biomarkers_no_height) {
   
@@ -369,35 +408,97 @@ baseline_hba1c <- full_hba1c_drug_merge %>%
 
 
 
-## SBP: have 2 year value from above; now add in between 6 months prior and 7 days after drug start date (for presbp) or between 12 months prior and 7 days after (for presbp12m)
-## Exclude if before timeprevcombo for 6 month and 12 month value (not 2 year value)
+## Uses 30 days prior to drug start, averaging measurements within 7 days of closest date
+## Includes volatility measures (SD, range, min, max) and source counts (home vs practice)
 
-baseline_sbp <- full_sbp_drug_merge %>%
-  
-  filter(drugdatediff<=7 & drugdatediff>=-366) %>%
-  
-  group_by(patid, dstartdate, drugclass) %>%
-  
-  mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
-  filter(abs(drugdatediff)==min_timediff) %>%
-  
-  mutate(presbp12m=min(testvalue, na.rm=TRUE)) %>%
-  filter(presbp12m==testvalue) %>%
-  
-  dbplyr::window_order(drugdatediff) %>%
-  filter(row_number()==1) %>%
-  
-  ungroup() %>%
-  
-  rename(presbp12mdate=date,
-         presbp12mdrugdiff=drugdatediff) %>%
-  
-  mutate(presbp=ifelse(presbp12mdrugdiff>=-183, presbp12m, NA),
-         presbpdate=ifelse(presbp12mdrugdiff>=-183, presbp12mdate, NA),
-         presbpdrugdiff=ifelse(presbp12mdrugdiff>=-183, presbp12mdrugdiff, NA)) %>%
-  
-  select(patid, dstartdate, drugclass, presbp12m, presbp12mdate, presbp12mdrugdiff, presbp, presbpdate, presbpdrugdiff)
 
+sbp_biomarkers <- c("sbp", "sbp_home", "sbp_practice")
+
+for (i in sbp_biomarkers) {
+  
+  print(i)
+  
+  drug_merge_tablename <- paste0("full_", i, "_drug_merge")
+  baseline_sbp_var <- paste0("baseline_biomarkers_interim_", i)
+  
+  # Dynamic variable names
+  pre_sbp_variable <- paste0("pre", i)
+  pre_sbp_date_variable <- paste0("pre", i, "date")
+  pre_sbp_drugdiff_variable <- paste0("pre", i, "drugdiff")
+  pre_sbp_sd_variable <- paste0("pre", i, "_sd")
+  pre_sbp_range_variable <- paste0("pre", i, "_range")
+  pre_sbp_min_variable <- paste0("pre", i, "_min")
+  pre_sbp_max_variable <- paste0("pre", i, "_max")
+  pre_sbp_nmeas_variable <- paste0("pre", i, "_n")
+  pre_sbp_nhome_variable <- paste0("pre", i, "_n_home")
+  pre_sbp_nprac_variable <- paste0("pre", i, "_n_practice")
+  
+  if (i == "sbp") {
+    # For combined SBP: calculate both home and practice counts
+    data <- get(drug_merge_tablename) %>%
+      filter(drugdatediff <= 0 & drugdatediff >= -30) %>%
+      group_by(patid, dstartdate, drugclass) %>%
+      mutate(min_timediff = min(abs(drugdatediff), na.rm = TRUE)) %>%
+      filter(drugdatediff >= (min_timediff - 7) & drugdatediff <= min_timediff) %>%
+      summarise(
+        {{pre_sbp_variable}} := mean(testvalue, na.rm = TRUE),
+        {{pre_sbp_date_variable}} := min(date, na.rm = TRUE),
+        {{pre_sbp_drugdiff_variable}} := min(drugdatediff, na.rm = TRUE),
+        {{pre_sbp_nmeas_variable}} := n(),
+        {{pre_sbp_sd_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+        {{pre_sbp_range_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_min_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_max_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+        {{pre_sbp_nhome_variable}} := sum(type == "home", na.rm = TRUE),
+        {{pre_sbp_nprac_variable}} := sum(type == "practice", na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      analysis$cached(baseline_sbp_var, indexes = c("patid", "dstartdate", "drugclass"))
+  } else if (i == "sbp_home") {
+    # For home SBP: only calculate home count
+    data <- get(drug_merge_tablename) %>%
+      filter(drugdatediff <= 0 & drugdatediff >= -30) %>%
+      group_by(patid, dstartdate, drugclass) %>%
+      mutate(min_timediff = min(abs(drugdatediff), na.rm = TRUE)) %>%
+      filter(drugdatediff >= (min_timediff - 7) & drugdatediff <= min_timediff) %>%
+      summarise(
+        {{pre_sbp_variable}} := mean(testvalue, na.rm = TRUE),
+        {{pre_sbp_date_variable}} := min(date, na.rm = TRUE),
+        {{pre_sbp_drugdiff_variable}} := min(drugdatediff, na.rm = TRUE),
+        {{pre_sbp_nmeas_variable}} := n(),
+        {{pre_sbp_sd_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+        {{pre_sbp_range_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_min_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_max_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+        {{pre_sbp_nhome_variable}} := n(),
+        .groups = "drop"
+      ) %>%
+      analysis$cached(baseline_sbp_var, indexes = c("patid", "dstartdate", "drugclass"))
+  } else if (i == "sbp_practice") {
+    # For practice SBP: only calculate practice count
+    data <- get(drug_merge_tablename) %>%
+      filter(drugdatediff <= 0 & drugdatediff >= -30) %>%
+      group_by(patid, dstartdate, drugclass) %>%
+      mutate(min_timediff = min(abs(drugdatediff), na.rm = TRUE)) %>%
+      filter(drugdatediff >= (min_timediff - 7) & drugdatediff <= min_timediff) %>%
+      summarise(
+        {{pre_sbp_variable}} := mean(testvalue, na.rm = TRUE),
+        {{pre_sbp_date_variable}} := min(date, na.rm = TRUE),
+        {{pre_sbp_drugdiff_variable}} := min(drugdatediff, na.rm = TRUE),
+        {{pre_sbp_nmeas_variable}} := n(),
+        {{pre_sbp_sd_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+        {{pre_sbp_range_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_min_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+        {{pre_sbp_max_variable}} := case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+        {{pre_sbp_nprac_variable}} := n(),
+        .groups = "drop"
+      ) %>%
+      analysis$cached(baseline_sbp_var, indexes = c("patid", "dstartdate", "drugclass"))
+  }
+  
+  assign(baseline_sbp_var, data)
+  
+}
 
 
 ## DBP: have 2 year value from above; now add in between 6 months prior and 7 days after drug start date (for predbp) or between 12 months prior and 7 days after (for predbp12m)
@@ -437,35 +538,48 @@ combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 baseline_hba1c <- baseline_hba1c %>%
   left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
   filter(prehba1c12mdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(prehba1c12mdrugdiff)<=timeprevcombo)) %>%
-  select(-timeprevcombo)
+  select(-timeprevcombo) %>%
+  analysis$cached("baseline_hba1c", indexes = c("patid", "dstartdate", "drugclass"))
 
-baseline_sbp <- baseline_sbp %>%
+baseline_sbp <- baseline_biomarkers_interim_sbp %>%
   left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
-  filter(presbp12mdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(presbp12mdrugdiff)<=timeprevcombo)) %>%
-  select(-timeprevcombo)
+  filter(presbpdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(presbpdrugdiff)<=timeprevcombo)) %>%
+  select(-timeprevcombo) %>%
+  analysis$cached("baseline_sbp", indexes = c("patid", "dstartdate", "drugclass"))
+
+baseline_sbp_home <- baseline_biomarkers_interim_sbp_home %>%
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
+  filter(presbp_homedrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(presbp_homedrugdiff)<=timeprevcombo)) %>%
+  select(-timeprevcombo) %>%
+  analysis$cached("baseline_sbp_home", indexes = c("patid", "dstartdate", "drugclass"))
+
+baseline_sbp_practice <- baseline_biomarkers_interim_sbp_practice %>%
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
+  filter(presbp_practicedrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(presbp_practicedrugdiff)<=timeprevcombo)) %>%
+  select(-timeprevcombo) %>%
+  analysis$cached("baseline_sbp_practice", indexes = c("patid", "dstartdate", "drugclass"))
 
 baseline_dbp <- baseline_dbp %>%
   left_join((combo_start_stop %>% select(patid, dcstartdate, timeprevcombo)), by=c("patid", c("dstartdate"="dcstartdate"))) %>%
   filter(predbp12mdrugdiff>=0 | is.na(timeprevcombo) | (!is.na(timeprevcombo) & abs(predbp12mdrugdiff)<=timeprevcombo)) %>%
-  select(-timeprevcombo)
+  select(-timeprevcombo) %>%
+  analysis$cached("baseline_dbp", indexes = c("patid", "dstartdate", "drugclass"))
 
 
 baseline_biomarkers <- baseline_biomarkers %>%
   rename(
     prehba1c2yrs=prehba1c,
-         prehba1c2yrsdate=prehba1cdate,
-         prehba1c2yrsdrugdiff=prehba1cdrugdiff,
-    presbp2yrs=presbp,
-    presbp2yrsdate=presbpdate,
-    presbp2yrsdrugdiff=presbpdrugdiff,
+    prehba1c2yrsdate=prehba1cdate,
+    prehba1c2yrsdrugdiff=prehba1cdrugdiff,
     predbp2yrs=predbp,
     predbp2yrsdate=predbpdate,
     predbp2yrsdrugdiff=predbpdrugdiff,
-    ) %>%
+  ) %>%
   left_join(baseline_hba1c, by=c("patid", "dstartdate", "drugclass")) %>%
-  left_join(baseline_sbp, by=c("patid", "dstartdate", "drugclass")) %>%
-  left_join(baseline_dbp, by=c("patid", "dstartdate", "drugclass")) %>%
   relocate(height, .after=prehba1cdrugdiff) %>%
+  analysis$cached("baseline_biomarkers_interim_1", indexes = c("patid", "dstartdate", "drugclass")) %>%
+  left_join(baseline_sbp, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("baseline_biomarkers_interim_2", indexes = c("patid", "dstartdate", "drugclass")) %>%
+  left_join(baseline_dbp, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
-
 
