@@ -353,6 +353,127 @@ sbp_practice_6m_outcome <- drug_start_stop %>%
 
 ############################################################################################
 
+# Calculate 60-365 day average SBP, SBP_home, and SBP_practice (all measurements between days 60-365)
+## Within 2 months to 1 year (60-365 days) after drug start
+## Average all values in this entire window (not limited to 7-day window around target date)
+
+sbp_60to365_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(all_sbp_measurements, by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate60to365 = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime60to365 = pmin(ifelse(is.na(timetoaddrem), 365, timetoaddrem),
+                               ifelse(is.na(timetochange), 365, timetochange+91), 365, na.rm=TRUE),
+         lastvaliddate60to365 = if_else(maxtime60to365<60, NA, sql("date_add(dstartdate, interval maxtime60to365 day)"))) %>%
+  
+  filter(date >= minvaliddate60to365 & date <= lastvaliddate60to365 & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  
+  summarise(
+    postsbp_60to365 = mean(testvalue, na.rm = TRUE),
+    postsbpdate_60to365_min = min(date, na.rm = TRUE),
+    postsbpdate_60to365_max = max(date, na.rm = TRUE),
+    postsbpdays_60to365_min = min(days_from_start, na.rm = TRUE),
+    postsbpdays_60to365_max = max(days_from_start, na.rm = TRUE),
+    n_measurements_60to365 = n(),
+    postsbp_60to365_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_60to365_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_60to365_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_60to365_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    n_home_60to365 = sum(type == "home", na.rm = TRUE),
+    n_practice_60to365 = sum(type == "practice", na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_60to365_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 60-365 day average SBP_home (home measurements only)
+sbp_home_60to365_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_home_medcodes %>% mutate(type = "home"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate60to365 = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime60to365 = pmin(ifelse(is.na(timetoaddrem), 365, timetoaddrem),
+                               ifelse(is.na(timetochange), 365, timetochange+91), 365, na.rm=TRUE),
+         lastvaliddate60to365 = if_else(maxtime60to365<60, NA, sql("date_add(dstartdate, interval maxtime60to365 day)"))) %>%
+  
+  filter(date >= minvaliddate60to365 & date <= lastvaliddate60to365 & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  
+  summarise(
+    postsbp_home_60to365 = mean(testvalue, na.rm = TRUE),
+    postsbpdate_home_60to365_min = min(date, na.rm = TRUE),
+    postsbpdate_home_60to365_max = max(date, na.rm = TRUE),
+    postsbpdays_home_60to365_min = min(days_from_start, na.rm = TRUE),
+    postsbpdays_home_60to365_max = max(days_from_start, na.rm = TRUE),
+    n_measurements_home_60to365 = n(),
+    postsbp_home_60to365_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_home_60to365_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_home_60to365_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_home_60to365_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_home_60to365_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+# Calculate 60-365 day average SBP_practice (practice measurements only)
+sbp_practice_60to365_outcome <- drug_start_stop %>%
+  select(patid, dstartdate, dstopdate, drugclass, druginstance) %>%
+  
+  # Join with combo_start_stop to get timetochange and timetoaddrem
+  left_join((combo_start_stop %>% select(patid, dcstartdate, timetochange, timetoaddrem)), 
+            by=c("patid", "dstartdate"="dcstartdate")) %>%
+  
+  inner_join(clean_sbp_practice_medcodes %>% mutate(type = "practice"), by = "patid") %>%
+  
+  mutate(days_from_start = datediff(date, dstartdate)) %>%
+  
+  mutate(minvaliddate60to365 = sql("date_add(dstartdate, interval 60 day)"),
+         maxtime60to365 = pmin(ifelse(is.na(timetoaddrem), 365, timetoaddrem),
+                               ifelse(is.na(timetochange), 365, timetochange+91), 365, na.rm=TRUE),
+         lastvaliddate60to365 = if_else(maxtime60to365<60, NA, sql("date_add(dstartdate, interval maxtime60to365 day)"))) %>%
+  
+  filter(date >= minvaliddate60to365 & date <= lastvaliddate60to365 & date <= dstopdate) %>%
+  
+  group_by(patid, dstartdate, drugclass) %>%
+  
+  summarise(
+    postsbp_practice_60to365 = mean(testvalue, na.rm = TRUE),
+    postsbpdate_practice_60to365_min = min(date, na.rm = TRUE),
+    postsbpdate_practice_60to365_max = max(date, na.rm = TRUE),
+    postsbpdays_practice_60to365_min = min(days_from_start, na.rm = TRUE),
+    postsbpdays_practice_60to365_max = max(days_from_start, na.rm = TRUE),
+    n_measurements_practice_60to365 = n(),
+    postsbp_practice_60to365_sd = case_when(n() <= 1 ~ NA_real_, TRUE ~ sd(testvalue, na.rm = TRUE)),
+    postsbp_practice_60to365_range = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE) - min(testvalue, na.rm = TRUE)),
+    postsbp_practice_60to365_min = case_when(n() <= 1 ~ NA_real_, TRUE ~ min(testvalue, na.rm = TRUE)),
+    postsbp_practice_60to365_max = case_when(n() <= 1 ~ NA_real_, TRUE ~ max(testvalue, na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  
+  analysis$cached("sbp_practice_60to365_outcome", indexes = c("patid", "dstartdate", "drugclass"))
+
+
+############################################################################################
+
 # Pull out 3 month and 6 month and 12 month biomarker values
 
 ## Loop through full biomarker drug merge tables
@@ -715,6 +836,13 @@ response_biomarkers <- response_biomarkers %>%
   left_join(sbp_home_6m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached("response_biomarkers_interim_6", indexes=c("patid", "dstartdate", "drugclass")) %>%
   left_join(sbp_practice_6m_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_7", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  # join 60-365 day outcome data
+  left_join(sbp_60to365_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_8", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_home_60to365_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
+  analysis$cached("response_biomarkers_interim_9", indexes=c("patid", "dstartdate", "drugclass")) %>%
+  left_join(sbp_practice_60to365_outcome, by=c("patid", "dstartdate", "drugclass")) %>%
   # cache this table
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drugclass"))
 
