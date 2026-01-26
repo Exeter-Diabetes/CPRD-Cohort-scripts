@@ -46,7 +46,7 @@ drug_start_stop <- drug_start_stop %>% analysis$cached("drug_start_stop")
 combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 
 ## Biomarkers inc. CKD
-#baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers")
+baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers")
 response_biomarkers <- response_biomarkers %>% analysis$cached("response_biomarkers") #includes baseline biomarker values for first instance drug periods so no need to use baseline_biomakers table
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
