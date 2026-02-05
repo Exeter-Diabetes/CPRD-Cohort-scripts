@@ -59,13 +59,13 @@ comorbids <- c("af",
                "lowerlimbfracture",
                "micturition_control",
                "myocardialinfarction",
-               "neuropathy",
+              #  "neuropathy", # codes removed from code list 05/02/2026
                "osteoporosis",
                "otherneuroconditions",
                "pad", #peripheral arterial disease
                "pulmonaryfibrosis",
                "pulmonaryhypertension",
-               "retinopathy",
+              #  "retinopathy", # codes removed from code list 05/02/2026
                "revasc", #revascularisation procedure
                "rheumatoidarthritis",
                "solid_cancer",
@@ -75,10 +75,11 @@ comorbids <- c("af",
                "ukpds_photocoagulation",
                "unstableangina",
                "urinary_frequency",
-               "vitreoushemorrhage",
+              #  "vitreoushemorrhage", # codes removed from code list 05/02/2026
                "volume_depletion",
                "genital_infection",
-               "genital_infection_nonspec"
+               "genital_infection_nonspec",
+               "hypoglycaemia"
 )
 
 
