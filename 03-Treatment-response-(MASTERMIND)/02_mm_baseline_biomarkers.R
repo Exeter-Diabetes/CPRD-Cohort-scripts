@@ -31,7 +31,7 @@ analysis = cprd$analysis("mm")
 ## Keep HbA1c separate as processed differently
 ## If you add biomarker to the end of this list, code should run fine to incorporate new biomarker, as long as you delete final 'mm_baseline_biomarkers' table
 
-biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "albumin_urine", "creatinine_urine")
+biomarkers <- c("weight", "height", "bmi", "fastingglucose", "hdl", "triglyceride", "creatinine_blood", "ldl", "alt", "ast", "totalcholesterol", "dbp", "sbp", "acr", "albumin_blood", "bilirubin", "haematocrit", "haemoglobin", "pcr", "albumin_urine", "creatinine_urine", "eosinophils")
 
 
 ############################################################################################
@@ -91,7 +91,13 @@ for (i in biomarkers) {
   raw_tablename <- paste0("raw_", i, "_medcodes")
   clean_tablename <- paste0("clean_", i, "_medcodes")
   
-  if (i=="haematocrit") {
+  if (i=="eosinophils") {
+    message("Remove eosinophil values <20")
+    raw_data <- get(raw_tablename) %>%
+      mutate(testvalue=ifelse(testvalue<20, NA, testvalue)) %>%
+      filter(!is.na(testvalue))
+  }
+  else if (i=="haematocrit") {
     message("Converting haematocrit values to proportion out of 1")
     raw_data <- get(raw_tablename) %>%
       mutate(testvalue=ifelse(testvalue>1, testvalue/100, testvalue))
@@ -106,7 +112,11 @@ for (i in biomarkers) {
   }
   
   
-  if (i=="albumin_urine") {
+  if (i == "eosinophils") {
+    # nothing for now
+    data <- raw_data
+  }
+  else if (i=="albumin_urine") {
     data <- raw_data %>%
       filter(numunitid==183)
   }
