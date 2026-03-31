@@ -94,7 +94,7 @@ for (i in biomarkers) {
   if (i=="eosinophils") {
     message("Remove eosinophil values <20")
     raw_data <- get(raw_tablename) %>%
-      mutate(testvalue=ifelse(testvalue<20, NA, testvalue)) %>%
+      mutate(testvalue=ifelse(testvalue>20, NA, testvalue)) %>%
       filter(!is.na(testvalue))
   }
   else if (i=="haematocrit") {
