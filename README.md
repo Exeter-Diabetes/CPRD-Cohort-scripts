@@ -19,9 +19,9 @@ graph TD;
     F -->|"Patients with a code for diabetes insipidus (excluded because they may mistakenly have diabetes mellitus codes)"|G["n=1,300"]
     F -->|"Patients with a code for gestational diabetes (excluded because algorithms for determining diagnosis date will not work in this group)"|H["n=28,053"]
     F --> I["n=2,081,081"]
-    I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|J["n=36"]
-    I --> K["<b>Diabetes cohort</b>: n=2,081,045"]
-    K --> L["<b>01 At-diagnosis cohort</b>: <br> n=1,232,500 <br> Index date=diagnosis date"]
+    I --> |"Inconsistencies in diabetes type suggesting <br> coding errors or unclassifiable"|J["n=49"]
+    I --> K["<b>Diabetes cohort</b>: n=2,081,032"]
+    K --> L["<b>01 At-diagnosis cohort</b>: <br> n=1,232,397 <br> Index date=diagnosis date"]
     K --> M["<b>02 Prevalent cohort</b>: <br> n= <br> Actively registered on  <br> Index date=diagnosis date"]
     K --> N["<b>03 Treatment response (MASTERMIND) cohort</b>: For T2D 1st instance dataset excluding drug starts within 91 days <br> of registration: n=1,270,009 with 2,893,016 unique drug periods <br> With script for diabetes medication <br> Index date=drug start date"]
 ```
