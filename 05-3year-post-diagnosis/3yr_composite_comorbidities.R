@@ -1,5 +1,4 @@
 
-
 # Setup
 library(tidyverse)
 library(aurum)
@@ -14,12 +13,12 @@ analysis <- cprd$analysis("all")
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 index_dates <- diabetes_cohort %>%
-  filter(!is.na(dm_diag_date)) %>%
-  select(patid, index_date = dm_diag_date)
+  filter(!is.na(index_date_3yr)) %>%
+  select(patid, index_date = index_date_3yr)
 
 
 # Load comorbidities
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 comorbidities <- comorbidities %>% analysis$cached("comorbidities")
 
 ###############################################################################
@@ -160,7 +159,7 @@ retinopathy_severity <- retinopathy_severity %>%
   )
 
 
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 retinopathy_severity <- retinopathy_severity %>%
   analysis$cached("retinopathy_severity_relaxed", unique_indexes="patid")
 
@@ -378,7 +377,7 @@ neuropathy_severity <- neuropathy_severity %>%
 
 
 
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 neuropathy_severity <- neuropathy_severity %>%
   analysis$cached("neuropathy_severity_relaxed", unique_indexes = "patid")
 
@@ -393,7 +392,7 @@ analysis <- cprd$analysis("all")
 death_kf_primary <- death_kf_primary %>% analysis$cached("death_kf_primary")
 
 # egfr40 decline, ACR_confirmed, and CKD stages
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers") 
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")  
 
@@ -544,7 +543,7 @@ severe_nephropathy <- nephropathy_flags %>%
 
 
 
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 
 nephropathy_severity <- non_severe_nephropathy %>%
   left_join(severe_nephropathy, by = "patid") %>%
@@ -683,13 +682,13 @@ ukpds <- index_dates %>%
       post_index_date_first_amputation,
       
       # Eye (UKPDS-specific)
-      pre_index_date_earliest_vitreoushemorrhage,
-      pre_index_date_latest_vitreoushemorrhage,
-      post_index_date_first_vitreoushemorrhage,
+      pre_index_date_earliest_vitreous_and_pre_retinal_haemorrhage,
+      pre_index_date_latest_vitreous_and_pre_retinal_haemorrhage,
+      post_index_date_first_vitreous_and_pre_retinal_haemorrhage,
       
-      pre_index_date_earliest_ukpds_photocoagulation,
-      pre_index_date_latest_ukpds_photocoagulation,
-      post_index_date_first_ukpds_photocoagulation
+    #  pre_index_date_earliest_ukpds_photocoagulation,
+    #  pre_index_date_latest_ukpds_photocoagulation,
+    #  post_index_date_first_ukpds_photocoagulation
     ),
     by = c("patid", "index_date")
   ) %>%
@@ -717,8 +716,8 @@ ukpds <- index_dates %>%
       coalesce(pre_index_date_earliest_primary_incident_stroke, as.Date("2050-01-01")),
       coalesce(pre_index_date_earliest_ckd5_code,            as.Date("2050-01-01")),
       coalesce(pre_index_date_earliest_amputation,           as.Date("2050-01-01")),
-      coalesce(pre_index_date_earliest_vitreoushemorrhage,   as.Date("2050-01-01")),
-      coalesce(pre_index_date_earliest_ukpds_photocoagulation, as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_vitreous_and_pre_retinal_haemorrhage,   as.Date("2050-01-01")),
+     # coalesce(pre_index_date_earliest_ukpds_photocoagulation, as.Date("2050-01-01")),
       na.rm = TRUE
     ),
     
@@ -728,8 +727,8 @@ ukpds <- index_dates %>%
       coalesce(pre_index_date_latest_primary_incident_stroke, as.Date("1900-01-01")),
       coalesce(pre_index_date_latest_ckd5_code,            as.Date("1900-01-01")),
       coalesce(pre_index_date_latest_amputation,           as.Date("1900-01-01")),
-      coalesce(pre_index_date_latest_vitreoushemorrhage,   as.Date("1900-01-01")),
-      coalesce(pre_index_date_latest_ukpds_photocoagulation, as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_vitreous_and_pre_retinal_haemorrhage,   as.Date("1900-01-01")),
+    #  coalesce(pre_index_date_latest_ukpds_photocoagulation, as.Date("1900-01-01")),
       na.rm = TRUE
     ),
     
@@ -749,8 +748,8 @@ ukpds <- index_dates %>%
       coalesce(post_index_date_first_primary_incident_stroke, as.Date("2050-01-01")),
       coalesce(post_index_date_first_ckd5_code,            as.Date("2050-01-01")),
       coalesce(post_index_date_first_amputation,           as.Date("2050-01-01")),
-      coalesce(post_index_date_first_vitreoushemorrhage,   as.Date("2050-01-01")),
-      coalesce(post_index_date_first_ukpds_photocoagulation, as.Date("2050-01-01")),
+      coalesce(post_index_date_first_vitreous_and_pre_retinal_haemorrhage,   as.Date("2050-01-01")),
+     # coalesce(post_index_date_first_ukpds_photocoagulation, as.Date("2050-01-01")),
       coalesce(post_cv_death_primary_cause_date,            as.Date("2050-01-01")),
       coalesce(post_pvd_death_primary_cause_date,           as.Date("2050-01-01")),
       coalesce(post_sudden_death_primary_cause_date,        as.Date("2050-01-01")),
@@ -778,6 +777,7 @@ ukpds <- index_dates %>%
 
 
 
-analysis <- cprd$analysis("at_diag")
+analysis <- cprd$analysis("3yr")
 ukpds <- ukpds %>%
   analysis$cached("ukpds", unique_indexes = "patid")
+
