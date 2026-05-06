@@ -1,7 +1,7 @@
 # 3-year post-diagnosis cohort
 The 3-year post-diagnosis cohort defines the index date as three years after diabetes diagnosis (`dm_diag_date + 1095 days`).
 
-This 3-year cohort includes n=969,321 patients from the diabetes cohort who had a recorded diagnosis date and remained registered and alive at the 3-year index date. Of the n=1,232,487 patients with diagnosis dates, n=218,026 deregistered before 3 years and n=45,140 died within 3 years.
+This 3-year post-diagnosis cohort includes n=969,321 patients from the diabetes cohort who had a recorded diagnosis date and remained registered and alive at the 3-year index date. Of the n=1,232,487 patients with diagnosis dates, n=218,026 deregistered before 3 years and n=45,140 died within 3 years.
 
 The dataset provides biomarker, comorbidity, medication, and sociodemographic variables referenced to the 3-year post-diagnosis index date.
 
