@@ -69,7 +69,6 @@ comorbids <- c("af",
                "unstableangina",
                "urinary_frequency",
                "volume_depletion",
-               # -----microvascular-------
                "non_severe_retinopathy",
                "severe_retinopathy",
                "non_severe_neuropathy",
@@ -80,7 +79,14 @@ comorbids <- c("af",
                "charcot_foot",
                "lower_limb_amputation",
                "vitreous_and_pre_retinal_haemorrhage",
-               "blindness_and_visual_impairment")
+               "blindness_and_visual_impairment", 
+               "acutepancreatitis",
+               "chronicpancreatitis", 
+               "pancreaticcancer", 
+               "surgicalpancreaticresection", 
+               "qresearch_polycystic_ovaries", 
+               "qresearch_learning_disability", 
+               "qresearch_bipolardepressionorschizophrenia")
 
 
 ############################################################################################
@@ -97,8 +103,11 @@ short_comorbid_map <- list(
   "vitreous_and_pre_retinal_haemorrhage" = "vitreous_and_pre_haemorrhage",
   "painful_peripheral_neuropathy"        = "painful_neuropathy",
   "foot_ulcer_infection_ischaemia"       = "foot_ulcer_ischaemia",
-  "blindness_and_visual_impairment"      = "blindness_and_vis_impairment"
-)
+  "blindness_and_visual_impairment"      = "blindness_and_vis_impairment", 
+  "qresearch_bipolardepressionorschizophrenia" = "qresearch_bipolarschiz", 
+  "qresearch_learning_disability" = "qresearch_learningdisab"
+
+  )
 
 get_short_comorbid <- function(x) {
   if (x %in% names(short_comorbid_map)) {
@@ -314,11 +323,18 @@ for (i in comorbids) {
 
 comorbids <- setdiff(comorbids, c("hosp_cause_majoramputation", "hosp_cause_minoramputation", "fh_diabetes_positive", "fh_diabetes_negative"))
 
+# rename column as length too long
+comorbids[comorbids == "qresearch_bipolardepressionorschizophrenia"] <-
+  "qresearch_bipolarschiz"
+
+
 comorbidities <- index_dates
 
 for (i in comorbids) {
   
+  
   short_i <- get_short_comorbid(i) 
+  
   
   print(paste("working out pre- and post-index date code occurrences for", i))
   
@@ -430,19 +446,31 @@ next_hosp_admi <- index_dates %>%
 
 
 
-next_hosp_admi_after_interval <- index_dates %>%
-  inner_join(cprd$tables$hesHospital, by="patid") %>%
-  filter(!is.na(admidate) & datediff(admidate, index_date)>=14 & admimeth!="11" & admimeth!="12" & admimeth!="13") %>%
-  group_by(patid) %>%
-  mutate(earliest_spell=min(spno, na.rm=TRUE)) %>% #have confirmed that lower spell number = earlier spell
-  filter(spno==earliest_spell) %>%
-  ungroup() %>%
-  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
-  filter(eorder==1) %>% #for episode, use episode order number to identify epikey of earliest episode within spell
-  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
-  filter(d_order==1) %>%
-  select(patid, index_date, postdiag_first_emergency_hosp_post_interval=epistart.x, postdiag_first_emergency_hosp_cause_post_interval=ICD) %>%
-  analysis$cached("next_hosp_admi_after_interval", unique_indexes="patid")
+
+pre_emerg_events <- index_dates %>%
+  inner_join(cprd$tables$hesHospital, by = "patid") %>%
+  filter(
+    !is.na(admidate),
+    admidate < index_date,
+    datediff(admidate, index_date) >= -365.25 * 2,
+    !(admimeth %in% c("11", "12", "13"))
+  ) %>%
+  group_by(patid, index_date) %>%
+  summarise(
+    pre_index_date_earliest_emerg_hosp = min(admidate, na.rm = TRUE),
+    pre_index_date_latest_emerg_hosp   = max(admidate, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+pre_emerg_hosp <- index_dates %>%
+  left_join(pre_emerg_events, by = c("patid", "index_date")) %>%
+  mutate(
+    pre_index_date_emerg_hosp =
+      as.integer(!is.na(pre_index_date_earliest_emerg_hosp))
+  ) %>%
+  analysis$cached("pre_emerg_hosp", unique_indexes = "patid")
+
+
 
 ############################################################################################
 
@@ -465,4 +493,7 @@ comorbidities <- comorbidities %>%
   left_join((amputation_outcome %>% select(-index_date)), by="patid") %>%
   left_join((fh_diabetes %>% select(-index_date)), by="patid") %>%
   left_join((next_hosp_admi %>% select(-index_date)), by="patid") %>%
-  analysis$cached("comorbidities", unique_indexes="patid")
+  left_join((pre_emerg_hosp %>% select(-index_date)), by="patid") %>%
+  analysis$cached("comorbidities_23_02_2026", unique_indexes="patid")
+
+

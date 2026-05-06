@@ -56,6 +56,97 @@ kf_death_primary <- primary_death_causes %>%
   mutate(kf_death_primary_cause=1L) %>%
   analysis$cached("death_kf_primary", unique_indexes="patid")
 
+stroke_death_primary <- primary_death_causes %>%
+  inner_join(codes$icd10_stroke, sql_on = "primary_cause LIKE CONCAT(icd10,'%')") %>%
+  distinct(patid) %>%
+  mutate(stroke_death_primary_cause = 1L) %>%
+  analysis$cached("death_stroke_primary", unique_indexes = "patid")
+
+mi_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_myocardialinfarction,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(mi_death_primary_cause = 1L) %>%
+  analysis$cached("death_mi_primary", unique_indexes = "patid")
+
+
+hyperglycaemia_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_hyperglycaemic_death,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(hyperglycaemia_death_primary_cause = 1L) %>%
+  analysis$cached("death_hyperglycaemia_primary", unique_indexes = "patid")
+
+hypoglycaemia_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_hypoglycaemia,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(hypoglycaemia_death_primary_cause = 1L) %>%
+  analysis$cached("death_hypoglycaemia_primary", unique_indexes = "patid")
+
+pvd_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_pvd_death,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(pvd_death_primary_cause = 1L) %>%
+  analysis$cached("death_pvd_primary", unique_indexes = "patid")
+
+sudden_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_sudden_death,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(sudden_death_primary_cause = 1L) %>%
+  analysis$cached("death_sudden_primary", unique_indexes = "patid")
+
+
+haem_cancer_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_haem_cancer,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(haem_cancer_death_primary_cause = 1L) %>%
+  analysis$cached("death_haem_cancer_primary", unique_indexes = "patid")
+
+
+solid_cancer_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_solid_cancer,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(solid_cancer_death_primary_cause = 1L) %>%
+  analysis$cached("death_solid_cancer_primary", unique_indexes = "patid")
+
+
+any_cancer_death_primary <- haem_cancer_death_primary %>%
+  select(patid) %>%
+  union(solid_cancer_death_primary %>% select(patid)) %>%
+  distinct(patid) %>%
+  mutate(cancer_death_primary_cause = 1L) %>%
+  analysis$cached("death_any_cancer_primary", unique_indexes = "patid")
+
+pancreatic_cancer_death_primary <- primary_death_causes %>%
+  inner_join(
+    codes$icd10_pancreaticcancer,
+    sql_on = "primary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  mutate(pancreatic_cancer_death_primary_cause = 1L) %>%
+  analysis$cached("death_pancreatic_cancer_primary", unique_indexes = "patid")
+
+
+
 
 # Secondary causes
 
@@ -81,6 +172,68 @@ kf_death_secondary <- secondary_death_causes %>%
   analysis$cached("death_kf_secondary", unique_indexes="patid")
 
 
+hyperglycaemia_death_secondary <- secondary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_hyperglycaemic_death,
+    sql_on = "secondary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  analysis$cached("death_hyperglycaemia_secondary", unique_indexes = "patid")
+
+hypoglycaemia_death_secondary <- secondary_death_causes %>%
+  inner_join(
+    codes$icd10_hypoglycaemia,
+    sql_on = "secondary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  analysis$cached("death_hypoglycaemia_secondary", unique_indexes = "patid")
+
+pvd_death_secondary <- secondary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_pvd_death,
+    sql_on = "secondary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  analysis$cached("death_pvd_secondary", unique_indexes = "patid")
+
+sudden_death_secondary <- secondary_death_causes %>%
+  inner_join(
+    codes$icd10_ukpds_sudden_death,
+    sql_on = "secondary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  analysis$cached("death_sudden_secondary", unique_indexes = "patid")
+
+
+haem_cancer_death_secondary <- secondary_death_causes %>%
+  inner_join(codes$icd10_haem_cancer, sql_on = "secondary_cause LIKE CONCAT(icd10,'%')") %>%
+  distinct(patid) %>%
+  analysis$cached("death_haem_cancer_secondary", unique_indexes = "patid")
+
+solid_cancer_death_secondary <- secondary_death_causes %>%
+  inner_join(codes$icd10_solid_cancer, sql_on = "secondary_cause LIKE CONCAT(icd10,'%')") %>%
+  distinct(patid) %>%
+  analysis$cached("death_solid_cancer_secondary", unique_indexes = "patid")
+
+cancer_death_secondary <- haem_cancer_death_secondary %>%
+  select(patid) %>%
+  union(solid_cancer_death_secondary %>% select(patid)) %>%
+  distinct(patid) %>%
+  mutate(cancer_death_secondary_cause = 1L) %>%
+  analysis$cached("death_cancer_secondary", unique_indexes = "patid")
+
+pancreatic_cancer_death_secondary <- secondary_death_causes %>%
+  inner_join(
+    codes$icd10_pancreaticcancer,
+    sql_on = "secondary_cause LIKE CONCAT(icd10,'%')"
+  ) %>%
+  distinct(patid) %>%
+  analysis$cached("death_pancreatic_cancer_secondary", unique_indexes = "patid")
+
+
+
+
+
 # Join primary and secondary for any cause
 
 cv_death_any <- cv_death_primary %>%
@@ -100,6 +253,62 @@ kf_death_any <- kf_death_primary %>%
   union(kf_death_secondary) %>%
   mutate(kf_death_any_cause=1L) %>%
   analysis$cached("death_kf_any", unique_indexes="patid")
+
+
+hyperglycaemia_death_any <- hyperglycaemia_death_primary %>%
+  select(-hyperglycaemia_death_primary_cause) %>%
+  union(hyperglycaemia_death_secondary) %>%
+  mutate(hyperglycaemia_death_any_cause = 1L) %>%
+  analysis$cached("death_hyperglycaemia_any", unique_indexes = "patid")
+
+hypoglycaemia_death_any <- hypoglycaemia_death_primary %>%
+  select(-hypoglycaemia_death_primary_cause) %>%
+  union(hypoglycaemia_death_secondary) %>%
+  mutate(hypoglycaemia_death_any_cause = 1L) %>%
+  analysis$cached("death_hypoglycaemia_any", unique_indexes = "patid")
+
+pvd_death_any <- pvd_death_primary %>%
+  select(-pvd_death_primary_cause) %>%
+  union(pvd_death_secondary) %>%
+  mutate(pvd_death_any_cause = 1L) %>%
+  analysis$cached("death_pvd_any", unique_indexes = "patid")
+
+sudden_death_any <- sudden_death_primary %>%
+  select(-sudden_death_primary_cause) %>%
+  union(sudden_death_secondary) %>%
+  mutate(sudden_death_any_cause = 1L) %>%
+  analysis$cached("death_sudden_any", unique_indexes = "patid")
+
+
+haem_cancer_death_any <- haem_cancer_death_primary %>%
+  select(patid) %>%
+  union(haem_cancer_death_secondary %>% select(patid)) %>%
+  distinct(patid) %>%
+  mutate(haem_cancer_death_any_cause = 1L) %>%
+  analysis$cached("death_haem_cancer_any", unique_indexes = "patid")
+
+solid_cancer_death_any <- solid_cancer_death_primary %>%
+  select(patid) %>%
+  union(solid_cancer_death_secondary %>% select(patid)) %>%
+  distinct(patid) %>%
+  mutate(solid_cancer_death_any_cause = 1L) %>%
+  analysis$cached("death_solid_cancer_any", unique_indexes = "patid")
+
+any_cancer_death_any <- haem_cancer_death_any %>%
+  select(patid) %>%
+  union(solid_cancer_death_any %>% select(patid)) %>%
+  distinct(patid) %>%
+  mutate(cancer_death_any_cause = 1L) %>%
+  analysis$cached("death_any_cancer_any", unique_indexes = "patid")
+
+
+pancreatic_cancer_death_any <- pancreatic_cancer_death_primary %>%
+  select(-pancreatic_cancer_death_primary_cause) %>%
+  union(pancreatic_cancer_death_secondary) %>%
+  mutate(pancreatic_cancer_death_any_cause=1L) %>%
+  analysis$cached("death_pancreatic_cancer_any", unique_indexes="patid")
+
+
 
 
 ## Join together and with all primary and secondary cause
@@ -136,5 +345,23 @@ death_causes <- cprd$tables$onsDeath %>%
   left_join(hf_death_any, by="patid") %>%
   left_join(kf_death_primary, by="patid") %>%
   left_join(kf_death_any, by="patid") %>%
+  left_join(hyperglycaemia_death_primary, by = "patid") %>%
+  left_join(hyperglycaemia_death_any, by = "patid") %>%
+  left_join(hypoglycaemia_death_primary, by = "patid") %>%
+  left_join(hypoglycaemia_death_any, by = "patid") %>%
+  left_join(pvd_death_primary, by = "patid") %>%
+  left_join(pvd_death_any, by = "patid") %>%
+  left_join(sudden_death_primary, by = "patid") %>%
+  left_join(sudden_death_any, by = "patid") %>%
+  left_join(haem_cancer_death_primary,  by = "patid") %>%
+  left_join(haem_cancer_death_any,      by = "patid") %>%
+  left_join(solid_cancer_death_primary, by = "patid") %>%
+  left_join(solid_cancer_death_any,     by = "patid") %>%
+  left_join(any_cancer_death_primary,   by = "patid") %>%
+  left_join(any_cancer_death_any,       by = "patid") %>%
+  left_join(pancreatic_cancer_death_primary, by = "patid") %>%
+  left_join(pancreatic_cancer_death_any, by = "patid") %>%
+  left_join(stroke_death_primary, by = "patid") %>%
+  left_join(mi_death_primary, by = "patid") %>%
   analysis$cached("death_causes", unique_indexes="patid")
 
