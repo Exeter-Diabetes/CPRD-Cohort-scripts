@@ -261,7 +261,9 @@ dm_diag_dates <- diabetes_cohort_ids %>%
          dm_diag_date_all_post_yob = pmin(ifelse(is.na(dm_diag_dmcodedate_post_yob), as.Date("2050-01-01"), dm_diag_dmcodedate_post_yob),
                                           ifelse(is.na(dm_diag_hba1cdate), as.Date("2050-01-01"), dm_diag_hba1cdate),
                                           ifelse(is.na(dm_diag_ohadate), as.Date("2050-01-01"), dm_diag_ohadate),
-                                          ifelse(is.na(dm_diag_insdate), as.Date("2050-01-01"), dm_diag_insdate), na.rm=TRUE)) %>%
+                                          ifelse(is.na(dm_diag_insdate), as.Date("2050-01-01"), dm_diag_insdate), na.rm=TRUE),
+         
+         dm_diag_date_all_post_yob=ifelse(dm_diag_date_all_post_yob==as.Date("2050-01-01"), as.Date(NULL), dm_diag_date_all_post_yob)) %>%
   
   analysis$cached("dm_diag_dates", unique_indexes="patid", indexes=c("dm_diag_date_all", "dm_diag_date_all_post_yob"))
 
@@ -450,14 +452,15 @@ check <- collect(diabetes_type_prelim %>%
 # Check those with T2D who only have diabetes medcodes in year of birth and no later codes/HbA1cs/scripts
 check <- collect(diabetes_type_prelim %>%
                    filter(diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & is.na(dm_diag_date_all_post_yob)))
-# 0 people
+## 13 people
+## Exclude these people
 
 
 # Finalise diabetes type and date of diagnosis - recode dm_diag_dmcodedate, dm_diag_date_all, dm_diag_age_all, dm_diag_before_reg and ins_in_1_year so include/exclude diabetes medcodes in year of birth depending on diabetes type
 
 diabetes_type_final <- diabetes_type_prelim %>%
   
-  filter(!((diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob) | (diabetes_type!=diabetes_type_post_yob))) %>%
+  filter(!((diabetes_type!=diabetes_type_post_yob) | (diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & year(dm_diag_date_all_post_yob)==yob)  | (diabetes_type=="type 2" & diabetes_type_post_yob=="type 2" & is.na(dm_diag_date_all_post_yob)))) %>%
   
   mutate(raw_dm_diag_dmcodedate=dm_diag_dmcodedate,
          raw_dm_diag_date_all=dm_diag_date_all,
@@ -522,7 +525,7 @@ diabetes_cohort <- diabetes_type_final %>%
   analysis$cached("diabetes_cohort", unique_indexes="patid", indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_date", "dm_diag_age_all", "dm_diag_age", "diabetes_type"))
 
 
-diabetes_cohort %>% count() # 2081045
-diabetes_cohort %>% filter(diabetes_type == "type 2") %>% count() # 1916915
+diabetes_cohort %>% count() # 2081032
+diabetes_cohort %>% filter(diabetes_type == "type 2") %>% count() # 1916902
 diabetes_cohort %>% filter(diabetes_type == "type 1") %>% count() # 153212
 diabetes_cohort %>% filter(diabetes_type == "other") %>% count() # 10918
