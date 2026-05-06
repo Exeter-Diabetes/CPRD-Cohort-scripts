@@ -18,12 +18,11 @@ codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 
 analysis = cprd$analysis("at_diag")
 
-
 ############################################################################################
 
 # Define medications
 
-## Haven't included definite_genital_infection_meds, topical_candidal_meds, immunosuppressants, oralsteroids, oestrogens or flu vaccine as not updated
+## Haven't included definite_genital_infection_meds, topical_candidal_meds, immunosuppressants, oestrogens or flu vaccine as not updated
 
 meds <- c("ace_inhibitors",
           "beta_blockers",
@@ -33,8 +32,9 @@ meds <- c("ace_inhibitors",
           "ksparing_diuretics",
           "statins",
           "arb",
-          "finerenone")
-
+          "finerenone", 
+          "oralsteroids", 
+          "antipsychotics")
 
 ############################################################################################
 
@@ -60,11 +60,9 @@ for (i in meds) {
 
 
 ############################################################################################
-
 # Clean scripts (remove if before DOB or after lcd/deregistration), then merge with index dates
 
 # Get index dates
-
 analysis = cprd$analysis("all")
 
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
@@ -139,10 +137,8 @@ for (i in meds) {
 
 
 # Cache final version
-
 non_diabetes_meds <- non_diabetes_meds %>%
   analysis$cached("non_diabetes_meds", unique_indexes="patid")
-
 
 
 

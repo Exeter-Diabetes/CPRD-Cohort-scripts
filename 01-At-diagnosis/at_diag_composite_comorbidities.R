@@ -24,63 +24,6 @@ comorbidities <- comorbidities %>% analysis$cached("comorbidities")
 
 ###############################################################################
 
-# These severe complications are only classified as diabetes-related 
-# when a non-severe microvascular code is present before. 
-# This avoids misclassifying non-diabetic causes (e.g., amputation from accident, 
-# non-diabetic blindness) as diabetic microvascular outcomes.
-starred <- tibble::tribble(
-  ~severe,                             ~family,
-  "blindness_and_visual_impairment",   "retinopathy",
-  "foot_ulcer_infection_ischaemia",    "neuropathy",
-  "charcot_foot",                      "neuropathy",
-  "painful_peripheral_neuropathy",     "neuropathy",
-  "neuropathic_pain",                  "neuropathy",
-  "lower_limb_amputation",             "neuropathy"
-)
-
-
-for (i in seq_len(nrow(starred))) {
-  
-  sev <- starred$severe[i]
-  fam <- starred$family[i]
-  
-  # Existing columns
-  pre_sev_col   <- paste0("pre_index_date_earliest_", sev)
-  post_sev_col  <- paste0("post_index_date_first_", sev)
-  
-  pre_ns_col    <- paste0("pre_index_date_earliest_non_severe_", fam)
-  post_ns_col   <- paste0("post_index_date_first_non_severe_", fam)
-  
-  # New columns 
-  pre_star_date <- paste0("pre_index_date_earliest_", sev, "_with_non_severe")
-  pre_star_flag <- paste0("pre_index_date_", sev, "_with_non_severe")
-  
-  post_star_date <- paste0("post_index_date_first_", sev, "_with_non_severe")
-  post_star_flag <- paste0("post_index_date_", sev, "_with_non_severe")
-  
-  comorbidities <- comorbidities %>%
-    mutate(
-      # PRE: severe only if pre non-severe exists and is <= pre severe date
-      !!pre_star_date := case_when(
-        !is.na(.data[[pre_sev_col]]) &
-          !is.na(.data[[pre_ns_col]]) &
-          .data[[pre_ns_col]] <= .data[[pre_sev_col]] ~ .data[[pre_sev_col]],
-        TRUE ~ as.Date(NA)
-      ),
-      !!pre_star_flag := as.integer(!is.na(.data[[pre_star_date]])),
-      
-      # POST: severe only if any non-severe (pre or post) exists
-      #       and occurs on/before the post severe date
-      !!post_star_date := case_when(
-        !is.na(.data[[post_sev_col]]) &
-          !is.na(coalesce(.data[[pre_ns_col]], .data[[post_ns_col]])) &
-          coalesce(.data[[pre_ns_col]], .data[[post_ns_col]]) <= .data[[post_sev_col]] ~
-          .data[[post_sev_col]],
-        TRUE ~ as.Date(NA)
-      ),
-      !!post_star_flag := as.integer(!is.na(.data[[post_star_date]]))
-    )
-}
 
 ################################################################################
 
@@ -104,14 +47,13 @@ retinopathy_severity <- index_dates %>%
       "pre_index_date_latest_proliferative_retinopathy",
       "pre_index_date_proliferative_retinopathy",
       "post_index_date_first_proliferative_retinopathy", 
-      "pre_index_date_earliest_blindness_and_visual_impairment_with_non_severe",
-      "pre_index_date_blindness_and_visual_impairment_with_non_severe",
-      "post_index_date_first_blindness_and_visual_impairment_with_non_severe",
-      "post_index_date_blindness_and_visual_impairment_with_non_severe"
+      "pre_index_date_earliest_blindness_and_visual_impairment",
+      "pre_index_date_blindness_and_visual_impairment",
+      "post_index_date_first_blindness_and_visual_impairment",
       ), by = c("patid","index_date")
   )
-            
-            
+  
+
             
 # Create severe_retinopathy composite and create pre and post flags/dates
 retinopathy_severity <- retinopathy_severity %>%
@@ -126,8 +68,7 @@ retinopathy_severity <- retinopathy_severity %>%
     ## --- Severe retinopathy (composite) ---
     #  - vitreous_and_pre_retinal_haemorrhage 
     #  - proliferative_retinopathy (includes photocoagulation)
-    #  - blindness_and_visual_impairment_with_non_severe (only those with prior non-severe)
-    
+    #  - blindness_and_visual_impairment
     # PRE: earliest severe retinopathy
     pre_index_date_earliest_severe_retinopathy = pmin(
       if_else(!is.na(pre_index_date_earliest_vitreous_and_pre_retinal_haemorrhage),
@@ -136,8 +77,8 @@ retinopathy_severity <- retinopathy_severity %>%
       if_else(!is.na(pre_index_date_earliest_proliferative_retinopathy),
               pre_index_date_earliest_proliferative_retinopathy,
               as.Date("2050-01-01")),
-      if_else(!is.na(pre_index_date_earliest_blindness_and_visual_impairment_with_non_severe),
-              pre_index_date_earliest_blindness_and_visual_impairment_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_blindness_and_visual_impairment),
+              pre_index_date_earliest_blindness_and_visual_impairment,
               as.Date("2050-01-01")),
       na.rm = TRUE
     ),
@@ -151,8 +92,8 @@ retinopathy_severity <- retinopathy_severity %>%
       if_else(!is.na(pre_index_date_latest_proliferative_retinopathy),
               pre_index_date_latest_proliferative_retinopathy,
               as.Date("1900-01-01")),
-      if_else(!is.na(pre_index_date_earliest_blindness_and_visual_impairment_with_non_severe),
-              pre_index_date_earliest_blindness_and_visual_impairment_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_blindness_and_visual_impairment),
+              pre_index_date_earliest_blindness_and_visual_impairment,
               as.Date("1900-01-01")),
       na.rm = TRUE
     ),
@@ -179,8 +120,8 @@ retinopathy_severity <- retinopathy_severity %>%
       if_else(!is.na(post_index_date_first_proliferative_retinopathy),
               post_index_date_first_proliferative_retinopathy,
               as.Date("2050-01-01")),
-      if_else(!is.na(post_index_date_first_blindness_and_visual_impairment_with_non_severe),
-              post_index_date_first_blindness_and_visual_impairment_with_non_severe,
+      if_else(!is.na(post_index_date_first_blindness_and_visual_impairment),
+              post_index_date_first_blindness_and_visual_impairment,
               as.Date("2050-01-01")),
       na.rm = TRUE
     ),
@@ -208,14 +149,21 @@ retinopathy_severity <- retinopathy_severity %>%
     pre_index_date_latest_severe_retinopathy,
     pre_index_date_severe_retinopathy,
     post_index_date_first_severe_retinopathy,
-    post_index_date_severe_retinopathy
+    post_index_date_severe_retinopathy,
+    
+    pre_index_date_vitreous_and_pre_retinal_haemorrhage,
+    post_index_date_first_vitreous_and_pre_retinal_haemorrhage, 
+    pre_index_date_proliferative_retinopathy,
+    post_index_date_first_proliferative_retinopathy, 
+    pre_index_date_blindness_and_visual_impairment,
+    post_index_date_first_blindness_and_visual_impairment
   )
 
-retinopathy_severity
 
 analysis <- cprd$analysis("at_diag")
 retinopathy_severity <- retinopathy_severity %>%
-  analysis$cached("retinopathy_severity", unique_indexes="patid")
+  analysis$cached("retinopathy_severity_relaxed", unique_indexes="patid")
+
 
 ###############################################################################
 
@@ -237,40 +185,34 @@ neuropathy_severity <- index_dates %>%
         post_index_date_first_non_severe_neuropathy,
         
         # foot ulcer / infection / ischaemia 
-        pre_index_date_earliest_foot_ulcer_infection_ischaemia_with_non_severe,
-        pre_index_date_foot_ulcer_infection_ischaemia_with_non_severe,
-        post_index_date_first_foot_ulcer_infection_ischaemia_with_non_severe,
-        post_index_date_foot_ulcer_infection_ischaemia_with_non_severe,
-        
+        pre_index_date_earliest_foot_ulcer_infection_ischaemia,
+        pre_index_date_foot_ulcer_infection_ischaemia,
+        post_index_date_first_foot_ulcer_infection_ischaemia,
+
         # gastroparesis 
         pre_index_date_earliest_gastroparesis,
         pre_index_date_latest_gastroparesis,
-        pre_index_date_gastroparesis,
         post_index_date_first_gastroparesis,
-        
+
         # charcot foot
-        pre_index_date_earliest_charcot_foot_with_non_severe,
-        pre_index_date_charcot_foot_with_non_severe,
-        post_index_date_first_charcot_foot_with_non_severe,
-        post_index_date_charcot_foot_with_non_severe,
-        
+        pre_index_date_earliest_charcot_foot,
+        pre_index_date_charcot_foot,
+        post_index_date_first_charcot_foot,
+
         # painful peripheral neuropathy 
-        pre_index_date_earliest_painful_peripheral_neuropathy_with_non_severe,
-        pre_index_date_painful_peripheral_neuropathy_with_non_severe,
-        post_index_date_first_painful_peripheral_neuropathy_with_non_severe,
-        post_index_date_painful_peripheral_neuropathy_with_non_severe,
-        
+        pre_index_date_earliest_painful_peripheral_neuropathy,
+        pre_index_date_painful_peripheral_neuropathy,
+        post_index_date_first_painful_peripheral_neuropathy,
+
         # neuropathic pain 
-        pre_index_date_earliest_neuropathic_pain_with_non_severe,
-        pre_index_date_neuropathic_pain_with_non_severe,
-        post_index_date_first_neuropathic_pain_with_non_severe,
-        post_index_date_neuropathic_pain_with_non_severe,
-        
+        pre_index_date_earliest_neuropathic_pain,
+        pre_index_date_neuropathic_pain,
+        post_index_date_first_neuropathic_pain,
+
         # lower limb amputation 
-        pre_index_date_earliest_lower_limb_amputation_with_non_severe,
-        pre_index_date_lower_limb_amputation_with_non_severe,
-        post_index_date_first_lower_limb_amputation_with_non_severe,
-        post_index_date_lower_limb_amputation_with_non_severe
+        pre_index_date_earliest_lower_limb_amputation,
+        pre_index_date_lower_limb_amputation,
+        post_index_date_first_lower_limb_amputation
       ),
     by = c("patid", "index_date")
   )
@@ -287,29 +229,29 @@ neuropathy_severity <- neuropathy_severity %>%
     
     
     ## --- Severe neuropathy (composite) ---
-    #  - foot_ulcer_infection_ischaemia_with_non_severe
-    #  - charcot_foot_with_non_severe
-    #  - painful_peripheral_neuropathy_with_non_severe
-    #  - neuropathic_pain_with_non_severe
-    #  - lower_limb_amputation_with_non_severe
+    #  - foot_ulcer_infection_ischaemia
+    #  - charcot_foot
+    #  - painful_peripheral_neuropathy
+    #  - neuropathic_pain
+    #  - lower_limb_amputation
     #  - gastroparesis 
     
     # PRE: earliest severe neuropathy
     pre_index_date_earliest_severe_neuropathy = pmin(
-      if_else(!is.na(pre_index_date_earliest_foot_ulcer_infection_ischaemia_with_non_severe),
-              pre_index_date_earliest_foot_ulcer_infection_ischaemia_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_foot_ulcer_infection_ischaemia),
+              pre_index_date_earliest_foot_ulcer_infection_ischaemia,
               as.Date("2050-01-01")),
-      if_else(!is.na(pre_index_date_earliest_charcot_foot_with_non_severe),
-              pre_index_date_earliest_charcot_foot_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_charcot_foot),
+              pre_index_date_earliest_charcot_foot,
               as.Date("2050-01-01")),
-      if_else(!is.na(pre_index_date_earliest_painful_peripheral_neuropathy_with_non_severe),
-              pre_index_date_earliest_painful_peripheral_neuropathy_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_painful_peripheral_neuropathy),
+              pre_index_date_earliest_painful_peripheral_neuropathy,
               as.Date("2050-01-01")),
-      if_else(!is.na(pre_index_date_earliest_neuropathic_pain_with_non_severe),
-              pre_index_date_earliest_neuropathic_pain_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_neuropathic_pain),
+              pre_index_date_earliest_neuropathic_pain,
               as.Date("2050-01-01")),
-      if_else(!is.na(pre_index_date_earliest_lower_limb_amputation_with_non_severe),
-              pre_index_date_earliest_lower_limb_amputation_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_lower_limb_amputation),
+              pre_index_date_earliest_lower_limb_amputation,
               as.Date("2050-01-01")),
       if_else(!is.na(pre_index_date_earliest_gastroparesis),
               pre_index_date_earliest_gastroparesis,
@@ -319,20 +261,20 @@ neuropathy_severity <- neuropathy_severity %>%
     
     # PRE: latest severe neuropathy
     pre_index_date_latest_severe_neuropathy = pmax(
-      if_else(!is.na(pre_index_date_earliest_foot_ulcer_infection_ischaemia_with_non_severe),
-              pre_index_date_earliest_foot_ulcer_infection_ischaemia_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_foot_ulcer_infection_ischaemia),
+              pre_index_date_earliest_foot_ulcer_infection_ischaemia,
               as.Date("1900-01-01")),
-      if_else(!is.na(pre_index_date_earliest_charcot_foot_with_non_severe),
-              pre_index_date_earliest_charcot_foot_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_charcot_foot),
+              pre_index_date_earliest_charcot_foot,
               as.Date("1900-01-01")),
-      if_else(!is.na(pre_index_date_earliest_painful_peripheral_neuropathy_with_non_severe),
-              pre_index_date_earliest_painful_peripheral_neuropathy_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_painful_peripheral_neuropathy),
+              pre_index_date_earliest_painful_peripheral_neuropathy,
               as.Date("1900-01-01")),
-      if_else(!is.na(pre_index_date_earliest_neuropathic_pain_with_non_severe),
-              pre_index_date_earliest_neuropathic_pain_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_neuropathic_pain),
+              pre_index_date_earliest_neuropathic_pain,
               as.Date("1900-01-01")),
-      if_else(!is.na(pre_index_date_earliest_lower_limb_amputation_with_non_severe),
-              pre_index_date_earliest_lower_limb_amputation_with_non_severe,
+      if_else(!is.na(pre_index_date_earliest_lower_limb_amputation),
+              pre_index_date_earliest_lower_limb_amputation,
               as.Date("1900-01-01")),
       if_else(!is.na(pre_index_date_latest_gastroparesis),
               pre_index_date_latest_gastroparesis,
@@ -356,20 +298,20 @@ neuropathy_severity <- neuropathy_severity %>%
     
     # POST: first severe neuropathy after diagnosis
     post_index_date_first_severe_neuropathy = pmin(
-      if_else(!is.na(post_index_date_first_foot_ulcer_infection_ischaemia_with_non_severe),
-              post_index_date_first_foot_ulcer_infection_ischaemia_with_non_severe,
+      if_else(!is.na(post_index_date_first_foot_ulcer_infection_ischaemia),
+              post_index_date_first_foot_ulcer_infection_ischaemia,
               as.Date("2050-01-01")),
-      if_else(!is.na(post_index_date_first_charcot_foot_with_non_severe),
-              post_index_date_first_charcot_foot_with_non_severe,
+      if_else(!is.na(post_index_date_first_charcot_foot),
+              post_index_date_first_charcot_foot,
               as.Date("2050-01-01")),
-      if_else(!is.na(post_index_date_first_painful_peripheral_neuropathy_with_non_severe),
-              post_index_date_first_painful_peripheral_neuropathy_with_non_severe,
+      if_else(!is.na(post_index_date_first_painful_peripheral_neuropathy),
+              post_index_date_first_painful_peripheral_neuropathy,
               as.Date("2050-01-01")),
-      if_else(!is.na(post_index_date_first_neuropathic_pain_with_non_severe),
-              post_index_date_first_neuropathic_pain_with_non_severe,
+      if_else(!is.na(post_index_date_first_neuropathic_pain),
+              post_index_date_first_neuropathic_pain,
               as.Date("2050-01-01")),
-      if_else(!is.na(post_index_date_first_lower_limb_amputation_with_non_severe),
-              post_index_date_first_lower_limb_amputation_with_non_severe,
+      if_else(!is.na(post_index_date_first_lower_limb_amputation),
+              post_index_date_first_lower_limb_amputation,
               as.Date("2050-01-01")),
       if_else(!is.na(post_index_date_first_gastroparesis),
               post_index_date_first_gastroparesis,
@@ -399,18 +341,47 @@ neuropathy_severity <- neuropathy_severity %>%
     pre_index_date_latest_severe_neuropathy,
     pre_index_date_severe_neuropathy,
     post_index_date_first_severe_neuropathy,
-    post_index_date_severe_neuropathy
+    post_index_date_severe_neuropathy, 
+    
+    # non-severe neuropathy
+    pre_index_date_earliest_non_severe_neuropathy,
+    pre_index_date_latest_non_severe_neuropathy,
+    pre_index_date_non_severe_neuropathy,
+    post_index_date_first_non_severe_neuropathy,
+    
+    # foot ulcer / infection / ischaemia 
+    pre_index_date_foot_ulcer_infection_ischaemia,
+    post_index_date_first_foot_ulcer_infection_ischaemia,
+    
+    # gastroparesis 
+    pre_index_date_latest_gastroparesis,
+    post_index_date_first_gastroparesis,
+    
+    # charcot foot
+    pre_index_date_charcot_foot,
+    post_index_date_first_charcot_foot,
+    
+    # painful peripheral neuropathy 
+    pre_index_date_painful_peripheral_neuropathy,
+    post_index_date_first_painful_peripheral_neuropathy,
+    
+    # neuropathic pain 
+    pre_index_date_neuropathic_pain,
+    post_index_date_first_neuropathic_pain,
+    
+    # lower limb amputation 
+    pre_index_date_lower_limb_amputation,
+    post_index_date_first_lower_limb_amputation
   )
-
+    
+  
 
 
 
 analysis <- cprd$analysis("at_diag")
 neuropathy_severity <- neuropathy_severity %>%
-  analysis$cached("neuropathy_severity", unique_indexes = "patid")
+  analysis$cached("neuropathy_severity_relaxed", unique_indexes = "patid")
 
-
-    
 
 
 ###############################################################################
@@ -647,18 +618,167 @@ mutate(
   post_index_date_severe_microvasc_any = as.integer(!is.na(post_index_date_first_severe_microvasc_any))
 )
 
-colnames(microvascular_complications)
-
-# Join the new variables created (those requiring a non-severe code before)
-# Rename "*_non_severe" to "*_ns" because mysql doesnt like length > 64 char
-microvasc_starred <- comorbidities %>%
-  select(patid, index_date, dplyr::contains("_with_non_severe")) %>%
-  rename_with(~ str_replace(.x, "_with_non_severe$", "_ns"),
-              ends_with("_with_non_severe"))
 
 
 microvascular_complications <- microvascular_complications %>%
-  left_join(select(microvasc_starred, -index_date), by = "patid") %>%
-  analysis$cached("microvascular_complications", unique_indexes = "patid")
+  analysis$cached("microvascular_complications_relaxed", unique_indexes = "patid")
 
 
+
+
+
+###############################################################################
+# UKPDS composite 
+###############################################################################
+
+# Severe diabetes-related complications (compostie outcome) defined according to recent UK Prospective Diabetes Study # (UKPDS) criteria: sudden death; death due to hyperglycaemia or hypoglycaemia; fatal or non-fatal myocardial 
+# infarction, angina, heart failure, stroke, or kidney failure; death from peripheral vascular disease; amputation;
+# and severe retinopathy (vitreous haemorrhage or retinal photocoagulation). Events were identified using HES and 
+# death registry data (primary cause only), with additional capture of kidney failure from primary care codes. 
+
+
+
+analysis <- cprd$analysis("all")
+death_causes <- death_causes %>% analysis$cached("death_causes")
+
+ukpds <- index_dates %>%
+  left_join(diabetes_cohort %>% select(patid, death_date), by = "patid") %>%
+  left_join(
+    death_causes %>% select(
+      patid,
+      cv_death_primary_cause,
+      pvd_death_primary_cause,
+      sudden_death_primary_cause,
+      hyperglycaemia_death_primary_cause,
+      hypoglycaemia_death_primary_cause,
+      hf_death_primary_cause,
+      kf_death_primary_cause
+    ),
+    by = "patid"
+  ) %>%
+  left_join(
+    comorbidities %>% select(
+      patid, index_date,
+      
+      # UKPDS cardiovascular events
+      pre_index_date_earliest_primary_incident_mi,
+      pre_index_date_latest_primary_incident_mi,
+      post_index_date_first_primary_incident_mi,
+      
+      pre_index_date_earliest_primary_hhf,
+      pre_index_date_latest_primary_hhf,
+      post_index_date_first_primary_hhf,
+      
+      pre_index_date_earliest_primary_incident_stroke,
+      pre_index_date_latest_primary_incident_stroke,
+      post_index_date_first_primary_incident_stroke,
+      
+      # Renal
+      pre_index_date_earliest_ckd5_code,
+      pre_index_date_latest_ckd5_code,
+      post_index_date_first_ckd5_code,
+      
+      # Amputation
+      pre_index_date_earliest_amputation,
+      pre_index_date_latest_amputation,
+      post_index_date_first_amputation,
+      
+      # Eye (UKPDS-specific)
+      pre_index_date_earliest_vitreoushemorrhage,
+      pre_index_date_latest_vitreoushemorrhage,
+      post_index_date_first_vitreoushemorrhage,
+      
+      pre_index_date_earliest_ukpds_photocoagulation,
+      pre_index_date_latest_ukpds_photocoagulation,
+      post_index_date_first_ukpds_photocoagulation
+    ),
+    by = c("patid", "index_date")
+  ) %>%
+  mutate(
+    # ---------------- post-index primary-cause death dates ----------------
+    post_cv_death_primary_cause_date =
+      if_else(cv_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_pvd_death_primary_cause_date =
+      if_else(pvd_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_sudden_death_primary_cause_date =
+      if_else(sudden_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_hyperglycaemia_death_primary_cause_date =
+      if_else(hyperglycaemia_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_hypoglycaemia_death_primary_cause_date =
+      if_else(hypoglycaemia_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_hf_death_primary_cause_date =
+      if_else(hf_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    post_kf_death_primary_cause_date =
+      if_else(kf_death_primary_cause == 1L & death_date > index_date, death_date, as.Date(NA)),
+    
+    # ---------------- PRE UKPDS ----------------
+    pre_index_date_earliest_ukpds = pmin(
+      coalesce(pre_index_date_earliest_primary_incident_mi, as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_primary_hhf,         as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_primary_incident_stroke, as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_ckd5_code,            as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_amputation,           as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_vitreoushemorrhage,   as.Date("2050-01-01")),
+      coalesce(pre_index_date_earliest_ukpds_photocoagulation, as.Date("2050-01-01")),
+      na.rm = TRUE
+    ),
+    
+    pre_index_date_latest_ukpds = pmax(
+      coalesce(pre_index_date_latest_primary_incident_mi, as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_primary_hhf,         as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_primary_incident_stroke, as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_ckd5_code,            as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_amputation,           as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_vitreoushemorrhage,   as.Date("1900-01-01")),
+      coalesce(pre_index_date_latest_ukpds_photocoagulation, as.Date("1900-01-01")),
+      na.rm = TRUE
+    ),
+    
+    pre_index_date_earliest_ukpds =
+      if_else(pre_index_date_earliest_ukpds == as.Date("2050-01-01"),
+              as.Date(NA), pre_index_date_earliest_ukpds),
+    pre_index_date_latest_ukpds =
+      if_else(pre_index_date_latest_ukpds == as.Date("1900-01-01"),
+              as.Date(NA), pre_index_date_latest_ukpds),
+    
+    pre_index_date_ukpds = as.integer(!is.na(pre_index_date_earliest_ukpds)),
+    
+    # ---------------- POST UKPDS ----------------
+    post_index_date_first_ukpds = pmin(
+      coalesce(post_index_date_first_primary_incident_mi, as.Date("2050-01-01")),
+      coalesce(post_index_date_first_primary_hhf,         as.Date("2050-01-01")),
+      coalesce(post_index_date_first_primary_incident_stroke, as.Date("2050-01-01")),
+      coalesce(post_index_date_first_ckd5_code,            as.Date("2050-01-01")),
+      coalesce(post_index_date_first_amputation,           as.Date("2050-01-01")),
+      coalesce(post_index_date_first_vitreoushemorrhage,   as.Date("2050-01-01")),
+      coalesce(post_index_date_first_ukpds_photocoagulation, as.Date("2050-01-01")),
+      coalesce(post_cv_death_primary_cause_date,            as.Date("2050-01-01")),
+      coalesce(post_pvd_death_primary_cause_date,           as.Date("2050-01-01")),
+      coalesce(post_sudden_death_primary_cause_date,        as.Date("2050-01-01")),
+      coalesce(post_hyperglycaemia_death_primary_cause_date,as.Date("2050-01-01")),
+      coalesce(post_hypoglycaemia_death_primary_cause_date, as.Date("2050-01-01")),
+      coalesce(post_hf_death_primary_cause_date,            as.Date("2050-01-01")),
+      coalesce(post_kf_death_primary_cause_date,            as.Date("2050-01-01")),
+      na.rm = TRUE
+    ),
+    
+    post_index_date_first_ukpds =
+      if_else(post_index_date_first_ukpds == as.Date("2050-01-01"),
+              as.Date(NA), post_index_date_first_ukpds),
+    
+    post_index_date_ukpds = as.integer(!is.na(post_index_date_first_ukpds))
+  ) %>%
+  select(
+    patid,
+    pre_index_date_earliest_ukpds,
+    pre_index_date_latest_ukpds,
+    pre_index_date_ukpds,
+    post_index_date_first_ukpds,
+    post_index_date_ukpds
+  )
+
+
+
+analysis <- cprd$analysis("at_diag")
+ukpds <- ukpds %>%
+  analysis$cached("ukpds", unique_indexes = "patid")
