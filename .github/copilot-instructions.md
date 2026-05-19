@@ -122,6 +122,32 @@ cprd$tables$observation %>% inner_join(codes$creatinine_blood, by="medcodeid") %
 
 ---
 
+## Dropping MySQL Tables
+
+When a script needs to be re-run (e.g. because the logic has changed), the affected cached tables must first be deleted from MySQL. Always ask the user for the **MySQL database name** before generating any DROP statements — it is not the same as the `cprdEnv` string and varies per project.
+
+### Table naming
+Every cached table is stored in MySQL as:
+```
+{analysis_prefix}_{table_name}
+```
+where `analysis_prefix` is the string passed to `cprd$analysis(...)` at the time of caching (e.g. `all_patid`, `at_diag`, `mm`, `PC_BP`).
+
+### DROP TABLE format
+Use a single `DROP TABLE IF EXISTS` statement listing all tables as `` `database`.`table` `` pairs, separated by commas and ending with a semicolon:
+
+```sql
+DROP TABLE IF EXISTS
+  `<database>`.`<analysis_prefix>_<table_name>`,
+  `<database>`.`<analysis_prefix>_<table_name>`;
+```
+
+- Always use backtick-quoting for both database and table names.
+- Use `IF EXISTS` to avoid errors if a table hasn't been created yet.
+- List all tables to drop in a single statement for efficiency.
+
+---
+
 ## Coding Conventions
 
 ### General R style
