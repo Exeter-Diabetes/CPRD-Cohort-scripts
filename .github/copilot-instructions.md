@@ -171,6 +171,7 @@ Because all queries are translated from R to MySQL via `dbplyr`, several standar
 | `arrange()` | `window_order()` |
 | `median()` | not supported; use `percentile_cont` via raw SQL if needed |
 | `slice()` | not supported; use `filter(row_number() == 1)` with `window_order` |
+| `first()` in `summarise()` | not supported in a remote `summarise()` context; if the column is constant within the group use `min()` or `max()`; if you need the first of a varying column, pre-sort with `window_order()` then `filter(row_number() == 1)` in a `mutate()` step before summarising |
 
 When pulling data into R with `collect()`, `patid` and similar large integer fields may arrive as `integer64`, which causes errors in many R functions. Convert with:
 ```r
