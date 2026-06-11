@@ -41,7 +41,7 @@ baseline_biomarkers <- baseline_biomarkers_bmi_extended_window %>% analysis$cach
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
 ## Comorbidities (drop comorbidities that are repeated in composite comorbidities table) 
-comorbidities <- comorbidities %>% analysis$cached("comorbidities_23_02_2026") %>%
+comorbidities <- comorbidities %>% analysis$cached("comorbidities") %>%
   select(-c(pre_index_date_earliest_non_severe_retinopathy, 
             pre_index_date_latest_non_severe_retinopathy, 
             pre_index_date_non_severe_retinopathy,
@@ -54,28 +54,9 @@ comorbidities <- comorbidities %>% analysis$cached("comorbidities_23_02_2026") %
 
 
 ## Drop comorbidities that are repeated in comorbidities table
-microvascular_complications <- microvascular_complications %>% analysis$cached("microvascular_complications_relaxed") %>% 
-  select(-c( pre_index_date_proliferative_retinopathy,
-    post_index_date_first_proliferative_retinopathy,
-    pre_index_date_painful_peripheral_neuropathy,
-    post_index_date_first_painful_peripheral_neuropathy,
-    pre_index_date_neuropathic_pain,
-    post_index_date_first_neuropathic_pain,
-    pre_index_date_foot_ulcer_infection_ischaemia,
-    post_index_date_first_foot_ulcer_infection_ischaemia,
-    pre_index_date_latest_gastroparesis,
-    post_index_date_first_gastroparesis,
-    pre_index_date_charcot_foot,
-    post_index_date_first_charcot_foot,
-    pre_index_date_lower_limb_amputation,
-    post_index_date_first_lower_limb_amputation,
-    pre_index_date_vitreous_and_pre_retinal_haemorrhage,
-    post_index_date_first_vitreous_and_pre_retinal_haemorrhage,
-    pre_index_date_blindness_and_visual_impairment,
-    post_index_date_first_blindness_and_visual_impairment
-  ))
+microvascular_complications <- microvascular_complications %>% analysis$cached("microvascular_complications_relaxed") 
 
-
+microvascular_complications
 ## eFI
 efi <- efi %>% analysis$cached("efi")
 
@@ -112,7 +93,3 @@ final_merge <- diabetes_cohort %>%
   left_join((microvascular_complications %>% select(-index_date)), by = "patid")%>%
   left_join(ukpds, by = "patid") %>%
   analysis$cached(paste0("final_", today), unique_indexes="patid")
-
-
-
-

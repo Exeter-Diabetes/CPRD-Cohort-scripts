@@ -22,7 +22,6 @@ codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
 analysis = cprd$analysis("at_diag")
 
 
-
 ############################################################################################
 
 # Define comorbidities
@@ -86,7 +85,9 @@ comorbids <- c("af",
                "surgicalpancreaticresection", 
                "qresearch_polycystic_ovaries", 
                "qresearch_learning_disability", 
-               "qresearch_bipolardepressionorschizophrenia")
+               "qresearch_bipolardepressionorschizophrenia", 
+               "haemochromatosis"
+               )
 
 
 ############################################################################################
@@ -423,12 +424,25 @@ fh_diabetes <- index_dates %>%
 
 ############################################################################################
 
+analysis = cprd$analysis("all_patid")
 
 
+# All non-elective emergency hospital admission dates
+all_emerg_hosp <- cprd$tables$hesHospital %>%
+  filter(!is.na(admidate) & !(admimeth %in% c("11", "12", "13"))) %>%
+  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
+  filter(eorder==1) %>%
+  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
+  filter(d_order==1) %>%
+  select(patid, emerg_hosp_date=admidate.x, admimeth=admimeth.x, episode_start=epistart.x, diagnosis_code=ICD) %>%
+  analysis$cached("emerg_hosp", indexes=c("patid", "emerg_hosp_date"))
+
+all_emerg_hosp
 
 
+analysis = cprd$analysis("at_diag")
 
-# Add next non-elective hospital admission
+# Add next non-elective hospital admission (post diag date)
 
 next_hosp_admi <- index_dates %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
@@ -445,8 +459,7 @@ next_hosp_admi <- index_dates %>%
   analysis$cached("next_hosp_admi", unique_indexes="patid")
 
 
-
-
+# Add previous non-elective hospital admission (pre diag date)
 pre_emerg_events <- index_dates %>%
   inner_join(cprd$tables$hesHospital, by = "patid") %>%
   filter(
@@ -494,6 +507,6 @@ comorbidities <- comorbidities %>%
   left_join((fh_diabetes %>% select(-index_date)), by="patid") %>%
   left_join((next_hosp_admi %>% select(-index_date)), by="patid") %>%
   left_join((pre_emerg_hosp %>% select(-index_date)), by="patid") %>%
-  analysis$cached("comorbidities_23_02_2026", unique_indexes="patid")
+  analysis$cached("comorbidities", unique_indexes="patid")
 
-
+comorbidities
