@@ -26,7 +26,7 @@ analysis = cprd$analysis("all_patid")
 
 ##################### IMPORT IMD/TDS/LSOA LOOKUPS ##############################################################################
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd("C:/Users/ky279/OneDrive - University of Exeter/CPRD/CPRD_Aurum/Mastermind/Townsend lookups/")
 
 imd_lsoa <- read_excel("Townsend lookups/File_1_-_IMD2019_Index_of_Multiple_Deprivation.xlsx", sheet="IMD2019") %>%
   select(lsoa_2011='LSOA code (2011)',
@@ -47,11 +47,20 @@ imd_townsend <- imd_lsoa %>%
   summarise(tds_2011=round(median(tds_2011), 3)) %>%
   ungroup()
 
+# Correction in 2026: IMD deciles from gov.uk are 1=most deprived and 10=least deprived, the opposite to CPRD
+
+imd_townsend <- imd_townsend %>%
+  mutate(imd_decile=11-imd_decile)
+
+
+imd_townsend
+
+#Correct - 10=most deprived, should have most positive Townsend score
+
 
 ################################################################################################################################
 
 ##################### MAKE MYSQL TABLE OF TOWNSEND SCORES ######################################################################
-
 
 townsend_score <- cprd$tables$patientImd %>%
   select(patid, imd_decile) %>%
