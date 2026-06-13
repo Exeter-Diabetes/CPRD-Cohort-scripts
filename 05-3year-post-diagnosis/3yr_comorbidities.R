@@ -1,7 +1,6 @@
-
 # Extracts dates for comorbidity code occurrences in GP and HES records
 
-# Merges with index dates (diagnosis dates)
+# Merges with index dates (3 years post-diagnosis)
 
 # Then finds earliest and latest pre-index date occurrence, and earliest post-index date occurrence for each comorbidity
 
@@ -18,8 +17,8 @@ rm(list=ls())
 cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "01/06/2024")
+analysis = cprd$analysis("3yr")
 
-analysis = cprd$analysis("at_diag")
 
 
 ############################################################################################
@@ -85,9 +84,7 @@ comorbids <- c("af",
                "surgicalpancreaticresection", 
                "qresearch_polycystic_ovaries", 
                "qresearch_learning_disability", 
-               "qresearch_bipolardepressionorschizophrenia", 
-               "haemochromatosis"
-               )
+               "qresearch_bipolardepressionorschizophrenia")
 
 
 ############################################################################################
@@ -208,20 +205,20 @@ comorbids <- c("fh_diabetes_positive", "fh_diabetes_negative", comorbids)
 ## NB: for baseline_biomarkers, cleaning and combining with index date is 2 separate steps, but as there are fewer cleaning steps for comorbidities I have made this one step here
 
 
-## Get index dates (diagnosis dates)
+## Get index dates (3 years post-diagnosis)
 
 analysis = cprd$analysis("all")
 
 diabetes_cohort <- diabetes_cohort %>% analysis$cached("diabetes_cohort")
 
 index_dates <- diabetes_cohort %>%
-  filter(!is.na(dm_diag_date)) %>%
-  select(patid, index_date=dm_diag_date)
+  filter(!is.na(index_date_3yr)) %>%
+  select(patid, index_date=index_date_3yr)
 
 
 ## Clean comorbidity data and combine with index 
 
-analysis = cprd$analysis("at_diag")
+analysis = cprd$analysis("3yr")
 
 for (i in comorbids) {
   short_i <- get_short_comorbid(i) 
@@ -424,25 +421,8 @@ fh_diabetes <- index_dates %>%
 
 ############################################################################################
 
-analysis = cprd$analysis("all_patid")
 
-
-# All non-elective emergency hospital admission dates
-all_emerg_hosp <- cprd$tables$hesHospital %>%
-  filter(!is.na(admidate) & !(admimeth %in% c("11", "12", "13"))) %>%
-  inner_join(cprd$tables$hesEpisodes, by=c("patid", "spno")) %>%
-  filter(eorder==1) %>%
-  inner_join(cprd$tables$hesDiagnosisEpi, by=c("patid", "epikey")) %>%
-  filter(d_order==1) %>%
-  select(patid, emerg_hosp_date=admidate.x, admimeth=admimeth.x, episode_start=epistart.x, diagnosis_code=ICD) %>%
-  analysis$cached("emerg_hosp", indexes=c("patid", "emerg_hosp_date"))
-
-all_emerg_hosp
-
-
-analysis = cprd$analysis("at_diag")
-
-# Add next non-elective hospital admission (post diag date)
+# Add next non-elective hospital admission
 
 next_hosp_admi <- index_dates %>%
   inner_join(cprd$tables$hesHospital, by="patid") %>%
@@ -459,7 +439,8 @@ next_hosp_admi <- index_dates %>%
   analysis$cached("next_hosp_admi", unique_indexes="patid")
 
 
-# Add previous non-elective hospital admission (pre diag date)
+
+
 pre_emerg_events <- index_dates %>%
   inner_join(cprd$tables$hesHospital, by = "patid") %>%
   filter(
@@ -488,7 +469,7 @@ pre_emerg_hosp <- index_dates %>%
 ############################################################################################
 
 # Rename severe retinopathy columns to proliferative retinopathy. 
-# severe_retinopathy will be created in 'at_diag_microvascular_comorbidities' and be a composite 
+# severe_retinopathy will be created in '3yr_composite_comorbidities' and be a composite 
 # of multiple severe retinopathy outcomes
 comorbidities <- comorbidities %>%
   rename(
@@ -508,5 +489,3 @@ comorbidities <- comorbidities %>%
   left_join((next_hosp_admi %>% select(-index_date)), by="patid") %>%
   left_join((pre_emerg_hosp %>% select(-index_date)), by="patid") %>%
   analysis$cached("comorbidities", unique_indexes="patid")
-
-comorbidities

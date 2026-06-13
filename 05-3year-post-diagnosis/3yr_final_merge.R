@@ -1,5 +1,4 @@
-
-# Pull together static patient data from all_diabetes_cohort table with biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the index dates
+# Pull together static patient data from all_diabetes_cohort table with biomarker, comorbidity, and sociodemographic (smoking/alcohol) data at the 3-year index dates
 
 ############################################################################################
 
@@ -10,7 +9,7 @@ rm(list=ls())
 
 cprd = CPRDData$new(cprdEnv = "diabetes-jun2024",cprdConf = "~/.aurum.yaml")
 
-analysis = cprd$analysis("at_diag")
+analysis = cprd$analysis("3yr")
 
 
 ############################################################################################
@@ -36,31 +35,51 @@ townsend_score <- townsend_score %>% analysis$cached("townsend_score")
 
 
 ## Baseline biomarkers plus CKD stage
-analysis = cprd$analysis("at_diag")
+analysis = cprd$analysis("3yr")
 baseline_biomarkers <- baseline_biomarkers_bmi_extended_window %>% analysis$cached("baseline_biomarkers")
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
 ## Comorbidities (drop comorbidities that are repeated in composite comorbidities table) 
 comorbidities <- comorbidities %>% analysis$cached("comorbidities") %>%
-  select(-c(pre_index_date_earliest_non_severe_retinopathy, 
-            pre_index_date_latest_non_severe_retinopathy, 
-            pre_index_date_non_severe_retinopathy,
-            post_index_date_first_non_severe_retinopathy,
-            pre_index_date_earliest_non_severe_neuropathy,
-            pre_index_date_latest_non_severe_neuropathy,
-            pre_index_date_non_severe_neuropathy,
-            post_index_date_first_non_severe_neuropathy
-            ))
+  select(-c(
+    pre_index_date_earliest_non_severe_retinopathy,
+    pre_index_date_latest_non_severe_retinopathy,
+    pre_index_date_non_severe_retinopathy,
+    post_index_date_first_non_severe_retinopathy,
+    pre_index_date_earliest_non_severe_neuropathy,
+    pre_index_date_latest_non_severe_neuropathy,
+    pre_index_date_non_severe_neuropathy,
+    post_index_date_first_non_severe_neuropathy)
+    )
 
 
 ## Drop comorbidities that are repeated in comorbidities table
-microvascular_complications <- microvascular_complications %>% analysis$cached("microvascular_complications_relaxed") 
+microvascular_complications <- microvascular_complications %>% analysis$cached("microvascular_complications_relaxed") %>% 
+  select(-c( pre_index_date_proliferative_retinopathy,
+    post_index_date_first_proliferative_retinopathy,
+    pre_index_date_painful_peripheral_neuropathy,
+    post_index_date_first_painful_peripheral_neuropathy,
+    pre_index_date_neuropathic_pain,
+    post_index_date_first_neuropathic_pain,
+    pre_index_date_foot_ulcer_infection_ischaemia,
+    post_index_date_first_foot_ulcer_infection_ischaemia,
+    pre_index_date_latest_gastroparesis,
+    post_index_date_first_gastroparesis,
+    pre_index_date_charcot_foot,
+    post_index_date_first_charcot_foot,
+    pre_index_date_lower_limb_amputation,
+    post_index_date_first_lower_limb_amputation,
+    pre_index_date_vitreous_and_pre_retinal_haemorrhage,
+    post_index_date_first_vitreous_and_pre_retinal_haemorrhage,
+    pre_index_date_blindness_and_visual_impairment,
+    post_index_date_first_blindness_and_visual_impairment
+  ))
 
-microvascular_complications
+
 ## eFI
 efi <- efi %>% analysis$cached("efi")
 
-# UKPDS
+## UKPDS 
 ukpds <- ukpds %>% analysis$cached("ukpds")
 
 
@@ -76,10 +95,10 @@ alcohol <- alcohol %>% analysis$cached("alcohol")
 
 ############################################################################################
 
-# Bring together and remove if diagnosed before registration or within 90 days after, or if death<=diagnosis date
+# Bring together and remove if index_date_3yr is missing or if death <= index_date_3yr
 
 final_merge <- diabetes_cohort %>%
-  filter(!is.na(dm_diag_date) & (is.na(death_date) | death_date>dm_diag_date)) %>%
+  filter(!is.na(index_date_3yr) & (is.na(death_date) | death_date>index_date_3yr)) %>%
   select(-c(dm_diag_date_all, dm_diag_age_all)) %>%
   left_join((baseline_biomarkers %>% select(-index_date)), by="patid") %>%
   left_join(ckd_stages, by="patid") %>%
@@ -93,3 +112,5 @@ final_merge <- diabetes_cohort %>%
   left_join((microvascular_complications %>% select(-index_date)), by = "patid")%>%
   left_join(ukpds, by = "patid") %>%
   analysis$cached(paste0("final_", today), unique_indexes="patid")
+
+
