@@ -28,7 +28,7 @@ analysis = cprd$analysis("mm")
 
 # Today's date for table names
 
-today <- as.character(Sys.Date(), format="%Y%m%d")
+today <- gsub("-", "", as.character(Sys.Date()))
 
 
 ############################################################################################
@@ -128,7 +128,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(druginstance, timetochange, timetoaddrem, multi_drug_start, timeprevcombo))), by=c("patid", "dstartdate", "drugclass")) %>%
   inner_join((ckd_stages %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
-  inner_join((comorbidities %>% select(-druginstance)), by=c("patid", "dstartdate", "drugclass")) %>%
+  inner_join(comorbidities, by=c("patid", "dstartdate", "drugclass")) %>%
   analysis$cached(paste0(today, "_all_1stinstance_interim_2"), indexes=c("patid", "dstartdate", "drugclass"))
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
