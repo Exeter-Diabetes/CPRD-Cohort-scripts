@@ -1,6 +1,8 @@
 
 # Processes prescriptions to find start and stop dates for drugs, and when other drug classes added or remove relative to start date for drug class of interest
 
+# Added 20260802 - whether first prescription is from usualgpstaffid (not in 2024 dataset)
+
 ############################################################################################
 
 # Setup
@@ -8,7 +10,7 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-2020", cprdConf = "~/.aurum.yaml")
 
 analysis = cprd$analysis("mm")
 
@@ -27,17 +29,18 @@ drugclasses <- c("Acarbose", "DPP4", "Glinide", "GLP1", "MFN", "SGLT2", "SU", "T
 analysis = cprd$analysis("all_patid")
 
 clean_oha_prodcodes <- clean_oha_prodcodes %>% analysis$cached("clean_oha_prodcodes")
-#clean_oha_prodcodes %>% count()
+# clean_oha_prodcodes %>% count()
 # 106,359,163
 
 
 clean_insulin_prodcodes <- clean_insulin_prodcodes %>% analysis$cached("clean_insulin_prodcodes")
-#clean_insulin_prodcodes %>% count()
+# clean_insulin_prodcodes %>% count()
 # 23,537,104
 
 
 insulin <- clean_insulin_prodcodes %>%
-  mutate(Acarbose=0L,
+  mutate(staffid=NA,
+         Acarbose=0L,
          DPP4=0L,
          Glinide=0L,
          GLP1=0L,
@@ -48,7 +51,7 @@ insulin <- clean_insulin_prodcodes %>%
          INS=1L,
          drug_substance1=insulin_cat,
          drug_substance2=NA) %>%
-  select(-insulin_cat)
+  select(-c(prodcodeid, insulin_cat))
 
 ohaandins <- clean_oha_prodcodes %>%
   union_all(insulin)
@@ -57,7 +60,7 @@ analysis = cprd$analysis("mm")
 
 ohaandins <- ohaandins %>% analysis$cached("ohaandins", indexes=c("patid", "date"))
 
-#ohaandins %>% count()
+# ohaandins %>% count()
 # 129,896,267
 
 
@@ -71,18 +74,16 @@ ohaandins <- ohaandins %>% analysis$cached("ohaandins", indexes=c("patid", "date
 ## First remove drugclasses columns (binary variables for each of the 9 classes) as won't be accurate after reshape
 ## Then join with drug_substance_class_lookup table to get drug classes (string variable) based on drug substance
 
-## Check that no rows have NA in drug class columns - if so, will lose them at this stage
-
-
-#ohaandins %>% filter(if_any(all_of(drugclasses), is.na)) %>% count()
-# 0 - perfect
-
 ohains <- ohaandins %>%
   select(-c(all_of(drugclasses))) %>%
   pivot_longer(cols=starts_with("drug_substance"), names_to="whichdrugsubstance", values_to="drugsubstance") %>%
   filter(!is.na(drugsubstance)) %>%
   select(-whichdrugsubstance) %>%
-  left_join(cprd$tables$drugSubstanceClassLookup, by="drugsubstance")
+  left_join(cprd$tables$drugSubstanceClassLookup, by="drugsubstance") %>%
+  analysis$cached("ohains_interim_1", indexes=c("patid", "date", "drugclass"))
+
+# ohains %>% count()
+# 131,285,572
 
 
 ############################################################################################
@@ -99,19 +100,52 @@ ohains <- ohains %>%
          duration = mean(duration[duration>0], na.rm=TRUE)) %>%
   ungroup()
 
+ohains <- ohains %>% analysis$cached("ohains_interim_2", indexes=c("patid", "date", "drugclass"))
+
+# ohains %>% count()
+# 131,285,572
+
+
+# Check how many cases of multiple drug class prescriptions on same day with different staffids
+
+# ohains %>% distinct(patid, date, drugclass, staffid) %>% group_by(patid, date, drugclass) %>% summarise(count=n()) %>% ungroup() %>% filter(count>1) %>% count()
+# 285,272 cases
+
+# Convert staffid to whether or not this is usualgpstaffid, then in next step define usualgp as max per patid-date-drugclass combination (so if mix of staffids, usualgp will be 1 if mix includes usualgpstaffid)
+
+ohains <- ohains %>%
+  inner_join((cprd$tables$patient %>% select(patid, usualgpstaffid)), by="patid") %>%
+  mutate(prescribedusualgp_interim=ifelse(!is.na(staffid) & !is.na(usualgpstaffid) & staffid==usualgpstaffid, 1L, 0L)) %>% #either can be missing
+  select(-c(staffid, usualgpstaffid))
+  
+ohains <- ohains %>% analysis$cached("ohains_interim_3", indexes=c("patid", "date", "drugclass"))
+
+# ohains %>% count()
+# 131,285,572
+
 
 # Make new drug substances variable = list of all different drug substances (remove duplicates first) within patid/date/drug class
 ## Start by just removing patid / date / drug class / drug substance duplicates
   
 ohains <- ohains %>% 
-  group_by(patid, date, drugclass, drugsubstance) %>%
-  filter(row_number()==1) %>%
+  group_by(patid, date, drugclass) %>%
+  mutate(prescribedusualgp = max(prescribedusualgp_interim, na.rm = TRUE)) %>%
   ungroup() %>%
-
-  group_by(patid, date, drugclass, quantity, daily_dose, duration) %>%
-  summarise(drugsubstances=sql("group_concat(distinct drugsubstance order by drugsubstance separator ' & ')")) %>%
-  ungroup()
   
+  group_by(patid, date, drugclass, drugsubstance) %>%
+  filter(row_number() == 1) %>%
+  ungroup() %>%
+  
+  group_by(patid, date, drugclass, quantity, daily_dose, duration, prescribedusualgp) %>%
+  summarise(drugsubstances = sql("group_concat(distinct drugsubstance order by drugsubstance separator ' & ')")) %>%
+  ungroup()
+
+ohains <- ohains %>% analysis$cached("ohains_interim_4", indexes=c("patid", "date", "drugclass"))
+
+# ohains %>% count()
+# 122,724,704
+
+
 
 # Add coverage = quantity/daily dose where both available, otherwise = duration
 
@@ -123,6 +157,15 @@ ohains <- ohains %>%
 
 ohains <- ohains %>% analysis$cached("ohains", indexes=c("patid", "date", "drugclass"))
   
+#check no duplicate patid-date-drugclass rows
+
+
+# ohains %>% distinct(patid, date, drugclass) %>% count()
+# 122,724,704
+
+# ohains %>% count()
+# 122,724,704
+
   
 ############################################################################################
 
@@ -378,7 +421,7 @@ drug_start_stop <- all_scripts_long %>%
 
 drug_start_stop <- drug_start_stop %>%
   filter(dstart==1) %>%
-  select(patid, drugclass, dstartdate, dstopdate, dstopdatepluscov, drugsubstances)
+  select(patid, drugclass, dstartdate, dstopdate, dstopdatepluscov, drugsubstances, prescribedusualgp)
 
 
 # Define time on drug
