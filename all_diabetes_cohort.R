@@ -16,7 +16,7 @@ library(tidyverse)
 library(aurum)
 rm(list=ls())
 
-cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "~/.aurum.yaml")
+cprd = CPRDData$new(cprdEnv = "diabetes-2020",cprdConf = "~/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
@@ -114,12 +114,15 @@ clean_hba1c <- raw_hba1c %>%
 
 
 ## All OHA scripts (need for diagnosis date (cleaned) and definition (cleaned))
-clean_oha <- cprd$tables$drugIssue %>%
+raw_oha <- cprd$tables$drugIssue %>%
   inner_join(cprd$tables$ohaLookup, by="prodcodeid") %>%
+  analysis$cached("raw_oha_prodcodes", indexes=c("patid", "issuedate"))
+
+clean_oha <- raw_oha %>%
   inner_join(cprd$tables$validDateLookup, by="patid") %>%
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>%
-  select(patid, date=issuedate, dosageid, quantity, quantunitid, duration, INS, TZD, SU, DPP4, MFN, GLP1, Glinide, Acarbose, SGLT2) %>%
-  analysis$cached("clean_oha_prodcodes", indexes=c("patid", "date", "INS", "TZD", "SU", "DPP4", "MFN", "GLP1", "Glinide", "Acarbose", "SGLT2"))
+  select(patid, staffid, date=issuedate, dosageid, quantity, quantunitid, duration, INS, TZD, SU, DPP4, MFN, GLP1, Glinide, Acarbose, SGLT2, drug_substance1, drug_substance2) %>%
+  analysis$cached("clean_oha_prodcodes", indexes=c("patid", "staffid", "date", "INS", "TZD", "SU", "DPP4", "MFN", "GLP1", "Glinide", "Acarbose", "SGLT2", "drug_substance1", "drug_substance2"))
 
 
 ## All insulin scripts (need for diagnosis date (cleaned) and definition (cleaned))
@@ -376,6 +379,29 @@ diabetes_type_final <- diabetes_type_prelim %>%
 
 ############################################################################################
 
+# Usual GP for a patient
+
+## take the usual gp id
+usual_gp_information <- cprd$tables$patient %>%
+  select(patid, usualgpstaffid) %>%
+  mutate(staffid = usualgpstaffid) %>%
+  ## join with the job category from staff table
+  left_join(
+    cprd$tables$staff %>%
+      select(staffid, jobcatid), by = c("staffid")
+  ) %>%
+  ## join with descriptions of job categories
+  left_join(
+    cprd$tables$jobCat, by = c("jobcatid")
+  ) %>%
+  ## rename and take columns needed
+  rename("usualgp_jobcat" = description) %>%
+  select(patid, usualgpstaffid, usualgp_jobcat) %>%
+  analysis$cached("usual_gp_information", unique_indexes = "patid")
+
+
+############################################################################################
+
 # Remove unreliable diagnosis dates, add in other variables, and cache
 ## Set diagnosis date to missing if between -30 and +90 days (inclusive) of registration start
 ## Add dm_diag_date and dm_diag_age - missing if diagnosis date is before registration
@@ -404,9 +430,10 @@ diabetes_cohort <- diabetes_type_final %>%
   
   left_join((cprd$tables$patient %>% select(patid, gender, regenddate, pracid, cprd_ddate)), by="patid") %>%
   left_join((cprd$tables$practice %>% select(pracid, lcd, region)), by="pracid") %>%
-  left_join((cprd$tables$patientImd2015 %>% select(patid, imd2015_10)), by="patid") %>%
+  left_join((cprd$tables$patientImd %>% select(patid, imd2015_10=imd_decile)), by="patid") %>%
   left_join((cprd$tables$validDateLookup %>% select(patid, ons_death)), by="patid") %>%
   left_join((cprd$tables$patidsWithLinkage %>% select(patid, n_patid_hes)), by="patid") %>%
+  left_join(usual_gp_information, by = c("patid")) %>%
   
   mutate(gp_record_end=pmin(if_else(is.na(lcd), as.Date("2020-10-31"), lcd),
                             if_else(is.na(regenddate), as.Date("2020-10-31"), regenddate),
