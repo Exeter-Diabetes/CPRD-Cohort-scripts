@@ -111,12 +111,20 @@ ohains <- ohains %>% analysis$cached("ohains_interim_2", indexes=c("patid", "dat
 # ohains %>% distinct(patid, date, drugclass, staffid) %>% group_by(patid, date, drugclass) %>% summarise(count=n()) %>% ungroup() %>% filter(count>1) %>% count()
 # 285,272 cases
 
+# ohains %>% inner_join(cprd$tables$staff, by="staffid") %>% distinct(patid, date, drugclass, jobcatid) %>% group_by(patid, date, drugclass) %>% summarise(count=n()) %>% ungroup() %>% filter(count>1) %>% count()
+# 89,496 cases - very few - just use one
+
+
 # Convert staffid to whether or not this is usualgpstaffid, then in next step define usualgp as max per patid-date-drugclass combination (so if mix of staffids, usualgp will be 1 if mix includes usualgpstaffid)
+# Also want job category
 
 ohains <- ohains %>%
   inner_join((cprd$tables$patient %>% select(patid, usualgpstaffid)), by="patid") %>%
-  mutate(prescribedusualgp_interim=ifelse(!is.na(staffid) & !is.na(usualgpstaffid) & staffid==usualgpstaffid, 1L, 0L)) %>% #either can be missing
-  select(-c(staffid, usualgpstaffid))
+  inner_join((cprd$tables$staff %>% select(staffid, jobcatid)), by="staffid") %>%
+  inner_join(cprd$tables$jobCat, by="jobcatid") %>%
+  mutate(prescribedusualgp_interim=ifelse(!is.na(staffid) & !is.na(usualgpstaffid) & staffid==usualgpstaffid, 1L, 0L), #either can be missing
+         prescribedstaffjobcat=description) %>% 
+  select(-c(staffid, usualgpstaffid, jobcatid, description))
   
 ohains <- ohains %>% analysis$cached("ohains_interim_3", indexes=c("patid", "date", "drugclass"))
 
@@ -137,7 +145,8 @@ ohains <- ohains %>%
   ungroup() %>%
   
   group_by(patid, date, drugclass, quantity, daily_dose, duration, prescribedusualgp) %>%
-  summarise(drugsubstances = sql("group_concat(distinct drugsubstance order by drugsubstance separator ' & ')")) %>%
+  summarise(drugsubstances = sql("group_concat(distinct drugsubstance order by drugsubstance separator ' & ')"),
+            prescribedstaffjobcat = min(prescribedstaffjobcat, na.rm=TRUE)) %>%
   ungroup()
 
 ohains <- ohains %>% analysis$cached("ohains_interim_4", indexes=c("patid", "date", "drugclass"))
