@@ -120,8 +120,8 @@ ohains <- ohains %>% analysis$cached("ohains_interim_2", indexes=c("patid", "dat
 
 ohains <- ohains %>%
   inner_join((cprd$tables$patient %>% select(patid, usualgpstaffid)), by="patid") %>%
-  inner_join((cprd$tables$staff %>% select(staffid, jobcatid)), by="staffid") %>%
-  inner_join(cprd$tables$jobCat, by="jobcatid") %>%
+  left_join((cprd$tables$staff %>% select(staffid, jobcatid)), by="staffid") %>%
+  left_join(cprd$tables$jobCat, by="jobcatid") %>%
   mutate(prescribedusualgp_interim=ifelse(!is.na(staffid) & !is.na(usualgpstaffid) & staffid==usualgpstaffid, 1L, 0L), #either can be missing
          prescribedstaffjobcat=description) %>% 
   select(-c(staffid, usualgpstaffid, jobcatid, description))
@@ -430,7 +430,7 @@ drug_start_stop <- all_scripts_long %>%
 
 drug_start_stop <- drug_start_stop %>%
   filter(dstart==1) %>%
-  select(patid, drugclass, dstartdate, dstopdate, dstopdatepluscov, drugsubstances, prescribedusualgp)
+  select(patid, drugclass, dstartdate, dstopdate, dstopdatepluscov, drugsubstances, prescribedusualgp, prescribedstaffjobcat)
 
 
 # Define time on drug
