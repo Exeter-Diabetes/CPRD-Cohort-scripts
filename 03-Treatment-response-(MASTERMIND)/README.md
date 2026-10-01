@@ -193,7 +193,7 @@ Acarbose / Acetohexamide /<br />Albiglutide / Alogliptin /<br />Canagliflozin / 
 | bolus_ins_within_6_months | whether there is a prescription for a bolus/rapid-acting insulin within the last 6 months (1 or NA) | |
 | intermediate_ins_within_6_months | whether there is a prescription for an intermediate insulin within the last 6 months (1 or NA) | |
 | mix_ins_within_6_months | whether there is a prescription for a mixed insulin within the last 6 months (1 or NA) | |
-| ncurrtx | how many **major** drug classes of diabetes medication (DPP4, GIPGLP1, GLP1, INS, MFN, SGLT2, SU, TZD) patient is currently taking, not including current treatment | |
+| ncurrtx | how many other **major** drug classes of diabetes medication (DPP4, GIPGLP1, GLP1, INS, MFN, SGLT2, SU, TZD) patient is currently taking, not including current treatment | |
 | height | height in cm | Mean of all values on/post- drug start date |
 | pre{biomarker} | biomarker value at baseline | For all biomarkers including prehba1c2yrs but not prehba1c or prehba1c12m: pre{biomarker} is closest biomarker to dstartdate within window of -730 days (2 years before dstartdate) and +7 days (a week after dstartdate)<br /><br />For prehba1c and prehba1c12m: prehba1c is closest HbA1c to dstartdate within window of -183 days (6 months before dstartdate) and +7 days (a week after dstartdate); prehba1c12m is closest HbA1c to dstartdate within window of -366 days (1 year before dstartdate) and +7 days (a week after dstartdate). prehba1c/prehba1c12m before timeprevcombo_class excluded (prehba1c2yrs before timeprevcombo_class not removed) |
 | pre{biomarker}date | date of baseline biomarker | |
