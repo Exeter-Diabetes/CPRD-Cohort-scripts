@@ -2,6 +2,7 @@
 # Extracts 6 month and 12 month response biomarkers
 ## 6 month response: must be at least 3 months from drug start date, before another drug class added/removed, and no later than drug stop date + 91 days
 ## 12 month response: must be at least 9 months from drug start date, before another drug class added/removed, and no later than drug stop date + 91 days
+## GLP1 group-censored versions (_cens, GLP1 only, end of script): also before a different GLP1 group is started, and no later than 91 days after the last script of the GLP1 group
 
 # (Unlike for baseline biomarkers): only want for first instances of drug class (i.e. not where patient has taken drug, stopped, and then restarted)
 # HbA1c only: response missing where timeprevcombo<=61 days before drug initiation
@@ -384,3 +385,200 @@ response_biomarkers <- response_biomarkers %>%
   relocate(prehba1c2yrsdate, .after=prehba1c2yrs) %>%
   relocate(prehba1c2yrsdrugdiff, .after=prehba1c2yrsdate) %>%
   analysis$cached("response_biomarkers", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+############################################################################################
+
+# GLP1 group-censored response variables (_cens): GLP1 only, NA for other drug classes
+## Each group of similar GLP1s is treated as if it were its own drug class (groups defined in glp1_cens_periods, 02_mm_baseline_biomarkers)
+## Only for the first substance period of the first run of each GLP1 group (glp1_group_start_cens==1); NA for other GLP1 substance periods
+## 6/12 month windows as above (at least 3/9 months, up to 9/15 months, before another drug class added/removed, before timetochange_class+91), and also:
+### before a different GLP1 group is started (timetonextgroup_cens)
+### no later than 91 days after the last script of the GLP1 group (timetogroupstop_cens+91)
+## HbA1c: baseline is prehba1c_cens (excludes values before timeprevcombo_cens), and response missing where timeprevcombo_cens<=61 days
+## Other biomarkers: baseline is pre{biomarker}, as above
+
+glp1_cens_periods <- glp1_cens_periods %>% analysis$cached("glp1_cens_periods")
+baseline_biomarkers_cens <- baseline_biomarkers_cens %>% analysis$cached("baseline_biomarkers_cens")
+
+glp1_group_starts <- glp1_cens_periods %>%
+  filter(glp1_group_start_cens==1) %>%
+  select(patid, dstartdate, drug_substance, timetonextgroup_cens, timetogroupstop_cens)
+
+
+# 6 month response
+
+for (i in biomarkers) {
+
+  print(i)
+
+  drug_merge_tablename <- paste0("full_", i, "_drug_merge")
+  post6m_cens_table_name <- paste0("post6m_cens_", i)
+
+  drug_merge_tablename <- drug_merge_tablename %>% analysis$cached(drug_merge_tablename)
+
+  data <- drug_merge_tablename %>%
+
+    filter(drug_class=="GLP1" & drug_instance==1)  %>%
+
+    inner_join(glp1_group_starts, by=c("patid", "dstartdate", "drug_substance")) %>%
+
+    mutate(minvaliddate6m = sql("date_add(dstartdate, interval 91 day)"),
+
+           # pmin gets translated to SQL LEAST which doesn't like missing values
+           maxtime6m = pmin(ifelse(is.na(timetoaddrem_class), 274, timetoaddrem_class),
+                            ifelse(is.na(timetochange_class), 274, timetochange_class+91),
+                            ifelse(is.na(timetonextgroup_cens), 274, timetonextgroup_cens),
+                            ifelse(is.na(timetogroupstop_cens), 274, timetogroupstop_cens+91), 274, na.rm=TRUE),
+
+           lastvaliddate6m=if_else(maxtime6m<91, NA, sql("date_add(dstartdate, interval maxtime6m day)"))) %>%
+
+    filter(date>=minvaliddate6m & date<=lastvaliddate6m) %>%
+
+    group_by(patid, dstartdate, drug_substance) %>%
+
+    mutate(min_timediff=min(abs(183-drugdatediff), na.rm=TRUE)) %>%
+    filter(abs(183-drugdatediff)==min_timediff) %>%
+
+    mutate(post_biomarker_6m=min(testvalue, na.rm=TRUE)) %>%
+    filter(post_biomarker_6m==testvalue) %>%
+
+    rename(post_biomarker_6mdate=date,
+           post_biomarker_6mdrugdiff=drugdatediff) %>%
+
+    dbplyr::window_order(post_biomarker_6mdrugdiff) %>%
+    filter(row_number()==1) %>%
+
+    ungroup() %>%
+
+    select(patid, dstartdate, drug_substance, post_biomarker_6m, post_biomarker_6mdate, post_biomarker_6mdrugdiff) %>%
+
+    analysis$cached(post6m_cens_table_name, indexes=c("patid", "dstartdate", "drug_substance"))
+
+  assign(post6m_cens_table_name, data)
+
+}
+
+
+# 12 month response
+
+for (i in biomarkers) {
+
+  print(i)
+
+  drug_merge_tablename <- paste0("full_", i, "_drug_merge")
+  post12m_cens_table_name <- paste0("post12m_cens_", i)
+
+  drug_merge_tablename <- drug_merge_tablename %>% analysis$cached(drug_merge_tablename)
+
+  data <- drug_merge_tablename %>%
+
+    filter(drug_class=="GLP1" & drug_instance==1)  %>%
+
+    inner_join(glp1_group_starts, by=c("patid", "dstartdate", "drug_substance")) %>%
+
+    mutate(minvaliddate12m = sql("date_add(dstartdate, interval 274 day)"),
+
+           # pmin gets translated to SQL LEAST which doesn't like missing values
+           maxtime12m = pmin(ifelse(is.na(timetoaddrem_class), 457, timetoaddrem_class),
+                             ifelse(is.na(timetochange_class), 457, timetochange_class+91),
+                             ifelse(is.na(timetonextgroup_cens), 457, timetonextgroup_cens),
+                             ifelse(is.na(timetogroupstop_cens), 457, timetogroupstop_cens+91), 457, na.rm=TRUE),
+
+           lastvaliddate12m=if_else(maxtime12m<274, NA, sql("date_add(dstartdate, interval maxtime12m day)"))) %>%
+
+    filter(date>=minvaliddate12m & date<=lastvaliddate12m) %>%
+
+    group_by(patid, dstartdate, drug_substance) %>%
+
+    mutate(min_timediff=min(abs(365-drugdatediff), na.rm=TRUE)) %>%
+    filter(abs(365-drugdatediff)==min_timediff) %>%
+
+    mutate(post_biomarker_12m=min(testvalue, na.rm=TRUE)) %>%
+    filter(post_biomarker_12m==testvalue) %>%
+
+    rename(post_biomarker_12mdate=date,
+           post_biomarker_12mdrugdiff=drugdatediff) %>%
+
+    dbplyr::window_order(post_biomarker_12mdrugdiff) %>%
+    filter(row_number()==1) %>%
+
+    ungroup() %>%
+
+    select(patid, dstartdate, drug_substance, post_biomarker_12m, post_biomarker_12mdate, post_biomarker_12mdrugdiff) %>%
+
+    analysis$cached(post12m_cens_table_name, indexes=c("patid", "dstartdate", "drug_substance"))
+
+  assign(post12m_cens_table_name, data)
+
+}
+
+
+# Combine with baseline values and find response
+## Starts from all first instance GLP1 substance periods so glp1_group_cens, glp1_group_run_cens and glp1_group_start_cens are there for all of them
+## pre{biomarker} (other than HbA1c) are only used to calculate the responses and are removed at the end, as they are already in response_biomarkers
+
+pre_biomarker_variables <- setdiff(paste0("pre", biomarkers), "prehba1c")
+
+response_biomarkers_cens <- glp1_cens_periods %>%
+  select(patid, dstartdate, drug_substance, glp1_group_cens, glp1_group_run_cens, glp1_group_start_cens, timeprevcombo_cens) %>%
+  left_join((baseline_biomarkers %>% select(patid, dstartdate, drug_substance, all_of(pre_biomarker_variables))), by=c("patid", "dstartdate", "drug_substance")) %>%
+  left_join(baseline_biomarkers_cens, by=c("patid", "dstartdate", "drug_substance"))
+
+
+for (i in biomarkers) {
+
+  print(i)
+
+  post6m_table <- get(paste0("post6m_cens_", i))
+  post12m_table <- get(paste0("post12m_cens_", i))
+
+  pre_biomarker_variable <- as.symbol(ifelse(i=="hba1c", "prehba1c_cens", paste0("pre", i)))
+
+  post_6m_biomarker_variable <- paste0("post", i, "6m_cens")
+  post_6m_biomarker_date_variable <- paste0("post", i, "6mdate_cens")
+  post_6m_biomarker_drugdiff_variable <- paste0("post", i, "6mdrugdiff_cens")
+  biomarker_6m_response_variable <- paste0(i, "resp6m_cens")
+  post_12m_biomarker_variable <- paste0("post", i, "12m_cens")
+  post_12m_biomarker_date_variable <- paste0("post", i, "12mdate_cens")
+  post_12m_biomarker_drugdiff_variable <- paste0("post", i, "12mdrugdiff_cens")
+  biomarker_12m_response_variable <- paste0(i, "resp12m_cens")
+
+  interim_response_biomarker_table <- paste0("response_biomarkers_cens_interim_", i)
+
+  response_biomarkers_cens <- response_biomarkers_cens %>%
+    left_join(post6m_table, by=c("patid", "dstartdate", "drug_substance")) %>%
+    left_join(post12m_table, by=c("patid", "dstartdate", "drug_substance"))
+
+
+  if (i=="hba1c") {
+    response_biomarkers_cens <- response_biomarkers_cens %>%
+      mutate(post_biomarker_6m=ifelse(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, NA, post_biomarker_6m),
+             post_biomarker_6mdate=if_else(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, as.Date(NA), post_biomarker_6mdate),
+             post_biomarker_6mdrugdiff=ifelse(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, NA, post_biomarker_6mdrugdiff),
+             post_biomarker_12m=ifelse(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, NA, post_biomarker_12m),
+             post_biomarker_12mdate=if_else(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, as.Date(NA), post_biomarker_12mdate),
+             post_biomarker_12mdrugdiff=ifelse(!is.na(timeprevcombo_cens) & timeprevcombo_cens<=61, NA, post_biomarker_12mdrugdiff))
+  }
+
+
+  response_biomarkers_cens <- response_biomarkers_cens %>%
+
+    mutate({{biomarker_6m_response_variable}}:=ifelse(!is.na(pre_biomarker_variable) & !is.na(post_biomarker_6m), post_biomarker_6m-pre_biomarker_variable, NA),
+           {{biomarker_12m_response_variable}}:=ifelse(!is.na(pre_biomarker_variable) & !is.na(post_biomarker_12m), post_biomarker_12m-pre_biomarker_variable, NA)) %>%
+
+    rename({{post_6m_biomarker_variable}}:=post_biomarker_6m,
+           {{post_6m_biomarker_date_variable}}:=post_biomarker_6mdate,
+           {{post_6m_biomarker_drugdiff_variable}}:=post_biomarker_6mdrugdiff,
+           {{post_12m_biomarker_variable}}:=post_biomarker_12m,
+           {{post_12m_biomarker_date_variable}}:=post_biomarker_12mdate,
+           {{post_12m_biomarker_drugdiff_variable}}:=post_biomarker_12mdrugdiff) %>%
+
+    analysis$cached(interim_response_biomarker_table, indexes=c("patid", "dstartdate", "drug_substance"))
+
+}
+
+
+response_biomarkers_cens <- response_biomarkers_cens %>%
+  select(-c(timeprevcombo_cens, all_of(pre_biomarker_variables))) %>%
+  analysis$cached("response_biomarkers_cens", indexes=c("patid", "dstartdate", "drug_substance"))

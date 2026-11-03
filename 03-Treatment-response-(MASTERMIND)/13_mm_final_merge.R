@@ -51,6 +51,7 @@ combo_start_stop <- combo_start_stop %>% analysis$cached("combo_start_stop")
 ## Biomarkers inc. CKD
 # baseline_biomarkers <- baseline_biomarkers %>% analysis$cached("baseline_biomarkers")
 response_biomarkers <- response_biomarkers %>% analysis$cached("response_biomarkers") #includes baseline biomarker values for first instance drug periods so no need to use baseline_biomakers table
+response_biomarkers_cens <- response_biomarkers_cens %>% analysis$cached("response_biomarkers_cens") #GLP1 group-censored (_cens) response variables: GLP1 first instance periods only
 ckd_stages <- ckd_stages %>% analysis$cached("ckd_stages")
 
 ## Comorbidities and eFI
@@ -138,6 +139,7 @@ all_diabetes_1stinstance %>% distinct(patid) %>% count()
 
 all_diabetes_1stinstance <- all_diabetes_1stinstance %>%
   inner_join((response_biomarkers %>% select(-c(drug_class, drug_instance, timeprevcombo_class))), by=c("patid", "dstartdate", "drug_substance")) %>%
+  left_join(response_biomarkers_cens, by=c("patid", "dstartdate", "drug_substance")) %>%
   inner_join((ckd_stages %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
   inner_join((comorbidities %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
   inner_join((efi %>% select(-c(drug_class, drug_instance))), by=c("patid", "dstartdate", "drug_substance")) %>%
