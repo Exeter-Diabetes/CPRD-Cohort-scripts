@@ -191,6 +191,9 @@ table <- table %>% mutate(patid = as.character(patid))
 - Cleaned tables: `clean_{feature}_medcodes`
 - Pre/post-index merged tables: `pre_index_date_{feature}_merge`
 - Final output columns: `pre_index_date_earliest_{comorbidity}`, `pre_index_date_latest_{comorbidity}`, `pre_index_date_{comorbidity}` (binary 0/1), `post_index_date_first_{comorbidity}`
+- **MySQL names (tables, columns and indexes) can be at most 64 characters.** `analysis$cached()` names each index `{analysis_prefix}_{table_name}_{column}`, so the index name is the one that usually goes over the limit. Check that `analysis_prefix` + `table_name` + the longest indexed column + 2 underscores is 64 characters or fewer.
+  - Take extra care with table names built in a loop (e.g. `paste0("response_biomarkers_interim_", i)` over `biomarkers`): check the longest value of `i` (`acr_from_separate`, 17 characters) with the longest indexed column (usually `drug_substance`, 14 characters). For example, `mm_response_biomarkers_interim_acr_from_separate_drug_substance` is 63 characters, so adding a suffix such as `_cens` to that table name goes over the limit.
+  - If a name is too long, the script stops with `Identifier name '...' is too long` when creating the index, and the table may already have been created without its indexes. Drop that table, and any tables already cached under the too-long naming pattern, then use a shorter table name.
 
 ### Date filtering
 - Always validate dates against `validDateLookup` (contains `min_dob`, `gp_end_date`, `gp_ons_end_date`).
