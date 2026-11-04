@@ -544,7 +544,8 @@ for (i in biomarkers) {
   post_12m_biomarker_drugdiff_variable <- paste0("post", i, "12mdrugdiff_cens")
   biomarker_12m_response_variable <- paste0(i, "resp12m_cens")
 
-  interim_response_biomarker_table <- paste0("response_biomarkers_cens_interim_", i)
+  ## short name: MySQL index names (mm_<table>_drug_substance) must be 64 characters or fewer
+  interim_response_biomarker_table <- paste0("response_cens_interim_", i)
 
   response_biomarkers_cens <- response_biomarkers_cens %>%
     left_join(post6m_table, by=c("patid", "dstartdate", "drug_substance")) %>%
