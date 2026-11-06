@@ -387,3 +387,116 @@ baseline_biomarkers <- baseline_biomarkers %>%
   relocate(height, .after=prehba1cdrugdiff) %>%
   analysis$cached("baseline_biomarkers", indexes=c("patid", "dstartdate", "drug_substance"))
 
+
+############################################################################################
+
+# GLP1 group-censored variables (_cens): GLP1 only, used for the _cens response variables in 03_mm_response_biomarkers
+## Variables above only see changes of drug CLASS, so a switch between two GLP1s (e.g. liraglutide -> semaglutide) is not seen
+## For the _cens variables, each group of similar GLP1s is treated as if it were its own drug class:
+### Liraglutide/exenatide/lixisenatide: Liraglutide, Exenatide, Exenatide prolonged-release, Lixisenatide, Albiglutide
+### Dulaglutide
+### Oral semaglutide
+### Injectable semaglutide: Low-dose semaglutide, Semaglutide, dose unclear, High-dose semaglutide (dose labels merged, so titration is not a change)
+## Only first instance GLP1 class periods (drug_instance==1), as for the response variables
+
+# Within the GLP1 class period, consecutive substance periods (ordered by start date) of the same GLP1 group form a run (glp1_group_run_cens)
+## glp1_group_start_cens: 1 for the first substance period of the first run of each GLP1 group; 0 for the others (e.g. 'Semaglutide, dose unclear' after low-dose semaglutide, or a return to a GLP1 group used earlier in the class period)
+## timetonextgroup_cens: days until the next run (a different GLP1 group) starts - response windows close at this date
+## timetogroupstop_cens: days until the last script of this run - response windows close 91 days after this date
+## timeprevcombo_cens: days since the previous change in drug class combination or GLP1 group (as timeprevcombo_class, but also counting GLP1 group changes)
+## NB: two GLP1 groups started on the same day give timetonextgroup_cens=0 / timeprevcombo_cens=0, so neither gets a response
+
+glp1_cens_periods <- drug_start_stop %>%
+  filter(drug_class=="GLP1" & drug_instance==1) %>%
+  mutate(glp1_group_cens=case_when(drug_substance=="Liraglutide" | drug_substance=="Exenatide" | drug_substance=="Exenatide prolonged-release" | drug_substance=="Lixisenatide" | drug_substance=="Albiglutide" ~ "Liraglutide/exenatide/lixisenatide",
+                                   drug_substance=="Dulaglutide" ~ "Dulaglutide",
+                                   drug_substance=="Oral semaglutide" ~ "Oral semaglutide",
+                                   drug_substance=="Low-dose semaglutide" | drug_substance=="Semaglutide, dose unclear" | drug_substance=="High-dose semaglutide" ~ "Injectable semaglutide")) %>%
+  group_by(patid) %>%
+  dbplyr::window_order(dstartdate, drug_substance) %>%
+  mutate(new_group_run=ifelse(is.na(lag(glp1_group_cens)) | lag(glp1_group_cens)!=glp1_group_cens, 1L, 0L)) %>%
+  mutate(glp1_group_run_cens=cumsum(new_group_run)) %>%
+  dbplyr::window_order() %>%
+  ungroup() %>%
+  group_by(patid, glp1_group_run_cens) %>%
+  mutate(group_run_start=min(dstartdate, na.rm=TRUE),
+         group_run_stop=max(dstopdate_substance, na.rm=TRUE)) %>%
+  ungroup() %>%
+  group_by(patid, glp1_group_cens) %>%
+  mutate(first_group_run=min(glp1_group_run_cens, na.rm=TRUE)) %>%
+  ungroup() %>%
+  analysis$cached("glp1_cens_periods_interim_1", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+# Start of the previous and next run of a different GLP1 group
+
+glp1_group_runs <- glp1_cens_periods %>%
+  distinct(patid, glp1_group_run_cens, group_run_start) %>%
+  group_by(patid) %>%
+  dbplyr::window_order(glp1_group_run_cens) %>%
+  mutate(prev_group_run_start=lag(group_run_start),
+         next_group_run_start=lead(group_run_start)) %>%
+  dbplyr::window_order() %>%
+  ungroup()
+
+
+# Latest change in drug class combination before each substance start: rows of combo_start_stop with dcstopdate_class are where the drug class combination changes
+## For substance periods starting mid class period this is the start of the current drug class combination (timeprevcombo_class counts back to the start of the combination before that)
+
+prev_class_change <- glp1_cens_periods %>%
+  distinct(patid, dstartdate) %>%
+  inner_join((combo_start_stop %>% filter(!is.na(dcstopdate_class)) %>% select(patid, class_change_date=dcstartdate)), by="patid") %>%
+  filter(class_change_date<dstartdate) %>%
+  group_by(patid, dstartdate) %>%
+  summarise(prev_class_change_date=max(class_change_date, na.rm=TRUE)) %>%
+  ungroup()
+
+
+glp1_cens_periods <- glp1_cens_periods %>%
+  inner_join((glp1_group_runs %>% select(-group_run_start)), by=c("patid", "glp1_group_run_cens")) %>%
+  left_join(prev_class_change, by=c("patid", "dstartdate")) %>%
+  mutate(glp1_group_start_cens=ifelse(dstartdate==group_run_start & glp1_group_run_cens==first_group_run, 1L, 0L),
+         timetonextgroup_cens=datediff(next_group_run_start, dstartdate),
+         timetogroupstop_cens=datediff(group_run_stop, dstartdate),
+         dateprevcombo_cens=case_when(is.na(prev_group_run_start) ~ prev_class_change_date,
+                                      is.na(prev_class_change_date) | prev_group_run_start>prev_class_change_date ~ prev_group_run_start,
+                                      TRUE ~ prev_class_change_date)) %>%
+  mutate(timeprevcombo_cens=datediff(dstartdate, dateprevcombo_cens)) %>%
+  select(patid, dstartdate, drug_substance, glp1_group_cens, glp1_group_run_cens, glp1_group_start_cens, timetonextgroup_cens, timetogroupstop_cens, timeprevcombo_cens) %>%
+  analysis$cached("glp1_cens_periods", indexes=c("patid", "dstartdate", "drug_substance"))
+
+
+# Baseline HbA1c for GLP1 group starts (glp1_group_start_cens==1): as prehba1c/prehba1c12m above, but excluding values before timeprevcombo_cens rather than timeprevcombo_class
+
+baseline_biomarkers_cens <- full_hba1c_drug_merge %>%
+
+  inner_join((glp1_cens_periods %>% filter(glp1_group_start_cens==1) %>% select(patid, dstartdate, drug_substance, timeprevcombo_cens)), by=c("patid", "dstartdate", "drug_substance")) %>%
+
+  filter(drugdatediff<=7 & drugdatediff>=-366) %>%
+
+  group_by(patid, dstartdate, drug_substance) %>%
+
+  mutate(min_timediff=min(abs(drugdatediff), na.rm=TRUE)) %>%
+  filter(abs(drugdatediff)==min_timediff) %>%
+
+  mutate(prehba1c12m_cens=min(testvalue, na.rm=TRUE)) %>%
+  filter(prehba1c12m_cens==testvalue) %>%
+
+  dbplyr::window_order(drugdatediff) %>%
+  filter(row_number()==1) %>%
+
+  ungroup() %>%
+
+  rename(prehba1c12mdate_cens=date,
+         prehba1c12mdrugdiff_cens=drugdatediff) %>%
+
+  filter(prehba1c12mdrugdiff_cens>=0 | is.na(timeprevcombo_cens) | (!is.na(timeprevcombo_cens) & abs(prehba1c12mdrugdiff_cens)<=timeprevcombo_cens)) %>%
+
+  mutate(prehba1c_cens=ifelse(prehba1c12mdrugdiff_cens>=-183, prehba1c12m_cens, NA),
+         prehba1cdate_cens=ifelse(prehba1c12mdrugdiff_cens>=-183, prehba1c12mdate_cens, NA),
+         prehba1cdrugdiff_cens=ifelse(prehba1c12mdrugdiff_cens>=-183, prehba1c12mdrugdiff_cens, NA)) %>%
+
+  select(patid, dstartdate, drug_substance, prehba1c_cens, prehba1cdate_cens, prehba1cdrugdiff_cens, prehba1c12m_cens, prehba1c12mdate_cens, prehba1c12mdrugdiff_cens) %>%
+
+  analysis$cached("baseline_biomarkers_cens", indexes=c("patid", "dstartdate", "drug_substance"))
+
