@@ -126,6 +126,16 @@ cprd$tables$observation %>% inner_join(codes$creatinine_blood, by="medcodeid") %
 
 When a script needs to be re-run (e.g. because the logic has changed), the affected cached tables must first be deleted from MySQL. Always ask the user for the **MySQL database name** before generating any DROP statements — it is not the same as the `cprdEnv` string and varies per project.
 
+### Rebuild everything a changed script makes
+- **When a script changes (including when variables are added), drop and re-make every table it creates, not only its final table.** This includes interim and loop tables (e.g. `post6m_{biomarker}`, `response_biomarkers_interim_{biomarker}`), and the tables in later scripts that are built from them (e.g. in MASTERMIND, 11 and 12 read tables from 02 and 03).
+- `analysis$cached()` silently reuses any table that still exists, so dropping only some tables mixes tables built from old and new inputs. For example, in November 2026 the MASTERMIND class `post6m_*`/`post12m_*` tables were found to date from November 2024, older than the current `drug_start_stop`.
+- Tables under the shared prefixes (`all_patid`, `all`) are used by other cohorts: only re-make them if the code that makes them has changed.
+- To check, compare creation times. A table should never be older than the tables it was built from:
+  ```sql
+  SELECT TABLE_NAME, CREATE_TIME FROM information_schema.TABLES
+  WHERE TABLE_SCHEMA='<database>' AND TABLE_NAME LIKE '<analysis_prefix>\_%' ORDER BY CREATE_TIME;
+  ```
+
 ### Table naming
 Every cached table is stored in MySQL as:
 ```
